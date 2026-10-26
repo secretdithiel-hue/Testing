@@ -1,214 +1,114 @@
 /**
  * ============================================================================
  * PROJECT: HUSAY NG SOKSAY - REGISTRATION SYSTEM
- * VERSION: V21.0 (PAYMENT VERIFICATION CENTER)
- * DATE:    JANUARY 2026
+ * VERSION: V1.0 (BASELINE RELEASE)
+ * DATE:    OCTOBER 2026
  * ============================================================================
  *
- * KEY FEATURES IN V21.0:
- * ✅ PAYMENT VERIFICATION CENTER (NEW):
- *    - Automatic detection of payment mismatches between applicant and system amounts
- *    - Interactive dashboard with statistics (total, mismatches, matched, pending)
- *    - Detailed payment breakdown showing competition prices
- *    - Email verification system for discrepancy notifications
- *    - Inline editing of applicant payment amounts
- *    - Customizable verification email with checklist items:
- *      • Payment Amount
- *      • Competition Selections
- *      • Coupon Code
- *      • Referral Code
- *      • Payment Method
- *      • Proof of Payment
- *    - Bulk email sending to all mismatched payments
- *    - Resolution tracking (email sent, resolved status)
- *    - Search and filter functionality (by name, ID, status)
- *    - Integration with existing email system and Gmail API threading
- *    - Accessible from Admin Center → Finance Operations
+ * This is Version 1 of the system. Everything below is the V1.0 baseline;
+ * any later change should be recorded in the CHANGELOG at the bottom of
+ * this header as V1.1, V1.2, V2.0, and so on.
  *
- * KEY FEATURES IN V20.0:
- * ✅ EMAIL THREADING FOR RECIPIENTS (NEW):
- *    - All emails to a participant now appear in ONE thread in their inbox
- *    - Uses Gmail API with proper RFC2822 MIME structure
- *    - Threading headers: In-Reply-To, References
- *    - Works WITH inline images (logos)
- *    - Requires Gmail API service to be enabled in Apps Script
- *    - Thread info stored in SYS_EMAIL_THREAD_ID column
- *    - Test functions available: Test Email Threading (New Email), 
- *      Test ALL Emails Threading (Selected Row) - tests RR, AR, 
- *      Referral Success, and Referral Removal notifications
+ * FEATURES IN V1.0:
  *
- * ✅ SYSTEM INTRODUCTION & GUIDE (NEW):
- *    - Interactive help center accessible from Admin Center menu
- *    - Tabbed interface: Overview, Registration, Finance, Emails, Pricing, Referrals, Tools, FAQ
- *    - Explains entire system flow with visual diagrams
- *    - Step-by-step guides for common tasks
- *    - Accordion FAQ sections for troubleshooting
- *    
- * ✅ ACKNOWLEDGEMENT RECEIPT (AR) EMAIL REDESIGN:
- *    - Changed from "Official Receipt (OR)" to "Acknowledgement Receipt (AR)"
- *    - NEW email structure: Email Spiel BEFORE the receipt
- *    - Added "CONFIDENTIAL - DO NOT SHARE" badge
- *    - New email spiel format with:
- *      • Personalized greeting with participant name
- *      • Payment confirmation with amount and competitions list
- *      • Referral code section
- *      • Welcome message and participation guidelines
- *      • Confidentiality reminder callout box
- *      • Official Submission Form button with link
- *      • Submission deadline
- *      • Event Primer button with link
- *      • Closing message
- *    - New breakdown table styling:
- *      • Blue header (Description / Amount)
- *      • Discounts in RED with STRIKETHROUGH
- *      • "TOTAL AMOUNT PAID:" with blue amount
- *    - Receipt No. now uses the participant's referral code (Gen ID)
- *    - Updated contact section with email, Facebook, Instagram
- *    - Configurable links in SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL:
- *      • SUBMISSION_FORM_LINK
- *      • EVENT_PRIMER_LINK
- *      • SUBMISSION_DEADLINE
- *      • CONTACT (EMAIL, FACEBOOK, INSTAGRAM)
+ * ✅ REGISTRATION & PRICING:
+ *    - Form-driven registration with generated IDs (Gen. ID / referral code)
+ *    - Competition name normalization with aliases (including
+ *      "(Special Competition)" variations such as Short Film Making)
+ *    - Bundle pricing for standard and special competitions
+ *    - Email format validation and proof-of-payment link validation
+ *    - Batch sheet writes and rate limiting for email sends
  *
- * KEY FEATURES IN V19.1:
- * ✅ REFERRAL NOTIFICATION RESEND (NEW):
- *    - 🔗 Resend All Pending Referral Notifications - Bulk resend to all
- *      referrers who have referrals but no tracked notification
- *    - 🔗 Resend Referral Notif (Selected Row) - Resend for specific referrer
- *    - 📧 Resend Email Menu (Selected Row) - New interactive menu with all
- *      email types (Registration, OR, Referral) in one dialog
- *    - Direct resend functions for HTML dialog integration
+ * ✅ COUPONS:
+ *    - Coupon Manager sheet with lazy-loaded coupon cache
+ *    - Member Ambassador coupon system
  *
- * KEY FEATURES IN V19.0:
- * ✅ COMPREHENSIVE EMAIL MANAGEMENT SYSTEM:
- *    - New "📧 Email Tools (V19)" submenu in Admin Center with 7 functions:
- *    
- *    DASHBOARD & VERIFICATION:
- *      1. 📊 Email Status Dashboard - Full overview of all email statuses
- *         Shows sent/error/failed/pending counts for all email types
- *      2. ✅ Quick Verify OR Emails - Fast check if all PAID have receipts
- *    
- *    BULK RESEND:
- *      3. 🔄 Resend All Failed/Error Emails - Resends all OR with errors
- *      4. 📨 Resend All Pending OR Emails - Sends OR to PAID without receipt
- *    
- *    INDIVIDUAL ROW ACTIONS:
- *      5. 📧 Resend Email for Selected Row - Resend OR or Registration email
- *      6. 🔍 Check Email Status for Selected Row - See tracking details
- *      7. 🗑️ Clear Email Tracking (Allow Resend) - Reset to allow resend
- *    
- *    EMAIL TYPES TRACKED:
- *      - Registration Confirmation (REGCONF)
- *      - Acknowledgement Receipt/AR (PAID)
- *      - Referral Success Notification (REFNOTIF_SUCCESS)
- *      - Referral Removal Notification (REFNOTIF_REMOVED)
- *    
- *    FEATURES:
- *      - Uses ReceiptGuard tracking system
- *      - Rate limiting protection (1.5s delay between sends)
- *      - Force resend option (clears tracking first)
- *      - Detailed logging of all operations
- *      - HTML-formatted status reports
- *
- * KEY FIXES IN V18.1:
- * ✅ COLUMN STRUCTURE VALIDATOR & FIXER:
- *    - New "Column Tools" submenu in Admin Center with 4 functions:
- *      1. 🔍 Check & Fix Columns + Data - Validates columns AND data integrity (Gen IDs, emails, pricing, referrals, Finance sync)
- *      2. 🔎 Auto-Detect Column Mapping - Finds columns by header names
- *      3. 🧪 Test Column Access - Verifies data can be read correctly
- *      4. 📋 Show All Column Headers - Displays full column mapping
- *    - Handles form reset/relink scenarios that break column positions
- *    - Automatically creates missing system columns (Gen. ID, Ref Count, etc.)
- *    - Validates headers match expected configuration
- *    - Supports header aliases (e.g., "Email Address" = "Email")
- *    - Comprehensive logging of all column operations
- *
- * KEY FIXES IN V18.0:
- * ✅ REFERRAL EDIT TRIGGER FIX:
- *    - Added handling for direct edits to referral code columns in Registration sheet
- *    - onEdit now watches REF_INPUT (col 24) and LOCKED_REF (col 31) columns
- *    - New handleReferralCodeEdit() function processes referral changes
- *    - Logic flow:
- *      1. If referral code changed AND person is already PAID:
- *         - Remove credit from old referrer (if any)
- *         - Notify old referrer about removal
- *         - Add credit to new referrer
- *         - Notify new referrer about gain
- *         - Update Finance Dashboard for both parties
- *      2. If referral code changed AND person is NOT PAID:
- *         - Just lock the new referral code
- *         - Credit will be given when payment is verified
- *    - New recalculateAndSyncFinance() function to update amounts after changes
- *    - Comprehensive logging at every step for debugging
- *
- * KEY FIXES IN V17.0:
- * ✅ REFERRAL NOTIFICATION COMPLETE FIX:
- *    - Fixed ReferralService.updateReferrer to capture email EARLY with validation
- *    - Added comprehensive debug logging for email retrieval at every step
- *    - Email is now normalized/trimmed using Utils.normalizeEmail()
- *    - Added direct cell read fallback if row array access fails
- *    - Notification functions now have 3-step fallback for email retrieval:
- *      Step 1: Use provided email (from updateReferrer result)
- *      Step 2: Lookup by GenID using getReferrerEmailByGenId
- *      Step 3: Direct sheet cell read as final fallback
- *    - Added step-by-step logging to trace exactly where notification fails
- *    - Each fallback attempt is logged with result (success/failure + value)
- *
- * KEY FIXES IN V16.0:
- * ✅ COMPETITION PARSING FIX:
- *    - Fixed "Short Film Making (Special Competition)" not being recognized
- *    - Added comprehensive aliases for all Short Film variations
- *    - Improved normalizeCompetitionName_ to handle "(Special Competition)" suffix
- *    - Added debug logging for competition parsing
- *
- * ✅ REFERRAL NOTIFICATION FIX (INCOMPLETE - FIXED IN V17):
- *    - Added fallback email lookup when result.referrerEmail is empty
- *    - Uses SheetRepository.getReferrerEmailByGenId as backup
- *    - Added detailed audit logging for notification attempts
- *    - Both success and removal notifications now have fallback logic
- *
- * KEY FIXES IN V15.0:
  * ✅ REFERRAL SYSTEM (BOTH PARTIES GET DISCOUNT):
- *    - Person who USES a referral code gets ₱50 discount
- *    - Referrer gets ₱50 cashback on FIRST successful referral
- *    - Referrer gets ₱10 cashback on EACH SUBSEQUENT referral
- *    - Both discounts properly reflected in emails and receipts
+ *    - Person who USES a referral code gets a discount
+ *    - Referrer gets cashback on the FIRST paid referral and a smaller amount
+ *      on EACH SUBSEQUENT one (amounts: SYSTEM_CONFIG.PRICING)
+ *    - Credit is given when the referred person is marked PAID, including
+ *      members of a payment group when the group's payer is marked PAID
+ *    - Referral success / removal notification emails with 3-step email
+ *      lookup fallback (provided email, lookup by GenID, direct cell read)
+ *    - onEdit handling for direct edits to the referral code columns
+ *      (REF_INPUT and LOCKED_REF), including credit transfer between
+ *      referrers when the participant is already PAID
  *
- * ✅ ALL V13 FEATURES PRESERVED:
- *    - Email validation
- *    - Proof link validation
- *    - Rate limiting
- *    - Dropdown-safe Finance Dashboard
- *    - Competition normalization
- *    - Batch operations
- *    - Coupon system with lazy loading
+ * ✅ FINANCE:
+ *    - Dropdown-safe Financial Dashboard synced from Registration
+ *    - Cashback Report
+ *    - Marking PAID in the Financial Dashboard "Status" column drives the
+ *      receipt, the referral credit and the paid date; several rows may be
+ *      pasted / filled at once
+ *    - Payment Verification Center (Admin Center → Finance Operations):
+ *      expected amount next to the amount received, mismatch detection,
+ *      payment breakdown, search and filter
+ *    - Combined Registration Merge (Master Transaction): merge groups,
+ *      manual total override, bundle info, merge-aware receipts
  *
+ * ✅ EMAILS:
+ *    - Registration Confirmation, Acknowledgement Receipt (AR),
+ *      Referral notifications, Submission Acknowledgement, Announcements
+ *    - AR email with spiel before the receipt, "CONFIDENTIAL - DO NOT SHARE"
+ *      badge, itemized breakdown (discounts in red strikethrough), and
+ *      configurable links in SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL
+ *    - Recipient-side email threading via the Gmail API (In-Reply-To /
+ *      References headers; thread info stored in SYS_EMAIL_THREAD_ID).
+ *      Requires the Gmail API service to be enabled in Apps Script.
+ *    - Email Tools: status dashboard, quick verify, bulk resend of failed /
+ *      pending emails, per-row resend, status check, and tracking reset
+ *      (ReceiptGuard tracking)
  *
- * ✅ EMAIL VALIDATION:
- *    - Added regex validation for email format
- *    - Prevents malformed emails from processing
+ * ✅ SUBMISSIONS & DEPERSONALIZATION:
+ *    - Submission Form handler supporting multiple competitions per row
+ *    - Participant numbers, anonymized file copies, and document PII scan
+ *      (requires the Advanced Drive Service)
+ *    - Submission email preview / simulator and depersonalization test suite
  *
- * ✅ IMPROVED ERROR HANDLING:
- *    - Error handlers now provide user feedback where appropriate
- *    - Added error recovery mechanisms
+ * ✅ ADMIN TOOLS:
+ *    - System Introduction & Guide: generated live from the settings, the
+ *      menu definition and the spreadsheet (see below)
+ *    - System Dashboard, quick and full health checks, System Updater
+ *    - Column Tools: check & fix columns + data, auto-detect column mapping,
+ *      test column access, show all column headers
+ *    - Manual Response Editor (live CRUD)
+ *    - Participant Number Audit Tool
+ *    - Analytics & Finance Dashboards (Premium Edition)
  *
- * ✅ BATCH OPERATIONS:
- *    - Consolidated multiple setValue() calls into batch writes
- *    - Significant performance improvement
+ * HOW THE PARTS STAY CONNECTED (one source for each thing):
+ *    - SYSTEM_CONFIG ............... prices, rules, sheet names, columns, status
+ *                                    words, email wording. Read by the pricing
+ *                                    engine, emails, previews, tests and the guide.
+ *    - getAdminMenuDefinition_() ... the Admin Center menu. onOpen() builds the menu
+ *                                    from it; the guide's Menu tab, the health check
+ *                                    and every "go to ..." message read the same list
+ *                                    (getMenuPathText_).
+ *    - getPaidEmailLookup_() ....... who counts as paid (Finance status; a group
+ *                                    member follows the group's payer). Used by the
+ *                                    dashboards, System Dashboard, Sync, health
+ *                                    check, announcement filters and the guide.
+ *    - getSystemHealthData() ....... live status for the System Dashboard and guide.
+ *    - SYSTEM_CONFIG.COMPETITIONS .. the competitions (names on both forms, short label,
+ *      + getCompetitions_()          sheet for the judges, special or standard). Read by
+ *                                    pricing, receipts, previews, anonymized folders, the
+ *                                    judges' sheets, the self-tests and the health check.
+ *    - getCouponValue_() ........... the value of a coupon code, for receipts, resends,
+ *                                    tests and the System Updater.
+ *    - withGuideLink_() ............ finishes every dialog: adds the shared base layer
+ *                                    (getAdminBaseCss_: one font, one dark palette, the
+ *                                    same form controls, scrollbars and focus rings) and
+ *                                    the "Guide" link to the page about that tool.
+ *    - buildAdminDialog_() ......... the shared page shell and ui-* components
+ *                                    (getAdminUiCss_) used by the report and form dialogs.
+ *                                    Emails keep their own blue-and-gold design; inside a
+ *                                    dialog they are always shown on a white "email-paper".
+ *    To add or rename a tool, edit getAdminMenuDefinition_() only.
+ *    To add or rename a competition, edit SYSTEM_CONFIG.COMPETITIONS (and its price,
+ *    prefix and submission columns); the Full System Health Check reports any mismatch.
  *
- * ✅ PROOF LINK VALIDATION:
- *    - Added validation for expected proof link domains
- *    - Warns on suspicious proof links
- *
- * ✅ RATE LIMITING:
- *    - Added basic rate limiting for email sends
- *    - Prevents spam/abuse
- *
- * ✅ COUPON CACHE OPTIMIZATION:
- *    - Added lazy loading option
- *    - Memory-efficient for large coupon sets
- *
- * ✅ ALL PREVIOUS V12.0 FIXES PRESERVED
+ * CHANGELOG:
+ *    V1.0 - Baseline release.
  * ============================================================================
  */
 
@@ -219,7 +119,7 @@
 var SYSTEM_CONFIG = {
   META: {
     NAME: "Husay ng Soksay",
-    VERSION: "21.0",
+    VERSION: "1.0",
     ORG: "UPLB Sociology Society",
     TIMEZONE: "Asia/Manila",
     CURRENCY: "PHP"
@@ -416,6 +316,24 @@ var SYSTEM_CONFIG = {
     }
   },
 
+  // ===== COMPETITIONS: THE ONE LIST EVERY FEATURE READS =====
+  // Pricing, receipts, previews, anonymized folders, the sheets for the judges, the self-tests,
+  // the health check and the guide all take their competition names from here
+  // (through getCompetitions_()), so they cannot disagree with each other.
+  //   key ........... internal code; also the key in DEPERSONALIZATION.PREFIXES / ANON_FOLDERS
+  //   registration .. name(s) on the Registration form, exactly as priced in PRICING.SINGLE
+  //                   (the first one is the usual one)
+  //   submission .... answer on the Submission form, exactly as in SUBMISSION_COMPETITION_MAP
+  //   short ......... short label printed on receipts
+  //   sheet ......... name of the sheet for the judges, made by Generate Competition Sheets
+  //   special ....... true = counted as a "special" competition by the bundle prices
+  COMPETITIONS: [
+    { key: "ESSAY",  registration: ["Essay Writing Competition"],               submission: "Essay Writing Competition",            short: "Essay Writing",            sheet: "Essay Writing",            special: false },
+    { key: "SPEECH", registration: ["Speech Competition"],                      submission: "Speech Competition",                   short: "Speech Competition",       sheet: "Speech",                   special: false },
+    { key: "PHOTO",  registration: ["Mobile Phone Photography Competition"],    submission: "Mobile Phone Photography Competition", short: "Mobile Phone Photography", sheet: "Mobile Phone Photography", special: false },
+    { key: "FILM",   registration: ["Short Film Making", "Short Film (Group)"], submission: "Short Film Competition",               short: "Short Film Making",        sheet: "Short-Film",               special: true }
+  ],
+
   PRICING: {
     SINGLE: {
       "Essay Writing Competition": 349,
@@ -448,10 +366,19 @@ var SYSTEM_CONFIG = {
     ENABLE_PAID_REVERSAL: true,
     DUPLICATE_SEND_WINDOW_HOURS: 24,
     
+    // true = also write DEBUG-level log lines to the "System Logs" sheet (slow; for troubleshooting)
+    DEBUG_LOG_TO_SHEET: false,
+    
     // NEW: Rate limiting
     RATE_LIMIT: {
       MAX_EMAILS_PER_HOUR: 50,
-      COOLDOWN_MINUTES: 1
+      // Minimum gap between ANY two emails. Keep this at 0: a non-zero value silently
+      // drops legitimate emails (e.g. the referral notification that follows a receipt,
+      // or a second registration arriving in the same minute). The hourly cap above and
+      // the 24h duplicate guard already protect against spam.
+      COOLDOWN_MINUTES: 0,
+      // Pause between two emails when a tool sends many in a row (milliseconds)
+      SEND_PAUSE_MS: 1500
     },
     
     // NEW: Allowed proof link domains
@@ -470,12 +397,24 @@ var SYSTEM_CONFIG = {
       ORG_FINANCE_HEAD: "PRINCESS EARLA MAE M. FAJARDO"
     },
 
+    // Position titles printed under the two signature lines of every receipt (HTML allowed)
+    VERIFIER_TITLES: {
+      FINANCE_HEAD: "Finance Committee Head<br>HNS 2025",
+      ORG_FINANCE_HEAD: "UPLB Sociology Society<br>Finance Committee Head"
+    },
+
+    // Announcement Center defaults
+    ANNOUNCEMENT: {
+      // Sign-off pre-filled in the Announcement Center editor (HTML allowed)
+      DEFAULT_SIGNOFF_HTML: "Para sa disiplina ng SokSay,<br>Dithiel Maron A. Fandi&#241;o<br>Event Co-Head, 4th Husay ng SokSay<br>UPLB SOCIOLOGY SOCIETY"
+    },
+
     LOGOS: {
       UPLB_FILE_ID: "1lbN8iz7n5hyW4i3wmnLxPX4N8wlOFeLT",
       HUSAY_FILE_ID: "1HG_CdvGAaQsUtwxMs2cmtE6JiOdIQ-7y"
     },
     
-    // V15.0: Referral notification settings
+    // Referral notification settings
     REFERRAL_NOTIFICATIONS: {
       ENABLED: true,  // Set to false to disable referral notifications
       // Notification for successful referral (when Person B's payment is verified)
@@ -495,6 +434,9 @@ var SYSTEM_CONFIG = {
       SUBMISSION_FORM_LINK: "https://docs.google.com/forms/d/e/1FAIpQLSdgyokhF8eY4peb3m6m7YuKemqnSwrbDgDCbf-gif3GxevWhA/viewform",
       EVENT_PRIMER_LINK: "https://drive.google.com/file/d/1zoDW4qR-3xQi_9jTvWge9AGIF_4-ebVC/view",
       SUBMISSION_DEADLINE: "February 27, 2026 - Entry Submission Deadline",
+      // Text on the two buttons in the receipt email
+      SUBMISSION_BUTTON_LABEL: "SUBMISSION FORM FOR 4TH HUSAY NG SOKSAY",
+      PRIMER_BUTTON_LABEL: "4TH Husay Ng Soksay Event Primer",
       CONTENT: [
         "<b>WELCOME TO THE 4TH HUSAY NG SOKSAY!</b> This email contains important participant information that you will be utilizing in the competition such as the submission links and your participant number so <b>KINDLY SAVE THIS EMAIL</b>.",
         "To ensure a fair and confidential review, all entries will be evaluated anonymously using a participant number. Please <b style=\"background-color:#fef3c7;\">DO NOT INCLUDE</b> any identifying information—such as your name, initials, signatures, school/organization, or identifying captions—anywhere in your submission, including the headers, footers, cover pages, or the file name itself. If any personal details are found, they may be removed to protect the integrity of the process.",
@@ -512,7 +454,7 @@ var SYSTEM_CONFIG = {
       SIGN_OFF: "Para sa malayang mga kwento,<br><b>The Husay Ng Soksay Team</b>"
     },
 
-    // ===== SUBMISSION ACKNOWLEDGEMENT EMAIL SPIEL (V23) =====
+    // ===== SUBMISSION ACKNOWLEDGEMENT EMAIL SPIEL =====
     // This message appears in the Submission Acknowledgement email sent after a participant submits their entry
     SUB_EMAIL_SPIEL: {
       ENABLED: true,
@@ -546,7 +488,7 @@ var SYSTEM_CONFIG = {
     REF_NOTIF_SENT: "SYS_REF_NOTIF_SENT"
   },
 
-  // ===== DEPERSONALIZATION & ANONYMITY SYSTEM (V23) =====
+  // ===== DEPERSONALIZATION & ANONYMITY SYSTEM =====
   DEPERSONALIZATION: {
     // Participant number prefixes per competition type
     PREFIXES: {
@@ -634,6 +576,108 @@ var SYSTEM_CONFIG = {
 };
 
 // ============================================================================
+// PART 1.5: SHARED LOOKUPS BUILT FROM THE SETTINGS
+// ============================================================================
+// Features do not keep their own copies of competition names, prefixes or coupon values.
+// They ask these functions, which read SYSTEM_CONFIG and the sheets.
+
+/**
+ * The competitions, joined from the settings into one list.
+ * @returns {Array<{key:string, registrationNames:string[], registrationName:string,
+ *   submissionName:string, shortName:string, sheetName:string, special:boolean,
+ *   prefix:string, price:number, map:Object}>}
+ */
+function getCompetitions_() {
+  return (SYSTEM_CONFIG.COMPETITIONS || []).map(function (c) {
+    var regNames = c.registration || [];
+    return {
+      key: c.key,
+      registrationNames: regNames,
+      registrationName: regNames[0] || "",
+      submissionName: c.submission || "",
+      shortName: c.short || regNames[0] || c.key,
+      sheetName: c.sheet || c.key,
+      special: !!c.special,
+      prefix: SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[c.key] || c.key,
+      price: SYSTEM_CONFIG.PRICING.SINGLE[regNames[0]],
+      map: SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP[c.submission] || null
+    };
+  });
+}
+
+function getCompetitionByKey_(key) {
+  var list = getCompetitions_();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].key === key) return list[i];
+  }
+  return null;
+}
+
+/** The competition a Registration-form name belongs to (exact name as priced), or null. */
+function getCompetitionByRegistrationName_(name) {
+  var wanted = String(name || "").trim();
+  var list = getCompetitions_();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].registrationNames.indexOf(wanted) >= 0) return list[i];
+  }
+  return null;
+}
+
+/** true when the bundle prices count this Registration-form name as a "special" competition. */
+function isSpecialCompetition_(registrationName) {
+  var comp = getCompetitionByRegistrationName_(registrationName);
+  if (comp) return comp.special;
+  // A priced name that is not in the list: treat it like the special competition it resembles
+  var text = String(registrationName || "").toUpperCase();
+  return getCompetitions_().some(function (c) {
+    if (!c.special) return false;
+    var stem = c.registrationName.split(/\s+/).slice(0, 2).join(" ").toUpperCase();
+    return !!stem && text.indexOf(stem) >= 0;
+  });
+}
+
+/** A participant number as the system writes it, e.g. formatParticipantNumber_("SP", 1) -> "SP-0001". */
+function formatParticipantNumber_(prefix, n) {
+  var digits = SYSTEM_CONFIG.DEPERSONALIZATION.COUNTER_DIGITS || 4;
+  var text = String(n || 1);
+  while (text.length < digits) text = "0" + text;
+  return prefix + "-" + text;
+}
+
+/** An example participant number for one competition key, for previews, tests and the guide. */
+function sampleParticipantNumber_(key, n) {
+  var comp = getCompetitionByKey_(key);
+  return formatParticipantNumber_(comp ? comp.prefix : key, n || 1);
+}
+
+/**
+ * Peso value of a coupon code as listed in the Coupon Manager sheet (0 when it is not there).
+ * Receipts, resends, the tests and the System Updater all use this one lookup.
+ */
+function getCouponValue_(code, couponSheet) {
+  var wanted = String(code || "").trim().toUpperCase();
+  if (!wanted) return 0;
+  try {
+    var sheet = couponSheet || SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SYSTEM_CONFIG.SHEETS.COUPONS);
+    if (!sheet || sheet.getLastRow() < 2) return 0;
+    var CC = SYSTEM_CONFIG.COLS.COUPON;
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(CC.CODE, CC.VALUE)).getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (String(data[i][CC.CODE - 1] || "").trim().toUpperCase() === wanted) return Number(data[i][CC.VALUE - 1] || 0);
+    }
+  } catch (e) {
+    Logger.log("Coupon value lookup failed for " + code + ": " + e);
+  }
+  return 0;
+}
+
+/** Wait between two emails of a bulk send (length set in SYSTEM_CONFIG.ADMIN.RATE_LIMIT.SEND_PAUSE_MS). */
+function pauseBetweenEmails_() {
+  var ms = Number(SYSTEM_CONFIG.ADMIN.RATE_LIMIT.SEND_PAUSE_MS);
+  if (ms > 0) Utilities.sleep(ms);
+}
+
+// ============================================================================
 // PART 2: UTILITIES & LOGGING (UPGRADED)
 // ============================================================================
 
@@ -665,7 +709,13 @@ var AuditLogService = (function () {
     info: function (a, d) { log_("INFO", a, d); },
     warn: function (a, d) { log_("WARN", a, d); },
     error: function (a, d) { log_("ERROR", a, d); },
-    debug: function (a, d) { log_("DEBUG", a, d); }
+    // DEBUG lines go to the Apps Script execution log only. Writing each one to the Logs sheet
+    // added ~10 sheet writes to every price calculation, which made bulk tools (QA, rebuild,
+    // dashboards) crawl. Set SYSTEM_CONFIG.ADMIN.DEBUG_LOG_TO_SHEET = true to restore that.
+    debug: function (a, d) {
+      if (SYSTEM_CONFIG.ADMIN.DEBUG_LOG_TO_SHEET) log_("DEBUG", a, d);
+      else Logger.log("[DEBUG] " + a + ": " + d);
+    }
   };
 })();
 
@@ -706,7 +756,13 @@ var Utils = (function () {
 
   function generateId(prefix) {
     prefix = prefix || "REF";
-    var random = Math.random().toString(36).substring(2, 10).toUpperCase();
+    // Always exactly 8 characters (Math.random().toString(36) can come out shorter,
+    // which would fail the REF-XXXXXXXX format check used by the data tools)
+    var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    var random = "";
+    for (var i = 0; i < 8; i++) {
+      random += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+    }
     return prefix + "-" + random;
   }
 
@@ -786,6 +842,14 @@ var Utils = (function () {
     return SYSTEM_CONFIG.ADMIN.NOT_YET_WORD;
   }
 
+  /**
+   * true when a status cell means "paid". Every dashboard, filter and report uses this,
+   * so they always agree with each other and with SYSTEM_CONFIG.ADMIN.TRIGGER_WORD.
+   */
+  function isPaidStatus(x) {
+    return normalizeStatusValue(x) === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD;
+  }
+
   return {
     upper: upper,
     lower: lower,
@@ -813,7 +877,8 @@ var Utils = (function () {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     },
-    normalizeStatusValue: normalizeStatusValue
+    normalizeStatusValue: normalizeStatusValue,
+    isPaidStatus: isPaidStatus
   };
 })();
 
@@ -857,10 +922,10 @@ var RateLimiter = (function () {
     var props = getProps_();
     var now = new Date().getTime();
     
-    // Check cooldown
+    // Check cooldown (0 = disabled)
     var lastSend = Number(props.getProperty(LAST_SEND_KEY) || 0);
-    var cooldownMs = SYSTEM_CONFIG.ADMIN.RATE_LIMIT.COOLDOWN_MINUTES * 60 * 1000;
-    if (now - lastSend < cooldownMs) {
+    var cooldownMs = Number(SYSTEM_CONFIG.ADMIN.RATE_LIMIT.COOLDOWN_MINUTES || 0) * 60 * 1000;
+    if (cooldownMs > 0 && now - lastSend < cooldownMs) {
       return { allowed: false, reason: "Cooldown period active" };
     }
     
@@ -1045,7 +1110,7 @@ var ColumnManager = (function () {
     };
   }
 
-  // V23: Ensure SYS columns exist on Submissions sheet (Submission Form)
+  // Ensure SYS columns exist on Submissions sheet (Submission Form)
   function ensureSysColsOnSubmissions(subSheet) {
     if (!subSheet) return {};
     var headers = SYSTEM_CONFIG.DEPERSONALIZATION.SYS_HEADERS;
@@ -1063,6 +1128,10 @@ var ColumnManager = (function () {
     for (var j = 0; j < headers.length; j++) {
       if (!colMap[headers[j]]) {
         lastCol++;
+        // Form response sheets often have no spare columns; add one before writing
+        if (lastCol > subSheet.getMaxColumns()) {
+          subSheet.insertColumnAfter(subSheet.getMaxColumns());
+        }
         subSheet.getRange(1, lastCol).setValue(headers[j]).setFontWeight("bold").setBackground("#333333").setFontColor("#FFFFFF");
         colMap[headers[j]] = lastCol;
         AuditLogService.info("SYS_COL_CREATED", "Created " + headers[j] + " at col " + lastCol + " on Submissions sheet");
@@ -1198,7 +1267,7 @@ SheetRepository.prototype.findRegistrationRowIndexByGenId = function (genId) {
   return null;
 };
 
-// V15.0: Get referrer's email by their GenID (referral code)
+// Get referrer's email by their GenID (referral code)
 SheetRepository.prototype.getReferrerEmailByGenId = function (genId) {
   if (!genId) return null;
   var regSheet = this.getRegistrationSheet();
@@ -1217,7 +1286,7 @@ SheetRepository.prototype.getReferrerEmailByGenId = function (genId) {
   return null;
 };
 
-// V15.0: Get referrer's name by their GenID (referral code)
+// Get referrer's name by their GenID (referral code)
 SheetRepository.prototype.getReferrerNameByGenId = function (genId) {
   if (!genId) return null;
   var regSheet = this.getRegistrationSheet();
@@ -1237,7 +1306,7 @@ SheetRepository.prototype.getReferrerNameByGenId = function (genId) {
 };
 
 // ============================================================================
-// PART 4.5: SUBMISSION REPOSITORY & DEPERSONALIZATION SERVICE (V23)
+// PART 4.5: SUBMISSION REPOSITORY & DEPERSONALIZATION SERVICE
 // ============================================================================
 
 // ----- Submission Sheet Access -----
@@ -1321,17 +1390,54 @@ var DepersonalizationService = (function () {
     if (!rowIdx) return null;
     var row = repo.getRegistrationRow(rowIdx);
     var R = SYSTEM_CONFIG.COLS.REG;
+    var paymentStatus = String(row[R.PAYMENT_STATUS - 1] || "").trim();
+
+    // The Financial Dashboard is the source of truth for payment status.
+    // If the Registration column is blank or stale, fall back to it so paid
+    // participants are not blocked from submitting.
+    if (paymentStatus !== SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) {
+      try {
+        var finSheet = repo.getFinanceSheet();
+        var finHeaders = finSheet ? ColumnManager.headerMap(finSheet) : {};
+        var finEmailCol = finHeaders["Email"];
+        var finStatusCol = finHeaders["Status"];
+        var isPaidInFinance = function (someEmail) {
+          if (!finSheet || !finEmailCol || !finStatusCol || !someEmail) return false;
+          var finRow = repo.findFinanceRowIndexByEmail(someEmail, { Email: finEmailCol });
+          if (!finRow) return false;
+          return Utils.normalizeStatusValue(finSheet.getRange(finRow, finStatusCol).getValue()) === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD;
+        };
+
+        if (isPaidInFinance(email)) {
+          paymentStatus = SYSTEM_CONFIG.ADMIN.TRIGGER_WORD;
+        } else if (typeof MergeService !== "undefined") {
+          // Member of a merged group: the payment is carried by the group's primary payer
+          // (a member's own status cells are deliberately left blank by the merge).
+          var mergeMeta = MergeService.getMergeMetaForEmail_(email, rowIdx, regSheet);
+          if (mergeMeta && mergeMeta.groupId) {
+            var mergeGroup = MergeService.getGroupFromRegistration_(mergeMeta.groupId, regSheet);
+            var payerEmail = mergeGroup ? mergeGroup.primaryEmail : mergeMeta.primaryEmail;
+            if (payerEmail && Utils.normalizeEmail(payerEmail) !== email && isPaidInFinance(payerEmail)) {
+              paymentStatus = SYSTEM_CONFIG.ADMIN.TRIGGER_WORD;
+            }
+          }
+        }
+      } catch (finErr) {
+        AuditLogService.warn("SUB_FIN_STATUS_LOOKUP_FAIL", "email=" + email + " err=" + finErr);
+      }
+    }
+
     return {
       rowIndex: rowIdx,
       genId: String(row[R.GEN_ID - 1] || "").trim(),
       name: String(row[R.NAME - 1] || "").trim(),
       school: String(row[R.SCHOOL - 1] || "").trim(),
-      paymentStatus: String(row[R.PAYMENT_STATUS - 1] || "").trim()
+      paymentStatus: paymentStatus
     };
   }
 
   /**
-   * V23.2: Extract text content from a Google Drive file for PII scanning.
+   * Extract text content from a Google Drive file for PII scanning.
    * Supports Google Docs, PDFs (via Drive API OCR conversion), .docx, and plain text.
    * @param {string} fileId - Google Drive file ID
    * @returns {Object} { text: string, fileName: string, mimeType: string, error: string|null }
@@ -1393,7 +1499,7 @@ var DepersonalizationService = (function () {
   }
 
   /**
-   * V23.2: Scan a document file for PII (participant name, school, adviser).
+   * Scan a document file for PII (participant name, school, adviser).
    * @param {string} fileId - Google Drive file ID
    * @param {string} participantName - Full name to search for
    * @param {string} schoolName - School/university to search for
@@ -1558,7 +1664,7 @@ var DepersonalizationService = (function () {
   }
 
   /**
-   * V23.3: Clean up old anonymized file copies from Google Drive.
+   * Clean up old anonymized file copies from Google Drive.
    * Trashes files whose IDs are stored in SYS_ANON_FILE_IDS for a specific competition prefix.
    * @param {string} existingAnonFileIds - Comma-separated anon file IDs from SYS_ANON_FILE_IDS
    * @param {string} competitionPrefix - e.g. "ES", "SP" — only delete files whose names start with this prefix
@@ -1585,7 +1691,7 @@ var DepersonalizationService = (function () {
   }
 
   /**
-   * V23.3: Look up an existing participant number for a competition prefix from a SYS_PARTICIPANT_NUM value.
+   * Look up an existing participant number for a competition prefix from a SYS_PARTICIPANT_NUM value.
    * @param {string} existingNums - Comma-separated participant numbers (e.g. "SP-0001, ES-0003")
    * @param {string} competitionKey - e.g. "SPEECH", "ESSAY"
    * @returns {string|null} The existing number (e.g. "ES-0003") or null if not found
@@ -1602,7 +1708,7 @@ var DepersonalizationService = (function () {
   }
 
   /**
-   * V23.1 "2nd Layer": Auto-detect competitions by scanning actual form data.
+   * "2nd Layer": Auto-detect competitions by scanning actual form data.
    * Column E only stores the LAST dropdown selection, but participants may fill
    * multiple competition sections by going back in the form. This scans each
    * competition's column group for actual data (name/members + uploaded files)
@@ -1657,6 +1763,8 @@ var DepersonalizationService = (function () {
    * @returns {Object} result with participantNum, status, matchedGenId, etc.
    */
   function processSubmission(subSheet, sysCols, row, rowVals, repo) {
+    // Optional 6th argument: { skipWrite, existingParticipantNum }
+    var options = (arguments.length > 5 && arguments[5]) || {};
     var email = Utils.normalizeEmail(rowVals[SYSTEM_CONFIG.COLS.SUB.EMAIL - 1]);
     var competitionType = String(rowVals[SYSTEM_CONFIG.COLS.SUB.COMPETITION_TYPE - 1] || "").trim();
 
@@ -1708,7 +1816,7 @@ var DepersonalizationService = (function () {
       return { success: false, error: notPaidMsg, status: "ERROR" };
     }
 
-    // V23.3: PREFER the name from Form 2 (competition-specific) over Form 1 (registration).
+    // PREFER the name from Form 2 (competition-specific) over Form 1 (registration).
     // Form 1 name can be a group listing ("1. Name1 2. Name2") while Form 2 has the individual name.
     if (compMap.nameCol) {
       var nameColNum = SYSTEM_CONFIG.COLS.SUB[compMap.nameCol];
@@ -1725,7 +1833,7 @@ var DepersonalizationService = (function () {
       }
     }
 
-    // V23: Extract all submission-specific fields for the acknowledgement email
+    // Extract all submission-specific fields for the acknowledgement email
     var region = "";
     if (compMap.regionCol) {
       var regionColNum = SYSTEM_CONFIG.COLS.SUB[compMap.regionCol];
@@ -1752,10 +1860,9 @@ var DepersonalizationService = (function () {
       if (entryTitleColNum) entryTitle = String(rowVals[entryTitleColNum - 1] || "").trim();
     }
 
-    // 3. Generate or reuse participant number (V23.3: reuse on edit)
-    var options = arguments.length > 5 ? arguments[5] : {};
+    // 3. Generate or reuse participant number (reuse on edit)
     var participantNum;
-    if (options && options.existingParticipantNum) {
+    if (options.existingParticipantNum) {
       participantNum = options.existingParticipantNum;
       AuditLogService.info("SUB_REUSE_NUM", "Row " + row + " reusing existing " + participantNum);
     } else {
@@ -1776,7 +1883,7 @@ var DepersonalizationService = (function () {
       }
     }
 
-    // 4.5 V23.2: Scan document files for PII content
+    // 4.5 Scan document files for PII content
     if (compMap.scannableCols && compMap.scannableCols.length > 0) {
       for (var sc = 0; sc < compMap.scannableCols.length; sc++) {
         var scanColKey = compMap.scannableCols[sc];
@@ -1852,13 +1959,14 @@ var DepersonalizationService = (function () {
       competitionType: competitionType,
       competitionKey: compMap.key,
       matchedGenId: matchedGenId,
+      matchedRegRow: matchedRegRow,
       participantName: participantName,
       email: email,
       status: status,
       piiResult: piiResult,
       fileResults: fileResults,
       fileCount: fileResults.length,
-      // V23: Submission-specific fields for acknowledgement email
+      // Submission-specific fields for acknowledgement email
       region: region,
       school: schoolName,
       adviser: adviser,
@@ -1884,23 +1992,23 @@ var DepersonalizationService = (function () {
 
   /**
    * Admin tool: re-run depersonalization for a specific row.
-   * V23.1: Supports multiple competitions per row (column E comma-separated).
-   * V23.3: Cleans up old anonymized files and reuses existing participant numbers.
+   * Supports multiple competitions per row (column E comma-separated).
+   * Cleans up old anonymized files and reuses existing participant numbers.
    */
   function reprocessSubmission(subSheet, sysCols, rowIndex, repo) {
     if (rowIndex < 2) return { success: false, error: "Invalid row" };
     var width = subSheet.getLastColumn();
     var rowVals = subSheet.getRange(rowIndex, 1, 1, width).getValues()[0];
 
-    // V23.3: Read existing SYS data for cleanup and number reuse
+    // Read existing SYS data for cleanup and number reuse
     var existingNumStr = sysCols["SYS_PARTICIPANT_NUM"] ? String(subSheet.getRange(rowIndex, sysCols["SYS_PARTICIPANT_NUM"]).getValue() || "").trim() : "";
     var existingAnonFileIds = sysCols["SYS_ANON_FILE_IDS"] ? String(subSheet.getRange(rowIndex, sysCols["SYS_ANON_FILE_IDS"]).getValue() || "").trim() : "";
 
-    // V23.1 Layer 1: Column E dropdown value
+    // Layer 1: Column E dropdown value
     var rawCompetition = String(rowVals[SYSTEM_CONFIG.COLS.SUB.COMPETITION_TYPE - 1] || "").trim();
     var dropdownComps = rawCompetition.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
 
-    // V23.1 Layer 2: Auto-detect from actual form data
+    // Layer 2: Auto-detect from actual form data
     var detectedComps = detectCompetitionsFromData_(rowVals);
 
     // Merge both layers: union, deduplicated
@@ -1913,7 +2021,7 @@ var DepersonalizationService = (function () {
     }
 
     if (competitionTypes.length <= 1) {
-      // Single competition — V23.3: cleanup + reuse number
+      // Single competition — cleanup + reuse number
       var singleCompType = competitionTypes.length === 1 ? competitionTypes[0] : rawCompetition;
       var singleMapEntry = SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP[singleCompType];
       var singleOptions = {};
@@ -1945,7 +2053,7 @@ var DepersonalizationService = (function () {
       var originalCompValue = rowVals[SYSTEM_CONFIG.COLS.SUB.COMPETITION_TYPE - 1];
       rowVals[SYSTEM_CONFIG.COLS.SUB.COMPETITION_TYPE - 1] = singleCompType2;
 
-      // V23.3: Cleanup old files and reuse number for this competition
+      // Cleanup old files and reuse number for this competition
       // Bug 2a fix: skipWrite=true prevents each processSubmission call from writing
       // to the sheet mid-loop; the outer aggregated writeSysCols_ does the single final write
       var compOptions = { skipWrite: true };
@@ -2015,12 +2123,59 @@ var DepersonalizationService = (function () {
   };
 })();
 
+/**
+ * All competitions a submission row really contains: the column E answer(s) plus every
+ * competition section that has data. Column E alone only holds the last choice when a
+ * participant fills several sections, so tools that read just column E (resend, dashboard,
+ * entry editor) missed the other entries. Names come back as spelled in
+ * SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP; an unrecognized answer is kept as typed.
+ * @param {Array} rowVals - full row values from the Submission Form sheet
+ * @returns {string[]}
+ */
+function getSubmissionCompetitionTypes_(rowVals) {
+  var keys = Object.keys(SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP);
+  var raw = String(rowVals[SYSTEM_CONFIG.COLS.SUB.COMPETITION_TYPE - 1] || "").trim();
+  var fromDropdown = raw.split(/\s*,\s*/).filter(function (c) { return c.length > 0; });
+  var detected = DepersonalizationService.detectCompetitionsFromData(rowVals);
+
+  var seen = {};
+  var out = [];
+  var all = fromDropdown.concat(detected);
+  for (var i = 0; i < all.length; i++) {
+    var name = String(all[i]).trim();
+    for (var k = 0; k < keys.length; k++) {
+      if (keys[k].toUpperCase() === name.toUpperCase()) { name = keys[k]; break; }
+    }
+    if (name && !seen[name.toUpperCase()]) {
+      seen[name.toUpperCase()] = true;
+      out.push(name);
+    }
+  }
+  return out;
+}
+
+/**
+ * The participant number that belongs to one competition on a row (matched by its prefix,
+ * e.g. "ES-" for Essay). The old fallback borrowed another competition's number, which sent
+ * an acknowledgement quoting the wrong number; a non-matching number is now used only when
+ * the row has exactly one competition and one number.
+ */
+function pickParticipantNumFor_(competitionKey, participantNums, competitionCount) {
+  var prefix = SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[competitionKey];
+  if (prefix) {
+    for (var i = 0; i < participantNums.length; i++) {
+      if (String(participantNums[i]).indexOf(prefix + "-") === 0) return participantNums[i];
+    }
+  }
+  return (competitionCount === 1 && participantNums.length === 1) ? participantNums[0] : "";
+}
+
 // ============================================================================
 // PART 5: BUSINESS SERVICES (PRICING / COUPON / REFERRAL)
 // ============================================================================
 
 var PricingEngine = (function () {
-  // V16.0 FIX: Comprehensive competition aliases including "(Special Competition)" variations
+  // FIX: Comprehensive competition aliases including "(Special Competition)" variations
   var COMPETITION_ALIASES = {
     // Essay Writing
     "ESSAY WRITING": "Essay Writing Competition",
@@ -2045,7 +2200,7 @@ var PricingEngine = (function () {
     "FILM MAKING": "Short Film Making",
     "FILMMAKING": "Short Film Making",
     
-    // V16.0 FIX: Short Film with "(Special Competition)" suffix variations
+    // FIX: Short Film with "(Special Competition)" suffix variations
     "SHORT FILM MAKING SPECIAL COMPETITION": "Short Film Making",
     "SHORT FILM MAKING (SPECIAL COMPETITION)": "Short Film Making",
     "SHORT FILM (SPECIAL COMPETITION)": "Short Film Making",
@@ -2064,7 +2219,7 @@ var PricingEngine = (function () {
     "SHORTFILM GROUP": "Short Film (Group)"
   };
 
-  // V16.0 FIX: Enhanced normalization with better handling of "(Special Competition)" suffix
+  // FIX: Enhanced normalization with better handling of "(Special Competition)" suffix
   function normalizeCompetitionName_(name) {
     var raw = String(name || "").trim();
     if (!raw) return "";
@@ -2083,21 +2238,21 @@ var PricingEngine = (function () {
       return raw;
     }
     
-    // V16.0 FIX: Try removing all parentheses and their content
+    // FIX: Try removing all parentheses and their content
     var withoutParens = up.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
     if (COMPETITION_ALIASES[withoutParens]) {
       AuditLogService.debug("COMP_NORM", "No-paren match: '" + raw + "' -> '" + COMPETITION_ALIASES[withoutParens] + "'");
       return COMPETITION_ALIASES[withoutParens];
     }
     
-    // V16.0 FIX: Try removing just parentheses characters (keep content)
+    // FIX: Try removing just parentheses characters (keep content)
     var parensRemoved = up.replace(/[()]/g, "").replace(/\s+/g, " ").trim();
     if (COMPETITION_ALIASES[parensRemoved]) {
       AuditLogService.debug("COMP_NORM", "Paren-char removed match: '" + raw + "' -> '" + COMPETITION_ALIASES[parensRemoved] + "'");
       return COMPETITION_ALIASES[parensRemoved];
     }
     
-    // V16.0 FIX: Special handling for Short Film variations - catch-all
+    // FIX: Special handling for Short Film variations - catch-all
     if (up.indexOf("SHORT FILM") >= 0 || up.indexOf("SHORTFILM") >= 0 || up.indexOf("FILM MAKING") >= 0 || up.indexOf("FILMMAKING") >= 0) {
       // Check if it's a group competition
       if (up.indexOf("GROUP") >= 0) {
@@ -2145,21 +2300,18 @@ var PricingEngine = (function () {
 
   function synthesizeFromCount_(countAnswer) {
     var up = Utils.upper(countAnswer);
-    var essay = "Essay Writing Competition";
-    var speech = "Speech Competition";
-    var photo = "Mobile Phone Photography Competition";
-    var shortFilm = "Short Film Making";
-    if (up.indexOf("ALL IN") >= 0) return [essay, speech, photo, shortFilm].join(", ");
+    // Standard competitions first, then the special one(s), in the order of SYSTEM_CONFIG.COMPETITIONS
+    var comps = getCompetitions_();
+    var standard = comps.filter(function (c) { return !c.special; }).map(function (c) { return c.registrationName; });
+    var special = comps.filter(function (c) { return c.special; }).map(function (c) { return c.registrationName; });
+    if (up.indexOf("ALL IN") >= 0) return standard.concat(special).join(", ");
     var m = String(countAnswer || "").match(/(\d+)/);
     var n = m ? Number(m[1]) : 0;
     if (!n && up.indexOf("STANDARD A") >= 0) n = 1;
     if (!n && up.indexOf("STANDARD B") >= 0) n = 2;
     if (!n && up.indexOf("STANDARD C") >= 0) n = 3;
-    var picks = [];
-    if (n >= 1) picks.push(essay);
-    if (n >= 2) picks.push(speech);
-    if (n >= 3) picks.push(photo);
-    if (n >= 4) picks.push(shortFilm);
+    var picks = standard.slice(0, Math.min(n, standard.length));
+    if (n > standard.length) picks = picks.concat(special.slice(0, n - standard.length));
     return picks.join(", ");
   }
 
@@ -2171,7 +2323,7 @@ var PricingEngine = (function () {
   }
 
   function calculate(countAnswer, competitionsString) {
-    // V16.0: Debug logging for competition parsing
+    // Debug logging for competition parsing
     AuditLogService.debug("PRICING_CALC_INPUT", "countAnswer='" + countAnswer + "', competitions='" + competitionsString + "'");
     
     var effective = normalizeSelection(countAnswer, competitionsString);
@@ -2187,7 +2339,7 @@ var PricingEngine = (function () {
     var choices = parseCompetitions_(effective);
     var stdCount = 0, spcCount = 0, rawTotal = 0;
     
-    // V16.0: Detailed logging for each competition
+    // Detailed logging for each competition
     for (var i = 0; i < choices.length; i++) {
       var choice = String(choices[i]).trim();
       var price = SYSTEM_CONFIG.PRICING.SINGLE[choice];
@@ -2196,7 +2348,7 @@ var PricingEngine = (function () {
         continue;
       }
       rawTotal += Number(price || 0);
-      if (choice.indexOf("Short Film") >= 0) {
+      if (isSpecialCompetition_(choice)) {
         spcCount++;
         AuditLogService.debug("PRICING_COMP_COUNT", "Special competition: '" + choice + "' (price=" + price + ")");
       } else {
@@ -2205,7 +2357,7 @@ var PricingEngine = (function () {
       }
     }
     
-    // V16.0: Log final counts
+    // Log final counts
     AuditLogService.debug("PRICING_COUNTS", "stdCount=" + stdCount + ", spcCount=" + spcCount + ", rawTotal=" + rawTotal);
     
     var finalPrice = rawTotal;
@@ -2230,7 +2382,15 @@ var PricingEngine = (function () {
 
   return {
     normalizeSelection: normalizeSelection,
-    calculate: calculate
+    calculate: calculate,
+    // The canonical names the spelling table can produce (checked by the health check)
+    aliasTargets: function () {
+      var seen = {}, out = [];
+      Object.keys(COMPETITION_ALIASES).forEach(function (k) {
+        if (!seen[COMPETITION_ALIASES[k]]) { seen[COMPETITION_ALIASES[k]] = true; out.push(COMPETITION_ALIASES[k]); }
+      });
+      return out;
+    }
   };
 })();
 
@@ -2337,7 +2497,7 @@ CouponService.prototype.revert = function (code) {
 };
 
 // UPGRADED: ReferralService with complete ADD/REMOVE logic
-// V17.0: Fixed email capture and added comprehensive logging
+// Fixed email capture and added comprehensive logging
 function ReferralService(regSheet) {
   this.sheet = regSheet;
 }
@@ -2359,13 +2519,13 @@ ReferralService.prototype.updateReferrer = function (referrerCode, action, child
   var width = this.sheet.getLastColumn();
   var rowVals = this.sheet.getRange(rowIndex, 1, 1, width).getValues()[0];
 
-  // V17.0 FIX: Capture and validate email EARLY, before any other operations
+  // FIX: Capture and validate email EARLY, before any other operations
   // Use Utils.normalizeEmail to ensure consistent formatting
   var rawEmail = rowVals[SYSTEM_CONFIG.COLS.REG.EMAIL - 1];
   var referrerEmail = Utils.normalizeEmail(rawEmail);
   var referrerName = String(rowVals[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "").trim();
   
-  // V17.0: Debug logging for email capture
+  // Debug logging for email capture
   AuditLogService.debug("REF_EMAIL_CAPTURE", 
     "Referrer " + target + " at row " + rowIndex + 
     ": rawEmail='" + rawEmail + "' (type=" + typeof rawEmail + ")" +
@@ -2373,12 +2533,12 @@ ReferralService.prototype.updateReferrer = function (referrerCode, action, child
     ", name='" + referrerName + "'"
   );
   
-  // V17.0: Validate the captured email
+  // Validate the captured email
   if (!referrerEmail || !Utils.isValidEmail(referrerEmail)) {
     AuditLogService.warn("REF_EMAIL_INVALID_EARLY", 
       "Referrer " + target + " has invalid email: '" + referrerEmail + "'. Attempting direct cell read...");
     
-    // V17.0: Try reading the email cell directly as a fallback
+    // Try reading the email cell directly as a fallback
     try {
       var directEmailCell = this.sheet.getRange(rowIndex, SYSTEM_CONFIG.COLS.REG.EMAIL).getValue();
       referrerEmail = Utils.normalizeEmail(directEmailCell);
@@ -2436,7 +2596,7 @@ ReferralService.prototype.updateReferrer = function (referrerCode, action, child
   var netTotalAmount = Math.max(0, originalFinalAmount - newCashback);
 
   // Sync to Finance - including the updated Total Amount
-  // V17.0: Use the already-validated referrerEmail
+  // Use the already-validated referrerEmail
   try {
     var finSheet = repo.getFinanceSheet();
     if (finSheet) {
@@ -2465,21 +2625,21 @@ ReferralService.prototype.updateReferrer = function (referrerCode, action, child
     AuditLogService.warn("REF_FIN_SYNC_FAIL", "Could not sync referrer finance for " + target + ": " + e);
   }
 
-  // V17.0: Log the final return values
+  // Log the final return values
   AuditLogService.info("REFERRAL_UPDATE", 
     "Referrer " + target + " " + action + " Child " + childGenId + 
     ". Count: " + newCount + ", Cashback: " + newCashback + ", NetTotal: " + netTotalAmount +
     ", Email: " + referrerEmail + ", Name: " + referrerName);
   
-  // V17.0: Return the already-validated email and name
+  // Return the already-validated email and name
   return { 
     ok: true, 
     rowIndex: rowIndex, 
     count: newCount, 
     cashback: newCashback, 
     netTotal: netTotalAmount,
-    referrerEmail: referrerEmail,  // V17.0: Use the pre-validated email
-    referrerName: referrerName     // V17.0: Use the pre-captured name
+    referrerEmail: referrerEmail,  // Use the pre-validated email
+    referrerName: referrerName     // Use the pre-captured name
   };
 };
 
@@ -2572,14 +2732,14 @@ var EmailBuilder = (function () {
       '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;max-width:600px;">' +
       '    <tr>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <img class="header-logo" src="' + escapeHtml_(uplbSrc) + '" alt="UPLB Sociology Society" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
+      '        <img class="header-logo" src="' + escapeHtml_(uplbSrc) + '" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:Times New Roman, serif;font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">HUSAY NG SOKSAY</div>' +
-      '        <div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">UPLB SOCIOLOGY SOCIETY</div>' +
+      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:Times New Roman, serif;font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">' + getEventTitleHtml_() + '</div>' +
+      '        <div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</div>' +
       '      </td>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <img class="header-logo" src="' + escapeHtml_(husaySrc) + '" alt="Husay ng Soksay" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
+      '        <img class="header-logo" src="' + escapeHtml_(husaySrc) + '" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + '" data-logo="event" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '    </tr>' +
       '  </table>' +
@@ -2664,7 +2824,7 @@ var EmailBuilder = (function () {
   function receiptTemplateHtml_() {
     return (
       '<!DOCTYPE html>' +
-      '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Husay ng Soksay - Acknowledgement Receipt</title>' +
+      '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + ' - Acknowledgement Receipt</title>' +
       '<style>' +
       '  /* Mobile-first responsive styles */' +
       '  @media only screen and (max-width: 600px) {' +
@@ -2688,14 +2848,14 @@ var EmailBuilder = (function () {
       '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;">' +
       '    <tr>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <img class="header-logo" src="__UPLB_LOGO_SRC__" alt="UPLB Sociology Society" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
+      '        <img class="header-logo" src="__UPLB_LOGO_SRC__" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <h1 class="header-title" style="margin:0;color:#FFD700;font-family:Times New Roman, serif;font-size:26px;letter-spacing:2px;font-weight:800;">HUSAY NG SOKSAY</h1>' +
-      '        <p style="margin:5px 0 0 0;color:#ffffff;font-size:11px;letter-spacing:1px;">UPLB SOCIOLOGY SOCIETY</p>' +
+      '        <h1 class="header-title" style="margin:0;color:#FFD700;font-family:Times New Roman, serif;font-size:26px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</h1>' +
+      '        <p style="margin:5px 0 0 0;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</p>' +
       '      </td>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <img class="header-logo" src="__HUSAY_LOGO_SRC__" alt="Husay ng Soksay" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
+      '        <img class="header-logo" src="__HUSAY_LOGO_SRC__" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + '" data-logo="event" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '    </tr>' +
       '  </table>' +
@@ -2743,13 +2903,13 @@ var EmailBuilder = (function () {
       '      <td width="45%" align="center" valign="top" style="padding:0;">' +
       '        <div style="border-bottom:1px solid #000;width:90%;margin:0 auto 5px auto;"></div>' +
       '        <p style="margin:0;font-weight:bold;font-size:11px;text-transform:uppercase;">__VERIFIER_1__</p>' +
-      '        <p style="margin:2px 0 0 0;font-size:10px;color:#555;">Finance Committee Head<br>HNS 2025</p>' +
+      '        <p style="margin:2px 0 0 0;font-size:10px;color:#555;">' + SYSTEM_CONFIG.ADMIN.VERIFIER_TITLES.FINANCE_HEAD + '</p>' +
       '      </td>' +
       '      <td class="spacer" width="10%"></td>' +
       '      <td width="45%" align="center" valign="top" style="padding:0;">' +
       '        <div style="border-bottom:1px solid #000;width:90%;margin:0 auto 5px auto;"></div>' +
       '        <p style="margin:0;font-weight:bold;font-size:11px;text-transform:uppercase;">__VERIFIER_2__</p>' +
-      '        <p style="margin:2px 0 0 0;font-size:10px;color:#555;">UPLB Sociology Society<br>Finance Committee Head</p>' +
+      '        <p style="margin:2px 0 0 0;font-size:10px;color:#555;">' + SYSTEM_CONFIG.ADMIN.VERIFIER_TITLES.ORG_FINANCE_HEAD + '</p>' +
       '      </td>' +
       '    </tr>' +
       '  </table>' +
@@ -2761,15 +2921,18 @@ var EmailBuilder = (function () {
   }
 
   function canonicalToDisplayLabel_(canon) {
-    if (canon === "Essay Writing Competition") return "Essay Writing";
-    if (canon === "Speech Competition") return "Speech Competition";
-    if (canon === "Mobile Phone Photography Competition") return "Mobile Phone Photography";
-    if (canon.indexOf("Short Film") >= 0) return "Short Film Making";
+    // Short label for the receipt, from the shared competition list
+    var comp = getCompetitionByRegistrationName_(canon);
+    if (comp) return comp.shortName;
+    if (isSpecialCompetition_(canon)) {
+      var special = getCompetitions_().filter(function (c) { return c.special; })[0];
+      if (special) return special.shortName;
+    }
     return canon;
   }
 
-  // UPGRADED: Include referral discount in receipt itemization (V20 - red strikethrough for discounts)
-  // V20.0 FIX: Now accepts actual couponDiscount value instead of reverse-calculating
+  // UPGRADED: Include referral discount in receipt itemization (red strikethrough for discounts)
+  // FIX: Now accepts actual couponDiscount value instead of reverse-calculating
   function buildItemRows_(competitions, finalAmount, couponCode, referralDiscount, couponDiscountValue) {
     var pricing = PricingEngine.calculate("", competitions);
     var normalized = pricing.normalizedCompetitions || "";
@@ -2806,8 +2969,8 @@ var EmailBuilder = (function () {
     }
 
     // Coupon discount (red with strikethrough)
-    // V20.0 FIX: Use the passed couponDiscountValue if available, otherwise calculate from finalAmount
-    // V20.1 FIX: Cap coupon discount to prevent showing more than actual remaining amount
+    // FIX: Use the passed couponDiscountValue if available, otherwise calculate from finalAmount
+    // FIX: Cap coupon discount to prevent showing more than actual remaining amount
     var couponDiscount = 0;
     var remainingAfterBundle = Math.max(0, Number(pricing.finalPrice || 0) - Number(refDisc || 0));
     
@@ -2819,26 +2982,13 @@ var EmailBuilder = (function () {
       // This assumes: finalAmount = pricing.finalPrice - bundleDiscount - refDiscount - couponDiscount
       // So: couponDiscount = pricing.finalPrice - refDiscount - finalAmount
       var calculatedCoupon = Math.max(0, Number(pricing.finalPrice || 0) - Number(refDisc || 0) - Number(finalAmount || 0));
-      // V20.1 FIX: If calculated coupon seems unreasonably high (more than 50% of bundle price), 
+      // FIX: If calculated coupon seems unreasonably high (more than 50% of bundle price), 
       // it's probably a calculation error - cap it
       if (calculatedCoupon > remainingAfterBundle * 0.5 && calculatedCoupon > 200) {
         // Something is wrong - the coupon discount shouldn't be more than half the bundle price
         // Try to look up the actual coupon value
-        try {
-          var ss = SpreadsheetApp.getActiveSpreadsheet();
-          var couponSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.COUPONS);
-          if (couponSheet && couponCode) {
-            var couponData = couponSheet.getDataRange().getValues();
-            for (var ci = 1; ci < couponData.length; ci++) {
-              if (String(couponData[ci][0] || "").toUpperCase().trim() === String(couponCode).toUpperCase().trim()) {
-                calculatedCoupon = Number(couponData[ci][1] || 0);
-                break;
-              }
-            }
-          }
-        } catch (e) {
-          Logger.log("Coupon lookup error: " + e);
-        }
+        var listedCouponValue = couponCode ? getCouponValue_(couponCode) : 0;
+        if (listedCouponValue > 0) calculatedCoupon = listedCouponValue;
       }
       couponDiscount = Math.min(calculatedCoupon, remainingAfterBundle);
     }
@@ -2881,7 +3031,7 @@ var EmailBuilder = (function () {
     var pricing = PricingEngine.calculate("", data.competitions);
     var normalizedCompetitions = pricing.normalizedCompetitions || data.competitions || "";
     
-    // V20.0 FIX: Pass actual coupon discount value to buildItemRows_
+    // FIX: Pass actual coupon discount value to buildItemRows_
     var couponDiscountValue = Number(data.couponDiscount || 0);
     var itemRows = buildItemRows_(normalizedCompetitions, data.finalAmount, data.couponCode, data.referralDiscount || 0, couponDiscountValue);
 
@@ -2984,7 +3134,7 @@ var EmailBuilder = (function () {
         emailSpiel += '<p style="font-size:14px;margin:8px 0;line-height:1.5;">' + spielConfig.SUBMISSION_INTRO + '</p>';
       }
       if (spielConfig.SUBMISSION_FORM_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">SUBMISSION FORM FOR 4TH HUSAY NG SOKSAY</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
       }
       
       // Deadline
@@ -2997,7 +3147,7 @@ var EmailBuilder = (function () {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;line-height:1.5;">' + spielConfig.PRIMER_INTRO + '</p>';
       }
       if (spielConfig.EVENT_PRIMER_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">4TH Husay Ng Soksay Event Primer</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.PRIMER_BUTTON_LABEL || "Event Primer") + '</a></p>';
       }
       
       // Closing message
@@ -3031,15 +3181,15 @@ var EmailBuilder = (function () {
     html = html.split("__HUSAY_LOGO_SRC__").join(escapeHtml_(husaySrc));
 
     if (options.preview) {
-      if (!uplbSrc) html = html.replace(/<img[^>]*alt="UPLB Sociology Society"[^>]*>/g, "");
-      if (!husaySrc) html = html.replace(/<img[^>]*alt="Husay ng Soksay"[^>]*>/g, "");
+      if (!uplbSrc) html = html.replace(/<img[^>]*data-logo="org"[^>]*>/g, "");
+      if (!husaySrc) html = html.replace(/<img[^>]*data-logo="event"[^>]*>/g, "");
     }
 
     return html;
   }
 
   // =========================================================================
-  // V15.0: REFERRAL NOTIFICATION EMAIL TEMPLATES
+  // REFERRAL NOTIFICATION EMAIL TEMPLATES
   // =========================================================================
 
   /**
@@ -3192,7 +3342,7 @@ var EmailBuilder = (function () {
       '<div style="font-size:18px;font-weight:bold;color:#333333;letter-spacing:1px;margin-top:8px;">' + referrerCode + '</div>' +
       '</div>' +
       '<div style="font-size:11px;color:#888;text-align:center;">' +
-      'If you have any questions, please contact us at husayngsoksayteam@gmail.com' +
+      'If you have any questions, please contact us at ' + Utils.escapeHtml((SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT || {}).EMAIL || "") +
       '</div>' +
       '</div></div></body></html>'
     );
@@ -3330,7 +3480,9 @@ var EmailThreadService = (function() {
    */
   function buildMimeMessage(recipient, subject, htmlBody, inlineImages, inReplyTo, references, senderName) {
     var boundary = "----=_Part_" + Utilities.getUuid().replace(/-/g, '');
-    var senderEmail = Session.getActiveUser().getEmail();
+    // Effective user = the account the script (and its triggers) runs as, i.e. the real sender.
+    // getActiveUser() can be blank inside triggers, which produces an invalid From header.
+    var senderEmail = Session.getEffectiveUser().getEmail() || Session.getActiveUser().getEmail();
     var fromName = senderName || SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME;
     
     var mimeLines = [];
@@ -3626,19 +3778,19 @@ var EmailService = (function () {
   }
 
   // =========================================================================
-  // V15.0: REFERRAL NOTIFICATION FUNCTIONS
-  // V16.0: Added fallback email lookup when referrerEmail is empty/invalid
-  // V17.0: Improved fallback logic, added comprehensive step-by-step logging
+  // REFERRAL NOTIFICATION FUNCTIONS
+  // Added fallback email lookup when referrerEmail is empty/invalid
+  // Improved fallback logic, added comprehensive step-by-step logging
   // =========================================================================
 
   /**
    * Send notification to referrer when someone uses their code and payment is verified
-   * V17.0: Complete rewrite with robust email retrieval and logging
+   * Complete rewrite with robust email retrieval and logging
    * @param {string} referrerEmail - Email of the referrer (Person A)
    * @param {Object} data - Notification data containing referrer stats and referred person info
    */
   function sendReferralSuccessNotification(referrerEmail, data) {
-    // V17.0: Log entry point with all received data
+    // Log entry point with all received data
     AuditLogService.debug("REF_NOTIF_START", 
       "Starting referral success notification. " +
       "receivedEmail='" + referrerEmail + "', " +
@@ -3651,7 +3803,7 @@ var EmailService = (function () {
       return { sent: false, skipped: true, reason: "Notifications disabled" };
     }
 
-    // V17.0 FIX: Comprehensive email retrieval with multiple fallbacks
+    // FIX: Comprehensive email retrieval with multiple fallbacks
     var emailToUse = "";
     var emailSource = "";
     
@@ -3687,7 +3839,7 @@ var EmailService = (function () {
     }
     
     // Step 3: If Step 2 also failed, try direct sheet lookup
-    // V20.0: Also get masterSubject for threading
+    // Also get masterSubject for threading
     var referrerMasterSubject = "";
     if (data && data.referrerCode) {
       if (!emailToUse) {
@@ -3712,7 +3864,7 @@ var EmailService = (function () {
             }
           }
           
-          // V20.0: Get referrer's masterSubject for threading
+          // Get referrer's masterSubject for threading
           referrerMasterSubject = regSheet.getRange(rowIndex, SYSTEM_CONFIG.COLS.REG.MASTER_SUBJECT).getValue() || "";
           AuditLogService.debug("REF_NOTIF_GOT_SUBJECT", 
             "Got referrer's masterSubject: '" + referrerMasterSubject + "'");
@@ -3732,7 +3884,7 @@ var EmailService = (function () {
       return { sent: false, skipped: true, reason: "Invalid referrer email after all fallbacks" };
     }
 
-    // V20.0: Use referrer's masterSubject for threading, fallback to default
+    // Use referrer's masterSubject for threading, fallback to default
     var subject = referrerMasterSubject || 
                   (SYSTEM_CONFIG.META.NAME + ": Registration [" + data.referrerCode + "]");
     
@@ -3754,17 +3906,35 @@ var EmailService = (function () {
       "for code: " + data.referrerCode + " (threadGenId: " + threadGenId + ")");
     
     // isFirstEmail = false (reply to existing thread), threadGenId = referrer's GenID
-    return sendWithGuard_(emailToUse, subject, html, notifId, "REFNOTIF_SUCCESS", inlineImages, false, false, threadGenId);
+    var sendRes = sendWithGuard_(emailToUse, subject, html, notifId, "REFNOTIF_SUCCESS", inlineImages, false, false, threadGenId);
+
+    // Also record the send under the referrer's own Gen ID. The entry written above is keyed
+    // per referred person, so the Email Dashboard and "Resend All Pending Referral Notifs"
+    // (which look the referrer up) never found it, showed every referrer as not notified
+    // and re-sent to all of them on every run.
+    if (sendRes && sendRes.sent) {
+      try {
+        ReceiptGuard.setLast(data.referrerCode, "REFNOTIF_SUCCESS", sendRes.hash || "sent", {
+          sentAt: new Date().toISOString(),
+          recipient: emailToUse,
+          subject: subject,
+          count: Number(data.newCount || 0)
+        });
+      } catch (markErr) {
+        AuditLogService.warn("REF_NOTIF_MARK_FAIL", "code=" + data.referrerCode + " err=" + markErr);
+      }
+    }
+    return sendRes;
   }
 
   /**
    * Send notification to referrer when a referral is removed (payment reversed)
-   * V17.0: Complete rewrite with robust email retrieval and logging
+   * Complete rewrite with robust email retrieval and logging
    * @param {string} referrerEmail - Email of the referrer (Person A)
    * @param {Object} data - Notification data containing updated referrer stats
    */
   function sendReferralRemovedNotification(referrerEmail, data) {
-    // V17.0: Log entry point with all received data
+    // Log entry point with all received data
     AuditLogService.debug("REF_REMOVAL_NOTIF_START", 
       "Starting referral removal notification. " +
       "receivedEmail='" + referrerEmail + "', " +
@@ -3776,7 +3946,7 @@ var EmailService = (function () {
       return { sent: false, skipped: true, reason: "Notifications disabled" };
     }
 
-    // V17.0 FIX: Comprehensive email retrieval with multiple fallbacks
+    // FIX: Comprehensive email retrieval with multiple fallbacks
     var emailToUse = "";
     var emailSource = "";
     
@@ -3812,7 +3982,7 @@ var EmailService = (function () {
     }
     
     // Step 3: If Step 2 also failed, try direct sheet lookup
-    // V20.0: Also get masterSubject for threading
+    // Also get masterSubject for threading
     var referrerMasterSubject = "";
     if (data && data.referrerCode) {
       if (!emailToUse) {
@@ -3837,7 +4007,7 @@ var EmailService = (function () {
             }
           }
           
-          // V20.0: Get referrer's masterSubject for threading
+          // Get referrer's masterSubject for threading
           referrerMasterSubject = regSheet.getRange(rowIndex, SYSTEM_CONFIG.COLS.REG.MASTER_SUBJECT).getValue() || "";
         }
       } catch (directErr) {
@@ -3855,7 +4025,7 @@ var EmailService = (function () {
       return { sent: false, skipped: true, reason: "Invalid referrer email after all fallbacks" };
     }
 
-    // V20.0: Use referrer's masterSubject for threading
+    // Use referrer's masterSubject for threading
     var subject = referrerMasterSubject || 
                   (SYSTEM_CONFIG.META.NAME + ": Registration [" + data.referrerCode + "]");
     
@@ -4100,8 +4270,9 @@ function handleSubmission(e) {
         AuditLogService.warn("COUPON_INVALID", "Row " + row + " code=" + coupInput + " reason=" + result.reason);
       }
     }
-  } else if (lockedCoupPrev && !coupInput) {
+  } else if (lockedCoupNow && !coupInput) {
     // User cleared coupon - revert the old one
+    // (uses lockedCoupNow so a coupon already reverted above is not reverted twice)
     couponService.revert(lockedCoupPrev);
     regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.LOCKED_COUPON).setValue("");
     lockedCoupNow = "";
@@ -4191,7 +4362,8 @@ function handleSubmission(e) {
   );
   
   regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.FINAL_AMOUNT).setValue(finalPay);
-  
+  writeRegistrationPricingBreakdown_(regSheet, row, priceData, discountAmount, referralDiscount);
+
   // Store referral discount applied
   if (sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_DISCOUNT_APPLIED]) {
     regSheet.getRange(row, sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_DISCOUNT_APPLIED]).setValue(referralDiscount);
@@ -4265,9 +4437,13 @@ function handleSubmission(e) {
   }
 
   var upsertRes = FinanceWriter.upsertByEmail(finSheet, finCols, email, payload);
-  AuditLogService.info("FIN_UPSERT", upsertRes.action + " finance row=" + upsertRes.rowIndex + " email=" + email);
+  if (upsertRes) {
+    AuditLogService.info("FIN_UPSERT", upsertRes.action + " finance row=" + upsertRes.rowIndex + " email=" + email);
+  } else {
+    AuditLogService.warn("FIN_UPSERT_SKIPPED", "Row " + row + " has no email; no finance row written");
+  }
 
-  // V23: Reapply merge group accounting if participant is in a merge group
+  // Reapply merge group accounting if participant is in a merge group
   try {
     TriggerGuard.mute(function() {
       MergeService.reapplyMergeForEmail_(email);
@@ -4277,13 +4453,39 @@ function handleSubmission(e) {
   }
 }
 
+/**
+ * Write the itemized pricing columns (Base Fee, Bundle / Coupon / Referral Discount) next to
+ * the final amount. Registration used to store only the final amount, so the Finance
+ * dashboard's discount totals, the Payment Verification Center and the group emails, which
+ * all read these columns, saw them empty.
+ * Each column is written only if its header really is that column in this sheet.
+ */
+function writeRegistrationPricingBreakdown_(regSheet, row, priceData, couponDiscount, referralDiscount) {
+  try {
+    var R = SYSTEM_CONFIG.COLS.REG;
+    var lastCol = regSheet.getLastColumn();
+    var headers = regSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var put = function (col, keyword, value) {
+      if (!col || col > lastCol) return;
+      if (String(headers[col - 1] || "").toUpperCase().indexOf(keyword) < 0) return;
+      regSheet.getRange(row, col).setValue(value);
+    };
+    put(R.BASE_FEE, "FEE", Number((priceData && priceData.rawTotal) || 0));
+    put(R.BUNDLE_DISCOUNT, "BUNDLE", Number((priceData && priceData.bundleDiscount) || 0));
+    put(R.COUPON_DISCOUNT, "COUPON", Number(couponDiscount || 0));
+    put(R.REF_DISCOUNT, "REF", Number(referralDiscount || 0));
+  } catch (e) {
+    AuditLogService.warn("PRICING_BREAKDOWN_WRITE_FAIL", "Row " + row + ": " + e);
+  }
+}
+
 // ============================================================================
-// V23: SUBMISSION FORM (Submission Form) HANDLER
+// SUBMISSION FORM (Submission Form) HANDLER
 // ============================================================================
 
 /**
  * Handle a new submission from Submission Form.
- * V23.1: Supports MULTIPLE competitions per row (up to 4).
+ * Supports MULTIPLE competitions per row (up to 4).
  * Column E may contain comma-separated competition types.
  * Each competition gets its own participant number and acknowledgement email.
  */
@@ -4292,7 +4494,7 @@ function handleSubmissionFormResponse2(e) {
 
   var repo = new SheetRepository();
   var subSheet = repo.getSubmissionSheet();
-  if (!subSheet) throw new Error("Missing 'Submission Form' sheet.");
+  if (!subSheet) throw new Error("Missing '" + SYSTEM_CONFIG.SHEETS.SUBMISSIONS + "' sheet.");
 
   var sysCols = ColumnManager.ensureSysColsOnSubmissions(subSheet);
   var row = e.range.getRow();
@@ -4301,7 +4503,7 @@ function handleSubmissionFormResponse2(e) {
   var width = subSheet.getLastColumn();
   var rowVals = subSheet.getRange(row, 1, 1, width).getValues()[0];
 
-  // V23.1: Smart delta processing — detect already-processed competitions vs. new ones
+  // Smart delta processing — detect already-processed competitions vs. new ones
   var existingNum = sysCols["SYS_PARTICIPANT_NUM"] ? String(subSheet.getRange(row, sysCols["SYS_PARTICIPANT_NUM"]).getValue() || "").trim() : "";
   var existingAnonFileIds = sysCols["SYS_ANON_FILE_IDS"] ? String(subSheet.getRange(row, sysCols["SYS_ANON_FILE_IDS"]).getValue() || "").trim() : "";
   // Bug 3 fix: read SYS_CONFIRMATION_SENT NOW so we can guard against duplicate emails
@@ -4322,11 +4524,11 @@ function handleSubmissionFormResponse2(e) {
     }
   }
 
-  // V23.1 Layer 1: Column E dropdown value
+  // Layer 1: Column E dropdown value
   var rawCompetition = String(rowVals[SYSTEM_CONFIG.COLS.SUB.COMPETITION_TYPE - 1] || "").trim();
   var dropdownComps = rawCompetition.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
 
-  // V23.1 Layer 2: Auto-detect from actual form data (scans all competition column groups)
+  // Layer 2: Auto-detect from actual form data (scans all competition column groups)
   var detectedComps = DepersonalizationService.detectCompetitionsFromData(rowVals);
 
   // Merge both layers: union of dropdown + detected, deduplicated
@@ -4341,7 +4543,12 @@ function handleSubmissionFormResponse2(e) {
     }
   }
 
-  // V22 SAFEGUARD: Filter out competitions from dropdown that have no actual form data.
+  // Lookup tables (must be defined before the safeguard below uses them)
+  var PREFIXES = SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES;
+  var compMap = SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP;
+  var compMapKeys = Object.keys(compMap);
+
+  // SAFEGUARD: Filter out competitions from dropdown that have no actual form data.
   // This prevents accidental participant number assignment when a participant
   // selects a competition in the dropdown but doesn't fill in the corresponding section.
   var validatedComps = [];
@@ -4384,12 +4591,9 @@ function handleSubmissionFormResponse2(e) {
     return;
   }
 
-  // V23.3: Separate competitions into NEW vs EDIT (already-processed but may need re-depersonalization)
+  // Separate competitions into NEW vs EDIT (already-processed but may need re-depersonalization)
   var newCompetitions = [];
   var editCompetitions = [];
-  var PREFIXES = SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES;
-  var compMap = SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP;
-  var compMapKeys = Object.keys(compMap);
 
   for (var di = 0; di < allDetectedComps.length; di++) {
     var compName = allDetectedComps[di];
@@ -4405,7 +4609,7 @@ function handleSubmissionFormResponse2(e) {
       }
     }
     if (mapEntry && processedPrefixes[PREFIXES[mapEntry.key]]) {
-      // V23.3: Already processed — mark as EDIT (re-depersonalize)
+      // Already processed — mark as EDIT (re-depersonalize)
       editCompetitions.push(compName);
     } else {
       newCompetitions.push(compName);
@@ -4420,7 +4624,7 @@ function handleSubmissionFormResponse2(e) {
   if (unmatchedDetected.length > 0) {
     AuditLogService.warn("SUB_DETECT_MISMATCH",
       "Row " + row + ": Auto-scan found [" + unmatchedDetected.join(", ") + "] not in dropdown selection. " +
-      "May be a partially-filled form section. Verify in Submission Dashboard before confirming.");
+      "May be a partially-filled form section. Verify in " + getMenuPathText_("openSubmissionDashboard") + " before confirming.");
   }
 
   if (newCompetitions.length === 0 && editCompetitions.length === 0) {
@@ -4431,7 +4635,7 @@ function handleSubmissionFormResponse2(e) {
   // ===== Process EDIT competitions first: cleanup old files, reuse number, re-depersonalize =====
   var allParticipantNums = existingNums.slice(); // start with existing numbers
   var allStatuses = [];
-  // V23.3: Start with anon file IDs that do NOT belong to edit competitions (preserve others)
+  // Start with anon file IDs that do NOT belong to edit competitions (preserve others)
   var preservedAnonFileIds = [];
   if (existingAnonFileIds) {
     var existingIds = existingAnonFileIds.split(/\s*,\s*/).filter(function(id) { return id.length > 0; });
@@ -4535,7 +4739,7 @@ function handleSubmissionFormResponse2(e) {
   }
 
   // Write aggregated SYS columns (existing + new, comma-separated)
-  // V23.3: Deduplicate participant numbers
+  // Deduplicate participant numbers
   var uniqueNums = [];
   var numSet = {};
   for (var un = 0; un < allParticipantNums.length; un++) {
@@ -4563,13 +4767,16 @@ function handleSubmissionFormResponse2(e) {
     if (col) subSheet.getRange(row, col).setValue(sysData[sysKeys[si]]);
   }
 
-  // V23.3: Send acknowledgement emails ONLY for NEW competitions (not edits)
-  // Also check SYS_CONFIRMATION_SENT to avoid duplicate emails on re-trigger
+  // Send acknowledgement emails ONLY for NEW competitions (not edits).
+  // Duplicate trigger fires cannot double-send: onFormSubmit holds the script lock and the
+  // participant numbers are written above before any email goes out, so a second fire sees
+  // those competitions as EDITs. A competition added later by editing the response is
+  // genuinely NEW and must still get its acknowledgement, even if an earlier one was sent.
   var emailsSent = 0;
-  // Bug 3 fix: do not send emails if we already sent confirmation on an earlier trigger run.
-  // Without this guard, two near-simultaneous trigger fires both see processedPrefixes={} and
-  // treat everything as NEW, resulting in duplicate acknowledgement emails.
-  if (allResults.length > 0 && !alreadySentConfirmation) {
+  if (allResults.length > 0) {
+    if (alreadySentConfirmation) {
+      AuditLogService.info("SUB_CONFIRM_ADDITIONAL", "Row " + row + ": sending acknowledgement for newly added competition(s).");
+    }
     try {
       var inlineImages = LogoService.getInlineImages();
       var senderName = SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME;
@@ -4580,26 +4787,31 @@ function handleSubmissionFormResponse2(e) {
         var emailHtml = buildSubmissionConfirmationHtml_(res);
 
         // Try to thread with existing registration email
+        var threadedOk = false;
         if (res.matchedGenId) {
           var threadInfo = EmailThreadService.getThreadInfo(res.matchedGenId);
           if (threadInfo && threadInfo.threadId) {
-            EmailThreadService.sendReplyEmail(
+            var replyRes = EmailThreadService.sendReplyEmail(
               res.email, emailSubject, emailHtml,
               inlineImages, threadInfo.threadId, threadInfo.messageId, senderName
             );
-            AuditLogService.info("SUB_CONFIRM_THREADED", "Sent threaded confirmation to " + res.email + " (" + res.participantNum + ")");
-          } else {
-            MailApp.sendEmail({ to: res.email, subject: emailSubject, htmlBody: emailHtml, inlineImages: inlineImages, name: senderName });
-            AuditLogService.info("SUB_CONFIRM_SENT", "Sent confirmation to " + res.email + " (" + res.participantNum + ")");
+            threadedOk = !!(replyRes && replyRes.success);
+            if (threadedOk) {
+              AuditLogService.info("SUB_CONFIRM_THREADED", "Sent threaded confirmation to " + res.email + " (" + res.participantNum + ")");
+            } else {
+              AuditLogService.warn("SUB_CONFIRM_THREAD_FAIL", "Threaded send failed for " + res.email + " (" + res.participantNum + "), sending as a normal email. " + (replyRes && replyRes.error ? replyRes.error : ""));
+            }
           }
-        } else {
+        }
+        if (!threadedOk) {
+          // No thread available (or the threaded send failed): send as a normal email
           MailApp.sendEmail({ to: res.email, subject: emailSubject, htmlBody: emailHtml, inlineImages: inlineImages, name: senderName });
           AuditLogService.info("SUB_CONFIRM_SENT", "Sent confirmation to " + res.email + " (" + res.participantNum + ")");
         }
         emailsSent++;
 
         // Small delay between emails to avoid rate limiting
-        if (ei < allResults.length - 1) Utilities.sleep(1500);
+        if (ei < allResults.length - 1) pauseBetweenEmails_();
       }
 
       // Mark confirmation as sent
@@ -4618,7 +4830,7 @@ function handleSubmissionFormResponse2(e) {
 
 /**
  * Build the HTML for a submission acknowledgement email.
- * V23: Rewritten to match the AR email style with full spiel section.
+ * Rewritten to match the AR email style with full spiel section.
  */
 function buildSubmissionConfirmationHtml_(result) {
   var orgName = SYSTEM_CONFIG.META.ORG;
@@ -4746,14 +4958,14 @@ function buildSubmissionConfirmationHtml_(result) {
     '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;">' +
     '    <tr>' +
     '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-    '        <img class="header-logo" src="cid:uplb_logo" alt="UPLB Sociology Society" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
+    '        <img class="header-logo" src="cid:uplb_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
     '      </td>' +
     '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-    '        <h1 class="header-title" style="margin:0;color:' + GOLD + ';font-family:Times New Roman, serif;font-size:26px;letter-spacing:2px;font-weight:800;">HUSAY NG SOKSAY</h1>' +
-    '        <p style="margin:5px 0 0 0;color:#ffffff;font-size:11px;letter-spacing:1px;">UPLB SOCIOLOGY SOCIETY</p>' +
+    '        <h1 class="header-title" style="margin:0;color:' + GOLD + ';font-family:Times New Roman, serif;font-size:26px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</h1>' +
+    '        <p style="margin:5px 0 0 0;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</p>' +
     '      </td>' +
     '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-    '        <img class="header-logo" src="cid:husay_logo" alt="Husay ng Soksay" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
+    '        <img class="header-logo" src="cid:husay_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + '" data-logo="event" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
     '      </td>' +
     '    </tr>' +
     '  </table>' +
@@ -4825,7 +5037,7 @@ function buildSubmissionConfirmationHtml_(result) {
     '</div>' +
 
     // Footer (matching AR style)
-    '<div style="background-color:#eee;padding:12px 15px;font-size:10px;color:#555;text-align:center;">This is a system-generated submission acknowledgement from the ' + eventName + ' System.<br>© 2026 ' + orgName + '. All rights reserved.</div>' +
+    '<div style="background-color:#eee;padding:12px 15px;font-size:10px;color:#555;text-align:center;">This is a system-generated submission acknowledgement from the ' + eventName + ' System.<br>© ' + new Date().getFullYear() + ' ' + orgName + '. All rights reserved.</div>' +
 
     '</div></body></html>';
 
@@ -4834,8 +5046,44 @@ function buildSubmissionConfirmationHtml_(result) {
 
 function onEdit(e) {
   if (!e || !e.range) return;
-  if (TriggerGuard.isMuted()) return;
 
+  // This function is also installed as an installable trigger (see createTriggers), so every
+  // user edit calls it twice: once as a simple trigger (limited permissions - it cannot send
+  // email) and once as the installable trigger. Only the installable run may do the work;
+  // otherwise the two runs race each other (ERROR receipts, double referral credit).
+  if (e.authMode && (e.authMode === ScriptApp.AuthMode.LIMITED || String(e.authMode) === "LIMITED")) return;
+
+  // Cheap filter before taking the lock: only these two sheets are watched
+  var editedSheetName = e.range.getSheet().getName();
+  if (editedSheetName !== SYSTEM_CONFIG.SHEETS.FINANCE &&
+      editedSheetName !== SYSTEM_CONFIG.SHEETS.REGISTRATION) return;
+  if (e.range.getRow() < 2) return;
+
+  // Serialize edits. Previously an edit made while another one was still being processed
+  // (e.g. marking two rows PAID a few seconds apart) was silently dropped.
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(30000); }
+  catch (lockErr) {
+    AuditLogService.error("LOCK_TIMEOUT", "onEdit lock timeout: " + editedSheetName + "!" +
+      e.range.getA1Notation() + " was not processed. Re-enter the value to retry.");
+    return;
+  }
+  try {
+    // If a bulk tool is writing right now, wait for it instead of dropping this edit
+    var waitedMs = 0;
+    while (TriggerGuard.isMuted() && waitedMs < 10000) {
+      Utilities.sleep(500);
+      waitedMs += 500;
+    }
+    processEdit_(e);
+  } catch (err) {
+    AuditLogService.error("EDIT_CRITICAL", err && err.stack ? err.stack : String(err));
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function processEdit_(e) {
   var range = e.range;
   var sheet = range.getSheet();
 
@@ -4848,6 +5096,11 @@ function onEdit(e) {
   var finCols = ColumnManager.getFinanceCols(finSheet);
 
   if (sheet.getName() === SYSTEM_CONFIG.SHEETS.FINANCE) {
+    // Several cells changed in one go (paste, fill-down, clearing a selection)
+    if (range.getNumRows() > 1 || range.getNumColumns() > 1) {
+      processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols);
+      return;
+    }
     var editedCol = range.getColumn();
     var header = Utils.safeString(sheet.getRange(1, editedCol).getValue()).trim();
     var aliases = SYSTEM_CONFIG.FINANCE_HEADERS.ALIASES || {};
@@ -4869,7 +5122,7 @@ function onEdit(e) {
       return;
     }
     
-    // V18.0: Handle Referral Code edits (REF_INPUT or LOCKED_REF columns)
+    // Handle Referral Code edits (REF_INPUT or LOCKED_REF columns)
     var isRefInputEdit = (editedCol === SYSTEM_CONFIG.COLS.REG.REF_INPUT);
     var isLockedRefEdit = (editedCol === SYSTEM_CONFIG.COLS.REG.LOCKED_REF);
     
@@ -4884,7 +5137,69 @@ function onEdit(e) {
 }
 
 /**
- * V18.0: Handle direct edits to the referral code columns
+ * A block of Financial Dashboard cells was changed in one go (pasting PAID into several rows,
+ * dragging the fill handle, clearing a selection). Google reports that as ONE edit with no
+ * old values, so each affected row is processed here exactly as if it had been edited alone.
+ *
+ * Each row is handled once, for the most important watched column inside the block
+ * (Status first). For Status, the previous value comes from the registration's
+ * SYS_LAST_FIN_STATUS, which is what makes un-marking several PAID rows reverse correctly.
+ */
+function processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols) {
+  var startedAt = Date.now();
+  var TIME_BUDGET_MS = 4.5 * 60 * 1000;   // stay inside the trigger's run-time limit
+
+  var firstCol = range.getColumn();
+  var numCols = range.getNumColumns();
+  var headers = finSheet.getRange(1, firstCol, 1, numCols).getValues()[0];
+  var aliases = SYSTEM_CONFIG.FINANCE_HEADERS.ALIASES || {};
+  var priority = ["Status", "Email Sent", "SYS_PAID_AT", "Verifier", "Pay Ref"];
+
+  var colByHeader = {};
+  for (var h = 0; h < headers.length; h++) {
+    var name = Utils.safeString(headers[h]).trim();
+    name = aliases[name] || name;
+    if (!colByHeader[name]) colByHeader[name] = firstCol + h;
+  }
+  var canonical = "";
+  for (var p = 0; p < priority.length; p++) {
+    if (colByHeader[priority[p]]) { canonical = priority[p]; break; }
+  }
+  if (!canonical) return;   // the block does not touch a watched column
+
+  var repo = new SheetRepository();
+  var lastFinStatusCol = sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.LAST_FIN_STATUS];
+  var firstRow = Math.max(2, range.getRow());
+  var lastRow = range.getRow() + range.getNumRows() - 1;
+  var done = 0;
+
+  for (var r = firstRow; r <= lastRow; r++) {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      AuditLogService.warn("BLOCK_EDIT_PARTIAL", "Finance rows " + r + "-" + lastRow +
+        " were not processed (time limit). Re-enter their values a few rows at a time.");
+      break;
+    }
+    try {
+      var email = finCols.Email ? finSheet.getRange(r, finCols.Email).getValue() : "";
+      if (!email) continue;
+
+      var oldValue = "";
+      if (canonical === "Status" && lastFinStatusCol) {
+        var regRow = repo.findRegistrationRowIndexByEmail(email);
+        if (regRow) oldValue = regSheet.getRange(regRow, lastFinStatusCol).getValue();
+      }
+      handleFinanceEditSync({ range: finSheet.getRange(r, colByHeader[canonical]), oldValue: oldValue },
+        sysRegCols, finCols, canonical);
+      done++;
+    } catch (rowErr) {
+      AuditLogService.error("BLOCK_EDIT_ROW_FAIL", "Finance row " + r + ": " + (rowErr && rowErr.stack ? rowErr.stack : rowErr));
+    }
+  }
+  AuditLogService.info("BLOCK_EDIT_DONE", "Finance " + canonical + " block edit: " + done + " row(s) processed (rows " + firstRow + "-" + lastRow + ").");
+}
+
+/**
+ * Handle direct edits to the referral code columns
  * This processes referral changes when someone edits their registration directly
  */
 function handleReferralCodeEdit(e, regSheet, finSheet, sysRegCols, finCols, row) {
@@ -5073,7 +5388,7 @@ function handleReferralCodeEdit(e, regSheet, finSheet, sysRegCols, finCols, row)
 }
 
 /**
- * V18.0: Recalculate final amount after referral changes and sync to Finance
+ * Recalculate final amount after referral changes and sync to Finance
  */
 function recalculateAndSyncFinance(regSheet, finSheet, finCols, sysRegCols, row) {
   var repo = new SheetRepository();
@@ -5110,7 +5425,8 @@ function recalculateAndSyncFinance(regSheet, finSheet, finCols, sysRegCols, row)
   
   // Update Registration sheet
   regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.FINAL_AMOUNT).setValue(finalAmount);
-  
+  writeRegistrationPricingBreakdown_(regSheet, row, pricing, couponDiscount, refDiscount);
+
   // Sync to Finance Dashboard
   var finRowIndex = repo.findFinanceRowIndexByEmail(email, finCols);
   if (finRowIndex) {
@@ -5129,12 +5445,298 @@ function recalculateAndSyncFinance(regSheet, finSheet, finCols, sysRegCols, row)
       "Finance synced for " + email + ": RefCode=" + (lockedRef || "none") + ", FinalAmount=" + finalAmount);
   }
 
-  // V23: Reapply merge group accounting if participant is in a merge group
+  // Reapply merge group accounting if participant is in a merge group
   try {
     MergeService.reapplyMergeForEmail_(email);
   } catch (mergeErr) {
     AuditLogService.warn("MERGE_REAPPLY_AFTER_REF_EDIT", "err=" + mergeErr);
   }
+}
+
+/**
+ * Mirror the Finance payment status into the Registration "Payment Status" column.
+ * Skips quietly if that column is not a status column in this sheet or is formula-driven.
+ */
+function syncRegistrationPaymentStatus_(regSheet, regRowIndex, isPaid) {
+  try {
+    var col = SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS;
+    if (!regSheet || !regRowIndex || regRowIndex < 2 || !col || col > regSheet.getLastColumn()) return;
+    var header = String(regSheet.getRange(1, col).getValue() || "").toUpperCase();
+    if (header.indexOf("STATUS") < 0) return;
+    var cell = regSheet.getRange(regRowIndex, col);
+    if (cell.getFormula()) return;
+    var current = String(cell.getValue() || "").trim();
+    if (isPaid) {
+      if (current !== SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) cell.setValue(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD);
+    } else if (current.toUpperCase() === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) {
+      // Only downgrade a PAID row (payment reversed); leave PENDING / CANCELLED / blank alone
+      cell.setValue("NOT YET");
+    }
+  } catch (e) {
+    AuditLogService.warn("REG_STATUS_SYNC_FAIL", "Row " + regRowIndex + ": " + e);
+  }
+}
+
+/**
+ * The words offered in the Registration sheet's "Payment Status" dropdown. That column is a
+ * mirror of the Financial Dashboard "Status" column, which is the one admins edit.
+ */
+function getRegistrationStatusOptions_() {
+  return ["NOT YET", SYSTEM_CONFIG.ADMIN.TRIGGER_WORD, "PENDING", "CANCELLED"];
+}
+
+/**
+ * One answer to "has this participant paid?", shared by the dashboards, the System Dashboard,
+ * the Announcement Center filter and the System Guide, so their numbers always agree.
+ *   - the Financial Dashboard "Status" column is the source of truth;
+ *   - a member of a merge group is paid when the group's primary payer is paid;
+ *   - a registration with no Finance row falls back to its own "Payment Status" cell.
+ * Read-only: it never writes to a sheet.
+ * @returns {{isPaid:function(string,*):boolean, isFree:function(string):boolean, total:number, paid:number}}
+ */
+function getPaidEmailLookup_() {
+  var R = SYSTEM_CONFIG.COLS.REG;
+  var repo = new SheetRepository();
+  var known = {}, paid = {}, free = {};
+  var finPaid = {};
+  var total = 0, paidCount = 0;
+
+  try {
+    var finSheet = repo.getFinanceSheet();
+    if (finSheet && finSheet.getLastRow() > 1) {
+      var finHeaders = ColumnManager.headerMap(finSheet);
+      var fEmailCol = finHeaders["Email"], fStatusCol = finHeaders["Status"];
+      if (fEmailCol && fStatusCol) {
+        var fv = finSheet.getRange(2, 1, finSheet.getLastRow() - 1, finSheet.getLastColumn()).getValues();
+        for (var f = 0; f < fv.length; f++) {
+          var fe = Utils.normalizeEmail(fv[f][fEmailCol - 1]);
+          if (fe) finPaid[fe] = Utils.isPaidStatus(fv[f][fStatusCol - 1]);
+        }
+      }
+    }
+  } catch (finErr) {
+    AuditLogService.warn("PAID_LOOKUP_FIN_FAIL", String(finErr));
+  }
+
+  try {
+    var regSheet = repo.getRegistrationSheet();
+    if (regSheet && regSheet.getLastRow() > 1) {
+      var regHeaders = ColumnManager.headerMap(regSheet);
+      var groupCol = regHeaders[V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID] || 0;
+      var primaryCol = regHeaders[V22_CONFIG.MERGE.REG_HEADERS.PRIMARY_EMAIL] || 0;
+      var rv = regSheet.getRange(2, 1, regSheet.getLastRow() - 1, regSheet.getLastColumn()).getValues();
+      for (var i = 0; i < rv.length; i++) {
+        var email = Utils.normalizeEmail(rv[i][R.EMAIL - 1]);
+        if (!email || known[email]) continue;
+        known[email] = true;
+        total++;
+
+        var groupId = groupCol ? String(rv[i][groupCol - 1] || "").trim() : "";
+        var payerEmail = (groupId && primaryCol) ? Utils.normalizeEmail(rv[i][primaryCol - 1]) : "";
+        var isMember = !!(payerEmail && payerEmail !== email);
+
+        var isPaid;
+        if (finPaid[email] === true) isPaid = true;
+        else if (isMember && finPaid.hasOwnProperty(payerEmail)) isPaid = finPaid[payerEmail];
+        else if (finPaid.hasOwnProperty(email)) isPaid = false;
+        else isPaid = Utils.isPaidStatus(rv[i][R.PAYMENT_STATUS - 1]);
+
+        if (isPaid) { paid[email] = true; paidCount++; }
+
+        // "Free" = processed registration that owes nothing itself (e.g. a coupon covered it).
+        // Group members owe nothing either, but their fee is inside the primary payer's total.
+        var hasGenId = !!String(rv[i][R.GEN_ID - 1] || "").trim();
+        if (hasGenId && !isMember && Number(rv[i][R.TOTAL_FEE - 1] || 0) === 0) free[email] = true;
+      }
+    }
+  } catch (regErr) {
+    AuditLogService.warn("PAID_LOOKUP_REG_FAIL", String(regErr));
+  }
+
+  return {
+    total: total,
+    paid: paidCount,
+    isPaid: function (email, fallbackStatus) {
+      var key = Utils.normalizeEmail(email);
+      if (key && known[key]) return paid[key] === true;
+      return Utils.isPaidStatus(fallbackStatus);
+    },
+    isFree: function (email) {
+      return free[Utils.normalizeEmail(email)] === true;
+    }
+  };
+}
+
+/**
+ * Emails that have at least one row in the Submission sheet.
+ */
+function getSubmittedEmailSet_() {
+  var set = {};
+  try {
+    var subSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SYSTEM_CONFIG.SHEETS.SUBMISSIONS);
+    if (!subSheet || subSheet.getLastRow() < 2) return set;
+    var vals = subSheet.getRange(2, SYSTEM_CONFIG.COLS.SUB.EMAIL, subSheet.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      var e = Utils.normalizeEmail(vals[i][0]);
+      if (e) set[e] = true;
+    }
+  } catch (err) {
+    AuditLogService.warn("SUBMITTED_SET_FAIL", String(err));
+  }
+  return set;
+}
+
+/**
+ * Registration rows settled by the payment on one row: the row itself and, when that row is
+ * the primary payer of a merge group, every member of the group.
+ */
+function getRegRowsCoveredByPayment_(regSheet, regRowIndex, email) {
+  var rows = regRowIndex ? [regRowIndex] : [];
+  try {
+    if (!regRowIndex || typeof MergeService === "undefined") return rows;
+    var meta = MergeService.getMergeMetaForEmail_(email, regRowIndex, regSheet);
+    if (!meta || !meta.groupId) return rows;
+    var group = MergeService.getGroupFromRegistration_(meta.groupId, regSheet);
+    if (!group || Utils.normalizeEmail(group.primaryEmail) !== Utils.normalizeEmail(email)) return rows;
+    var parts = group.participants || [];
+    for (var i = 0; i < parts.length; i++) {
+      var r = parts[i].rowIndex;
+      if (r && rows.indexOf(r) < 0) rows.push(r);
+    }
+  } catch (e) {
+    AuditLogService.warn("MERGE_ROWS_LOOKUP_FAIL", "row=" + regRowIndex + " err=" + e);
+  }
+  return rows;
+}
+
+/**
+ * Credit the referrer of ONE registration row (once) and tell them. Called when that
+ * registration's payment is verified, directly or through its merge group's primary payer.
+ * @returns {boolean} true when a credit was given
+ */
+function creditReferralForRegRow_(regSheet, regRowIndex, sysRegCols) {
+  try {
+    if (!regSheet || !regRowIndex) return false;
+    var regRowData = regSheet.getRange(regRowIndex, 1, 1, regSheet.getLastColumn()).getValues()[0];
+    var rowEmail = regRowData[SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "";
+    var lockedRef = String(regRowData[SYSTEM_CONFIG.COLS.REG.LOCKED_REF - 1] || "").trim();
+    var refCreditGivenCol = sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_CREDIT_GIVEN];
+    var refCreditGiven = refCreditGivenCol ? String(regSheet.getRange(regRowIndex, refCreditGivenCol).getValue() || "").trim() : "";
+    if (!lockedRef || refCreditGiven) return false;
+
+    // This person used a referral code and credit hasn't been given yet
+    var referralService = new ReferralService(regSheet);
+    var childGenId = regRowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "";
+    var childName = regRowData[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "";
+    var result = referralService.updateReferrer(lockedRef, "ADD", childGenId);
+    if (!result.ok) return false;
+
+    // Mark that referral credit has been given
+    if (refCreditGivenCol) {
+      regSheet.getRange(regRowIndex, refCreditGivenCol).setValue(lockedRef + "|" + Utils.nowTzString());
+    }
+    AuditLogService.info("REF_CREDIT_ON_PAID", "Credited referrer " + lockedRef + " for " + rowEmail + " (payment verified)");
+
+    // Send notification to referrer
+    try {
+      var cashbackEarned = (result.count === 1)
+        ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL
+        : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT;
+
+      var notifResult = EmailService.sendReferralSuccessNotification(result.referrerEmail, {
+        referrerName: result.referrerName,
+        referrerCode: lockedRef,
+        referredName: childName || "A new participant",
+        referredGenId: childGenId,
+        newCount: result.count,
+        newCashback: result.cashback,
+        cashbackEarned: cashbackEarned
+      });
+      if (notifResult.sent) {
+        AuditLogService.info("REF_NOTIF_SENT", "Referral success notification sent to " + result.referrerEmail);
+      } else if (notifResult.skipped) {
+        AuditLogService.info("REF_NOTIF_SKIPPED", "Referral notification skipped: " + notifResult.reason);
+      }
+    } catch (notifErr) {
+      AuditLogService.warn("REF_NOTIF_FAIL", "Failed to send referral notification: " + notifErr);
+    }
+    return true;
+  } catch (refCreditErr) {
+    AuditLogService.error("REF_CREDIT_ON_PAID_FAIL", "Failed to process referral credit for row " + regRowIndex + ": " + refCreditErr);
+    return false;
+  }
+}
+
+/**
+ * Take back the referral credit of ONE registration row (payment reversed) and tell the referrer.
+ * @returns {boolean} true when a credit was removed
+ */
+function reverseReferralForRegRow_(regSheet, regRowIndex, sysRegCols) {
+  try {
+    if (!regSheet || !regRowIndex) return false;
+    var regRowData = regSheet.getRange(regRowIndex, 1, 1, regSheet.getLastColumn()).getValues()[0];
+    var rowEmail = regRowData[SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "";
+    var lockedRef = String(regRowData[SYSTEM_CONFIG.COLS.REG.LOCKED_REF - 1] || "").trim();
+    var refCreditGivenCol = sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_CREDIT_GIVEN];
+    var refCreditGiven = refCreditGivenCol ? String(regSheet.getRange(regRowIndex, refCreditGivenCol).getValue() || "").trim() : "";
+    if (!lockedRef || !refCreditGiven) return false;
+
+    // Credit was given, need to remove it
+    var referralService = new ReferralService(regSheet);
+    var childGenId = regRowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "";
+    var childName = regRowData[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "";
+
+    // Calculate what cashback will be removed (before the update)
+    var referrerRowIndex = new SheetRepository().findRegistrationRowIndexByGenId(lockedRef);
+    var oldCount = 0;
+    if (referrerRowIndex) {
+      oldCount = Number(regSheet.getRange(referrerRowIndex, SYSTEM_CONFIG.COLS.REG.REF_COUNT).getValue() || 0);
+    }
+    var cashbackRemoved = (oldCount === 1)
+      ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL
+      : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT;
+
+    var result = referralService.updateReferrer(lockedRef, "REMOVE", childGenId);
+    if (!result.ok) return false;
+
+    // Clear the referral credit given marker
+    if (refCreditGivenCol) {
+      regSheet.getRange(regRowIndex, refCreditGivenCol).setValue("");
+    }
+    AuditLogService.info("REF_CREDIT_REVERSED", "Removed credit from referrer " + lockedRef + " for " + rowEmail + " (payment reversed)");
+
+    // Send notification to referrer about removed credit
+    try {
+      var notifResult = EmailService.sendReferralRemovedNotification(result.referrerEmail, {
+        referrerName: result.referrerName,
+        referrerCode: lockedRef,
+        referredName: childName || "A participant",
+        referredGenId: childGenId,
+        newCount: result.count,
+        newCashback: result.cashback,
+        cashbackRemoved: cashbackRemoved
+      });
+      if (notifResult.sent) {
+        AuditLogService.info("REF_REMOVAL_NOTIF_SENT", "Referral removal notification sent to " + result.referrerEmail);
+      } else if (notifResult.skipped) {
+        AuditLogService.info("REF_REMOVAL_NOTIF_SKIPPED", "Referral removal notification skipped: " + notifResult.reason);
+      }
+    } catch (notifErr) {
+      AuditLogService.warn("REF_REMOVAL_NOTIF_FAIL", "Failed to send referral removal notification: " + notifErr);
+    }
+    return true;
+  } catch (refRevErr) {
+    AuditLogService.error("REF_CREDIT_REVERSE_FAIL", "Failed to reverse referral credit for row " + regRowIndex + ": " + refRevErr);
+    return false;
+  }
+}
+
+/** Event name / organisation as printed in the header band of every email. */
+function getEventTitleHtml_() {
+  return Utils.escapeHtml(String(SYSTEM_CONFIG.META.NAME || "").toUpperCase());
+}
+function getOrgTitleHtml_() {
+  return Utils.escapeHtml(String(SYSTEM_CONFIG.META.ORG || "").toUpperCase());
 }
 
 function shouldAttemptPaidSend_(emailSentVal) {
@@ -5179,6 +5781,9 @@ function handleFinanceEditSync(e, sysRegCols, finCols, canonicalEditedHeader) {
 
     function syncMetaToReg(paidAtValue) {
       if (!regRowIndex) return;
+      // Keep the Registration "Payment Status" column in step with Finance. The submission
+      // handler, dashboards and announcement filters all read that column.
+      syncRegistrationPaymentStatus_(regSheet, regRowIndex, status === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD);
       if (sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.PAID_AT]) {
         regSheet.getRange(regRowIndex, sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.PAID_AT]).setValue(paidAtValue || "");
       }
@@ -5222,39 +5827,9 @@ function handleFinanceEditSync(e, sysRegCols, finCols, canonicalEditedHeader) {
             refDiscountApplied = Number(regSheet.getRange(regRowIndex, sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_DISCOUNT_APPLIED]).getValue() || 0);
           }
           
-          // V20.0 FIX: Get actual coupon discount value from Coupons sheet
-          // V20.1 FIX: Improved lookup with better matching and logging
-          var couponDiscountValue = 0;
+          // Actual coupon value from the Coupon Manager sheet (the lookup every feature shares)
           var couponCodeUsed = String(regData.couponCode || "").trim();
-          
-          if (couponCodeUsed) {
-            try {
-              var couponSheet = repo.getCouponSheet();
-              if (couponSheet) {
-                var couponData = couponSheet.getDataRange().getValues();
-                var couponCodeUpper = couponCodeUsed.toUpperCase();
-                
-                for (var ci = 1; ci < couponData.length; ci++) {
-                  var sheetCode = String(couponData[ci][0] || "").trim().toUpperCase();
-                  if (sheetCode === couponCodeUpper) {
-                    couponDiscountValue = Number(couponData[ci][1] || 0);
-                    Logger.log("Coupon lookup SUCCESS: code=" + couponCodeUsed + ", value=" + couponDiscountValue);
-                    break;
-                  }
-                }
-                
-                if (couponDiscountValue === 0) {
-                  Logger.log("Coupon lookup FAILED: code=" + couponCodeUsed + " not found in Coupons sheet");
-                }
-              } else {
-                Logger.log("Coupon lookup FAILED: Coupons sheet not found");
-              }
-            } catch (couponErr) {
-              Logger.log("Error fetching coupon value: " + couponErr);
-            }
-          } else {
-            Logger.log("No coupon code in registration data");
-          }
+          var couponDiscountValue = couponCodeUsed ? getCouponValue_(couponCodeUsed, repo.getCouponSheet()) : 0;
 
           var paidData = {
             name: regData.name,
@@ -5264,13 +5839,15 @@ function handleFinanceEditSync(e, sysRegCols, finCols, canonicalEditedHeader) {
             genId: regData.genId,
             finalAmount: regData.finalAmount,
             couponCode: regData.couponCode,
-            couponDiscount: couponDiscountValue,  // V20.0 FIX: Actual coupon value
+            couponDiscount: couponDiscountValue,  // FIX: Actual coupon value
             referralDiscount: refDiscountApplied,
             cashback: regData.cashback,
             paidAt: paidAtDate
           };
 
-          // V22: MERGE-AWARE RECEIPTS (Master Transaction)
+          // MERGE-AWARE RECEIPTS (Master Transaction)
+          // paidSendRes stays null when no individual/group receipt was attempted for this row
+          var paidSendRes = null;
           var mergeMeta = MergeService.getMergeMetaForEmail_(email, regRowIndex, regSheet);
           if (mergeMeta && mergeMeta.groupId) {
             // Keep finance meta consistent across group
@@ -5287,7 +5864,8 @@ function handleFinanceEditSync(e, sysRegCols, finCols, canonicalEditedHeader) {
             if (mergeMeta.role === MergeService.ROLES.MEMBER) {
               emailSentCell.setValue("SKIPPED: MERGED (" + mergeMeta.groupId + ") " + Utils.nowTzString());
             } else {
-              var groupSendRes = MergeService.sendGroupPaidReceipt_(mergeMeta.groupId, decision.force);
+              var groupSendRes = MergeService.sendGroupPaidReceipt_(mergeMeta.groupId, decision.force) || {};
+              paidSendRes = groupSendRes;
               emailSentCell.setValue(
                 (groupSendRes.skipped ? "SKIPPED" : (groupSendRes.sent ? "SENT" : "ERROR")) +
                 ": GROUP " + mergeMeta.groupId + " " + Utils.nowTzString()
@@ -5297,72 +5875,29 @@ function handleFinanceEditSync(e, sysRegCols, finCols, canonicalEditedHeader) {
               try { MergeService.markGroupMembersEmailSkipped_(mergeMeta.groupId); } catch (e2) {}
             }
           } else {
-            var paidSendRes = EmailService.sendPaidReceipt(email, regData.masterSubject, paidData, true, decision.force);
+            paidSendRes = EmailService.sendPaidReceipt(email, regData.masterSubject, paidData, true, decision.force);
             emailSentCell.setValue((paidSendRes.skipped ? "SKIPPED" : (paidSendRes.sent ? "SENT" : "ERROR")) + ": " + Utils.nowTzString());
           }
 
-          if (regRowIndex && sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.RECEIPT_HASH]) {
+          // (Previously this read paidSendRes even for merged rows, where it was never set;
+          // the resulting crash skipped the referral credit and the PAID sync below.)
+          if (paidSendRes && regRowIndex && sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.RECEIPT_HASH]) {
             regSheet.getRange(regRowIndex, sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.RECEIPT_HASH]).setValue(paidSendRes.hash || "");
           }
-          if (regRowIndex && paidSendRes.sent && sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.RECEIPT_SENT_AT]) {
+          if (paidSendRes && regRowIndex && paidSendRes.sent && sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.RECEIPT_SENT_AT]) {
             regSheet.getRange(regRowIndex, sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.RECEIPT_SENT_AT]).setValue(Utils.nowTzString());
           }
         }
       }
 
-      // ===== REFERRAL CREDIT PROCESSING ON PAID (V15.0 - WITH NOTIFICATIONS) =====
-      // Only give referral credit when payment is verified
-      try {
-        if (regRowIndex) {
-          var regRowData = regSheet.getRange(regRowIndex, 1, 1, regSheet.getLastColumn()).getValues()[0];
-          var lockedRef = String(regRowData[SYSTEM_CONFIG.COLS.REG.LOCKED_REF - 1] || "").trim();
-          var refCreditGivenCol = sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_CREDIT_GIVEN];
-          var refCreditGiven = refCreditGivenCol ? String(regSheet.getRange(regRowIndex, refCreditGivenCol).getValue() || "").trim() : "";
-          
-          if (lockedRef && !refCreditGiven) {
-            // This person used a referral code and credit hasn't been given yet
-            var referralService = new ReferralService(regSheet);
-            var childGenId = regRowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "";
-            var childName = regRowData[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "";
-            var result = referralService.updateReferrer(lockedRef, "ADD", childGenId);
-            
-            if (result.ok) {
-              // Mark that referral credit has been given
-              if (refCreditGivenCol) {
-                regSheet.getRange(regRowIndex, refCreditGivenCol).setValue(lockedRef + "|" + Utils.nowTzString());
-              }
-              AuditLogService.info("REF_CREDIT_ON_PAID", "Credited referrer " + lockedRef + " for " + email + " (payment verified)");
-              
-              // V15.0: Send notification to referrer
-              try {
-                var cashbackEarned = (result.count === 1) 
-                  ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL 
-                  : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT;
-                
-                var notificationData = {
-                  referrerName: result.referrerName,
-                  referrerCode: lockedRef,
-                  referredName: childName || "A new participant",
-                  referredGenId: childGenId,
-                  newCount: result.count,
-                  newCashback: result.cashback,
-                  cashbackEarned: cashbackEarned
-                };
-                
-                var notifResult = EmailService.sendReferralSuccessNotification(result.referrerEmail, notificationData);
-                if (notifResult.sent) {
-                  AuditLogService.info("REF_NOTIF_SENT", "Referral success notification sent to " + result.referrerEmail);
-                } else if (notifResult.skipped) {
-                  AuditLogService.info("REF_NOTIF_SKIPPED", "Referral notification skipped: " + notifResult.reason);
-                }
-              } catch (notifErr) {
-                AuditLogService.warn("REF_NOTIF_FAIL", "Failed to send referral notification: " + notifErr);
-              }
-            }
-          }
-        }
-      } catch (refCreditErr) {
-        AuditLogService.error("REF_CREDIT_ON_PAID_FAIL", "Failed to process referral credit for " + email + ": " + refCreditErr);
+      // ===== REFERRAL CREDIT ON PAID (WITH NOTIFICATIONS) =====
+      // A referrer is credited only when the referred person's payment is verified. A merged
+      // group is paid by its primary payer, so verifying the primary verifies every member:
+      // each member's referrer is credited and each member's Payment Status becomes PAID.
+      var paidRegRows = getRegRowsCoveredByPayment_(regSheet, regRowIndex, email);
+      for (var pr = 0; pr < paidRegRows.length; pr++) {
+        creditReferralForRegRow_(regSheet, paidRegRows[pr], sysRegCols);
+        if (paidRegRows[pr] !== regRowIndex) syncRegistrationPaymentStatus_(regSheet, paidRegRows[pr], true);
       }
 
       syncMetaToReg(finPaidAtVal);
@@ -5377,70 +5912,15 @@ function handleFinanceEditSync(e, sysRegCols, finCols, canonicalEditedHeader) {
       oldStatus === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD &&
       status !== SYSTEM_CONFIG.ADMIN.TRIGGER_WORD
     ) {
-      // ===== REFERRAL CREDIT REMOVAL ON PAID REVERSAL (V15.0 - WITH NOTIFICATIONS) =====
-      // Remove referral credit when payment is reversed
-      try {
-        if (regRowIndex) {
-          var regRowData = regSheet.getRange(regRowIndex, 1, 1, regSheet.getLastColumn()).getValues()[0];
-          var lockedRef = String(regRowData[SYSTEM_CONFIG.COLS.REG.LOCKED_REF - 1] || "").trim();
-          var refCreditGivenCol = sysRegCols[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_CREDIT_GIVEN];
-          var refCreditGiven = refCreditGivenCol ? String(regSheet.getRange(regRowIndex, refCreditGivenCol).getValue() || "").trim() : "";
-          
-          if (lockedRef && refCreditGiven) {
-            // Credit was given, need to remove it
-            var referralService = new ReferralService(regSheet);
-            var childGenId = regRowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "";
-            var childName = regRowData[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "";
-            
-            // Calculate what cashback will be removed (before the update)
-            var repoForCalc = new SheetRepository();
-            var referrerRowIndex = repoForCalc.findRegistrationRowIndexByGenId(lockedRef);
-            var oldCount = 0;
-            if (referrerRowIndex) {
-              var referrerRow = regSheet.getRange(referrerRowIndex, SYSTEM_CONFIG.COLS.REG.REF_COUNT).getValue();
-              oldCount = Number(referrerRow || 0);
-            }
-            var cashbackRemoved = (oldCount === 1) 
-              ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL 
-              : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT;
-            
-            var result = referralService.updateReferrer(lockedRef, "REMOVE", childGenId);
-            
-            if (result.ok) {
-              // Clear the referral credit given marker
-              if (refCreditGivenCol) {
-                regSheet.getRange(regRowIndex, refCreditGivenCol).setValue("");
-              }
-              AuditLogService.info("REF_CREDIT_REVERSED", "Removed credit from referrer " + lockedRef + " for " + email + " (payment reversed)");
-              
-              // V15.0: Send notification to referrer about removed credit
-              try {
-                var notificationData = {
-                  referrerName: result.referrerName,
-                  referrerCode: lockedRef,
-                  referredName: childName || "A participant",
-                  referredGenId: childGenId,
-                  newCount: result.count,
-                  newCashback: result.cashback,
-                  cashbackRemoved: cashbackRemoved
-                };
-                
-                var notifResult = EmailService.sendReferralRemovedNotification(result.referrerEmail, notificationData);
-                if (notifResult.sent) {
-                  AuditLogService.info("REF_REMOVAL_NOTIF_SENT", "Referral removal notification sent to " + result.referrerEmail);
-                } else if (notifResult.skipped) {
-                  AuditLogService.info("REF_REMOVAL_NOTIF_SKIPPED", "Referral removal notification skipped: " + notifResult.reason);
-                }
-              } catch (notifErr) {
-                AuditLogService.warn("REF_REMOVAL_NOTIF_FAIL", "Failed to send referral removal notification: " + notifErr);
-              }
-            }
-          }
-        }
-      } catch (refRevErr) {
-        AuditLogService.error("REF_CREDIT_REVERSE_FAIL", "Failed to reverse referral credit for " + email + ": " + refRevErr);
+      // ===== REFERRAL CREDIT REMOVAL ON PAID REVERSAL (WITH NOTIFICATIONS) =====
+      // Mirror of the PAID step above: the row itself and, for a group's primary payer,
+      // every member of the group.
+      var reversedRegRows = getRegRowsCoveredByPayment_(regSheet, regRowIndex, email);
+      for (var rr = 0; rr < reversedRegRows.length; rr++) {
+        reverseReferralForRegRow_(regSheet, reversedRegRows[rr], sysRegCols);
+        if (reversedRegRows[rr] !== regRowIndex) syncRegistrationPaymentStatus_(regSheet, reversedRegRows[rr], false);
       }
-      
+
       if (emailSentCell) emailSentCell.setValue("REVERSED: " + Utils.nowTzString());
       syncMetaToReg("");
       set(finCols.SysPaidAt, "");
@@ -5504,18 +5984,28 @@ function viewRateLimitStatus() {
 
 function createTriggers() {
   var ui = SpreadsheetApp.getUi();
-  var confirm = ui.alert("Create triggers?", "This will create installable triggers. Continue?", ui.ButtonSet.YES_NO);
-  if (confirm !== ui.Button.YES) return;
-
   var triggers = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
-  if (triggers.indexOf("onFormSubmit") < 0) {
+  var needed = ["onFormSubmit", "onEdit"].filter(function (h) { return triggers.indexOf(h) < 0; });
+  if (needed.length === 0) {
+    ui.alert("✅ Triggers", "Both triggers (on form submit, on edit) are already installed. Nothing to do.", ui.ButtonSet.OK);
+    return true;
+  }
+
+  var confirm = ui.alert("Create triggers?",
+    "Missing: " + needed.join(", ") + ".\n\n" +
+    "They will run as YOU (" + (Session.getActiveUser().getEmail() || "this account") + "), so emails are sent from this account. Continue?",
+    ui.ButtonSet.YES_NO);
+  if (confirm !== ui.Button.YES) return false;
+
+  if (needed.indexOf("onFormSubmit") >= 0) {
     ScriptApp.newTrigger("onFormSubmit").forSpreadsheet(SpreadsheetApp.getActive()).onFormSubmit().create();
   }
-  if (triggers.indexOf("onEdit") < 0) {
+  if (needed.indexOf("onEdit") >= 0) {
     ScriptApp.newTrigger("onEdit").forSpreadsheet(SpreadsheetApp.getActive()).onEdit().create();
   }
 
-  ui.alert("✅ Triggers created.");
+  ui.alert("✅ Triggers created", "Installed: " + needed.join(", ") + ".", ui.ButtonSet.OK);
+  return true;
 }
 
 function syncDashboard() {
@@ -5535,12 +6025,33 @@ function syncDashboard() {
     var regData = regSheet.getDataRange().getValues();
     var synced = 0;
 
+    // Registration "Payment Status" is mirrored from Finance (the source of truth). This also
+    // repairs rows marked PAID before that column was kept in sync automatically.
+    var payStatusCol = SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS;
+    var canSyncPayStatus = regData.length > 0 && payStatusCol <= regData[0].length &&
+      String(regData[0][payStatusCol - 1] || "").toUpperCase().indexOf("STATUS") >= 0;
+    var statusesSynced = 0;
+    // Same paid rule as every dashboard and filter: Finance status, and for a member of a
+    // payment group the status of the group's payer.
+    var mergeGroupColIdx = regData.length > 0 ? regData[0].indexOf(V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID) : -1;
+    var paidLookup = getPaidEmailLookup_();
+
     for (var r = 1; r < regData.length; r++) {
       var rr = regData[r];
       var emailRaw = rr[SYSTEM_CONFIG.COLS.REG.EMAIL - 1];
       var email = String(emailRaw || "").trim();
       var emailKey = email.toLowerCase();
       if (!emailKey) continue;
+
+      var inMergeGroup = mergeGroupColIdx >= 0 && String(rr[mergeGroupColIdx] || "").trim() !== "";
+      if (canSyncPayStatus && (metaCache[emailKey] || inMergeGroup)) {
+        var finIsPaid = paidLookup.isPaid(emailKey, rr[payStatusCol - 1]);
+        var regIsPaid = Utils.isPaidStatus(rr[payStatusCol - 1]);
+        if (finIsPaid !== regIsPaid) {
+          syncRegistrationPaymentStatus_(regSheet, r + 1, finIsPaid);
+          statusesSynced++;
+        }
+      }
 
       var cached = metaCache[emailKey] || {
         Status: SYSTEM_CONFIG.ADMIN.NOT_YET_WORD,
@@ -5577,14 +6088,15 @@ function syncDashboard() {
 
     AuditLogService.info("ADMIN_SYNC_LIGHT", "Synced " + synced + " rows.");
 
-    // V22: Reapply merge group accounting (prevents merged totals from being overwritten by Sync)
+    // Reapply merge group accounting (prevents merged totals from being overwritten by Sync)
     try {
       MergeService.reapplyAllMerges({ silent: true });
     } catch (e) {
       AuditLogService.warn("MERGE_REAPPLY_AFTER_SYNC_FAIL", String(e));
     }
 
-    ui.alert("✅ Light sync completed.\nRows synced: " + synced);
+    ui.alert("✅ Light sync completed.\nRows synced: " + synced +
+      (statusesSynced ? "\nRegistration payment statuses corrected: " + statusesSynced : ""));
 
   } catch (err) {
     AuditLogService.error("ADMIN_SYNC_LIGHT_FAIL", err && err.stack ? err.stack : String(err));
@@ -5599,16 +6111,19 @@ function runHealthCheck() {
   var log = "🏥 HEALTH CHECK\n-------------------------\n";
   var issues = 0;
 
-  var names = [];
-  for (var k in SYSTEM_CONFIG.SHEETS) {
-    if (SYSTEM_CONFIG.SHEETS.hasOwnProperty(k)) names.push(SYSTEM_CONFIG.SHEETS[k]);
-  }
-
-  for (var i = 0; i < names.length; i++) {
-    if (names[i] === SYSTEM_CONFIG.SHEETS.CASHBACK_REPORT) continue;
-    var ok = !!ss.getSheetByName(names[i]);
-    log += ok ? "✅ " + names[i] + "\n" : "❌ MISSING " + names[i] + "\n";
-    if (!ok) issues++;
+  // Sheets the system cannot run without are errors; the others appear when first used
+  var requiredSheets = { REGISTRATION: true, FINANCE: true, COUPONS: true };
+  for (var key in SYSTEM_CONFIG.SHEETS) {
+    if (!SYSTEM_CONFIG.SHEETS.hasOwnProperty(key) || key === "CASHBACK_REPORT") continue;
+    var sheetName = SYSTEM_CONFIG.SHEETS[key];
+    if (ss.getSheetByName(sheetName)) {
+      log += "✅ " + sheetName + "\n";
+    } else if (requiredSheets[key]) {
+      log += "❌ MISSING " + sheetName + "\n";
+      issues++;
+    } else {
+      log += "➖ " + sheetName + " (not created yet)\n";
+    }
   }
 
   var repo = new SheetRepository();
@@ -5618,14 +6133,21 @@ function runHealthCheck() {
   if (finSheet) ColumnManager.ensureFinanceHeaders(finSheet);
 
   var triggers = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
-  log += triggers.indexOf("onFormSubmit") >= 0 ? "✅ Trigger: onFormSubmit\n" : "⚠️ Trigger: onFormSubmit missing\n";
-  log += triggers.indexOf("onEdit") >= 0 ? "✅ Trigger: onEdit\n" : "⚠️ Trigger: onEdit missing\n";
+  var missingTriggers = ["onFormSubmit", "onEdit"].filter(function (h) { return triggers.indexOf(h) < 0; });
+  log += triggers.indexOf("onFormSubmit") >= 0 ? "✅ Trigger: onFormSubmit\n" : "❌ Trigger: onFormSubmit missing\n";
+  log += triggers.indexOf("onEdit") >= 0 ? "✅ Trigger: onEdit\n" : "❌ Trigger: onEdit missing\n";
+  if (missingTriggers.length) {
+    issues += missingTriggers.length;
+    log += "   → Run " + getMenuPathText_("createTriggers") + "\n";
+  }
 
   // Check rate limit status
   var rateStatus = RateLimiter.getStatus();
   log += "\n📊 Rate Limit: " + rateStatus.emailsSentThisHour + "/" + rateStatus.maxPerHour + " emails this hour\n";
 
   log += "\nTotal Issues: " + issues;
+  log += "\n\nMore detail: " + getMenuPathText_("runSystemHealthCheck");
+  log += "\nHow to fix things: " + getMenuPathText_("showSystemIntroduction");
   ui.alert(log);
 }
 
@@ -5637,7 +6159,7 @@ function runHealthCheck() {
  * Opens the interactive System Dashboard modal
  */
 function openSystemDashboard() {
-  var html = HtmlService.createHtmlOutput(getSystemDashboardHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getSystemDashboardHtml_(), ""))
     .setWidth(900)
     .setHeight(700);
   SpreadsheetApp.getUi().showModalDialog(html, "🎛️ System Dashboard");
@@ -5658,6 +6180,8 @@ function getSystemHealthData() {
       sheets[key] = {
         name: sheetNames[key],
         exists: !!ss.getSheetByName(sheetNames[key]),
+        // The others appear once their feature is used (submission form linked, first log...)
+        required: (key === "REGISTRATION" || key === "FINANCE" || key === "COUPONS"),
         rowCount: 0
       };
       if (sheets[key].exists) {
@@ -5684,30 +6208,24 @@ function getSystemHealthData() {
   // Rate limit status  
   var rateStatus = RateLimiter.getStatus();
   
-  // Quick stats
-  var regSheet = repo.getRegistrationSheet();
-  var stats = { total: 0, paid: 0, pending: 0 };
-  if (regSheet && regSheet.getLastRow() > 1) {
-    var data = regSheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      if (!data[i][SYSTEM_CONFIG.COLS.REG.EMAIL - 1]) continue;
-      stats.total++;
-      var payStatus = String(data[i][SYSTEM_CONFIG.COLS.REG.PAY_STATUS - 1] || "").toUpperCase();
-      if (payStatus === "PAID" || payStatus === "VERIFIED") {
-        stats.paid++;
-      } else {
-        stats.pending++;
-      }
-    }
-  }
-  
+  // Quick stats (same paid rule as the dashboards and the Announcement Center filter)
+  var paidLookup = getPaidEmailLookup_();
+  var stats = { total: paidLookup.total, paid: paidLookup.paid, pending: paidLookup.total - paidLookup.paid };
+
+  // Anonymized folders (needed before entries open)
+  var foldersMissing = [];
+  try {
+    foldersMissing = Object.keys(SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES).filter(function (k) { return !getAnonFolderId_(k); });
+  } catch (folderErr) {}
+
   return {
     sheets: sheets,
     triggers: triggerStatus,
     formLinked: formLinked,
     rateLimit: rateStatus,
     stats: stats,
-    timestamp: new Date().toLocaleString()
+    anonFolders: { ready: foldersMissing.length === 0, missing: foldersMissing },
+    timestamp: Utils.nowTzString()
   };
 }
 
@@ -5724,8 +6242,9 @@ function runSystemTests(testType) {
     
     try {
       var logos = LogoService.getInlineImages();
-      results.push({ category: "Email", name: "Logo Loading", passed: logos && logos.uplb && logos.husay, 
-        detail: logos ? "Both logos loaded successfully" : "Logo loading failed" });
+      var logosOk = !!(logos && logos.uplb_logo && logos.husay_logo);
+      results.push({ category: "Email", name: "Logo Loading", passed: logosOk,
+        detail: logosOk ? "Both logos loaded successfully" : "Logo loading failed (check the logo file IDs and sharing)" });
     } catch(e) {
       results.push({ category: "Email", name: "Logo Loading", passed: false, detail: "Error: " + e.message });
     }
@@ -5735,20 +6254,43 @@ function runSystemTests(testType) {
   }
   
   if (testType === "pricing" || testType === "all") {
-    // Pricing tests
-    var p1 = PricingEngine.calculate("STANDARD B: 2 Competitions", "Essay Writing, Speech Competition");
-    results.push({ category: "Pricing", name: "Basic Bundle (2 std)", passed: p1.finalPrice === 499, 
-      detail: "Expected ₱499, got ₱" + p1.finalPrice });
-    
-    var p2 = PricingEngine.calculate("STANDARD A: 1 Competition", "Short Film Making (Special Competition)");
-    results.push({ category: "Pricing", name: "Special Competition", passed: p2.finalPrice === 499, 
-      detail: "Expected ₱499 for Short Film, got ₱" + p2.finalPrice });
-    
-    var p3 = PricingEngine.calculate("", "Essay Writing, Speech Competition, Short Film Making");
-    results.push({ category: "Pricing", name: "Mixed Bundle (2std + 1spc)", passed: p3.finalPrice === 899 || p3.finalPrice === 898, 
-      detail: "Expected ~₱899, got ₱" + p3.finalPrice });
+    // Pricing tests. The inputs are built from the shared competition list and the expected
+    // prices from the bundle table, so the tests follow the settings.
+    var stdComps = getCompetitions_().filter(function (c) { return !c.special; });
+    var spcComps = getCompetitions_().filter(function (c) { return c.special; });
+    var B = SYSTEM_CONFIG.PRICING.BUNDLES;
+    if (stdComps.length >= 2 && spcComps.length >= 1) {
+      // short label + full name on purpose: the engine must understand both spellings
+      var twoStd = stdComps[0].shortName + ", " + stdComps[1].registrationName;
+      var p1 = PricingEngine.calculate("STANDARD B: 2 Competitions", twoStd);
+      results.push({ category: "Pricing", name: "Basic Bundle (2 std)", passed: p1.finalPrice === B.STD_2_SPC_0,
+        detail: twoStd + ": expected ₱" + B.STD_2_SPC_0 + ", got ₱" + p1.finalPrice });
+
+      var oneSpc = spcComps[0].registrationName + " (Special Competition)";
+      var p2 = PricingEngine.calculate("STANDARD A: 1 Competition", oneSpc);
+      results.push({ category: "Pricing", name: "Special Competition", passed: p2.finalPrice === B.STD_0_SPC_1,
+        detail: oneSpc + ": expected ₱" + B.STD_0_SPC_1 + ", got ₱" + p2.finalPrice });
+
+      var mixed = twoStd + ", " + spcComps[0].registrationName;
+      var p3 = PricingEngine.calculate("", mixed);
+      results.push({ category: "Pricing", name: "Mixed Bundle (2std + 1spc)", passed: p3.finalPrice === B.STD_2_SPC_1,
+        detail: mixed + ": expected ₱" + B.STD_2_SPC_1 + ", got ₱" + p3.finalPrice });
+    } else {
+      results.push({ category: "Pricing", name: "Bundle tests", passed: true,
+        detail: "Skipped: needs at least 2 standard and 1 special competition in SYSTEM_CONFIG.COMPETITIONS" });
+    }
+
+    // Every priced name must be in the competition list, and the other way round
+    var listed = {};
+    getCompetitions_().forEach(function (c) { c.registrationNames.forEach(function (n) { listed[n] = true; }); });
+    var unpriced = Object.keys(listed).filter(function (n) { return SYSTEM_CONFIG.PRICING.SINGLE[n] == null; });
+    var unlisted = Object.keys(SYSTEM_CONFIG.PRICING.SINGLE).filter(function (n) { return !listed[n]; });
+    results.push({ category: "Pricing", name: "Competition list matches price list", passed: unpriced.length === 0 && unlisted.length === 0,
+      detail: (unpriced.length || unlisted.length)
+        ? ((unpriced.length ? "No price for: " + unpriced.join(", ") + ". " : "") + (unlisted.length ? "Priced but not in COMPETITIONS: " + unlisted.join(", ") : ""))
+        : Object.keys(listed).length + " competition name(s), all priced" });
   }
-  
+
   if (testType === "merge" || testType === "all") {
     // Merge tests
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -5756,13 +6298,15 @@ function runSystemTests(testType) {
     var hasMergeCol = false;
     if (regSheet) {
       var headers = regSheet.getRange(1, 1, 1, regSheet.getLastColumn()).getValues()[0];
-      hasMergeCol = headers.indexOf("Merge Group ID") >= 0 || headers.indexOf("Merge Group") >= 0;
+      // The merge columns are created the first time a merge is made
+      hasMergeCol = headers.indexOf(V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID) >= 0;
     }
-    results.push({ category: "Merge", name: "Merge Column Exists", passed: hasMergeCol, 
-      detail: hasMergeCol ? "Merge Group column found" : "Merge Group column not found" });
-    
-    results.push({ category: "Merge", name: "Merge Functions Available", passed: typeof V22_merge_init === "function", 
-      detail: "V22 merge system " + (typeof V22_merge_init === "function" ? "loaded" : "not loaded") });
+    results.push({ category: "Merge", name: "Merge Column Exists", passed: true,
+      detail: hasMergeCol ? "Merge Group column found" : "Merge Group column not created yet (it is added on the first merge)" });
+
+    var mergeLoaded = (typeof MergeService === "object" && typeof V22_merge_executeMerge === "function");
+    results.push({ category: "Merge", name: "Merge Functions Available", passed: mergeLoaded,
+      detail: "Merge system " + (mergeLoaded ? "loaded" : "not loaded") });
   }
   
   if (testType === "coupon" || testType === "all") {
@@ -5776,7 +6320,8 @@ function runSystemTests(testType) {
       var coupons = couponSheet.getDataRange().getValues();
       var active = 0;
       for (var i = 1; i < coupons.length; i++) {
-        var status = String(coupons[i][4] || "ACTIVE").toUpperCase();
+        if (!String(coupons[i][SYSTEM_CONFIG.COLS.COUPON.CODE - 1] || "").trim()) continue;
+        var status = String(coupons[i][SYSTEM_CONFIG.COLS.COUPON.STATUS - 1] || "ACTIVE").toUpperCase().trim();
         if (status === "ACTIVE") active++;
       }
       results.push({ category: "Coupon", name: "Active Codes", passed: active > 0, 
@@ -5798,8 +6343,10 @@ function runSystemTests(testType) {
       
       // Check for Gen ID column
       var genIdCol = SYSTEM_CONFIG.COLS.REG.GEN_ID - 1;
-      var finGenIdCol = 0; // Assuming first col in finance
-      
+      // Finance columns are located by header name (the first column is Timestamp, not Gen. ID)
+      var finHeaderMap = ColumnManager.headerMap(finSheet);
+      var finGenIdCol = (finHeaderMap["Gen. ID"] || finHeaderMap["Gen ID"] || finHeaderMap["Generated ID"] || 0) - 1;
+
       var regIds = {};
       var finIds = {};
       
@@ -5811,7 +6358,7 @@ function runSystemTests(testType) {
         }
       }
       
-      for (var j = 1; j < finData.length; j++) {
+      for (var j = 1; finGenIdCol >= 0 && j < finData.length; j++) {
         var fid = String(finData[j][finGenIdCol] || "").trim();
         if (fid) finIds[fid] = true;
       }
@@ -5862,14 +6409,21 @@ function autoFixSystemIssues() {
   // Fix missing columns
   var regSheet = repo.getRegistrationSheet();
   if (regSheet) {
+    // reported only when something was really added
+    var regColsBefore = regSheet.getLastColumn();
     ColumnManager.ensureSysColsOnRegistration(regSheet);
-    fixed.push("Verified/added system columns to Registration");
+    if (regSheet.getLastColumn() > regColsBefore) {
+      fixed.push("Added " + (regSheet.getLastColumn() - regColsBefore) + " missing system column(s) to " + SYSTEM_CONFIG.SHEETS.REGISTRATION);
+    }
   }
   
   var finSheet = repo.getFinanceSheet();
   if (finSheet) {
+    var finColsBefore = finSheet.getLastColumn();
     ColumnManager.ensureFinanceHeaders(finSheet);
-    fixed.push("Verified/added headers to Finance");
+    if (finSheet.getLastColumn() > finColsBefore) {
+      fixed.push("Added " + (finSheet.getLastColumn() - finColsBefore) + " missing header(s) to " + SYSTEM_CONFIG.SHEETS.FINANCE);
+    }
   }
   
   return { fixed: fixed, count: fixed.length };
@@ -5923,52 +6477,52 @@ function getSystemDashboardHtml_() {
     '<base target="_top">',
     '<style>',
     '* { box-sizing: border-box; margin: 0; padding: 0; }',
-    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; padding: 20px; min-height: 100vh; }',
+    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #0d1117 0%, #161b22 100%); color: #fff; padding: 20px; min-height: 100vh; }',
     '.dashboard { max-width: 860px; margin: 0 auto; }',
     '.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }',
     '.header h1 { font-size: 24px; display: flex; align-items: center; gap: 10px; }',
     '.header-actions { display: flex; gap: 10px; }',
     '.btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }',
-    '.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }',
-    '.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }',
-    '.btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }',
-    '.btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }',
+    '.btn-primary { background: linear-gradient(135deg, #1f6feb 0%, #8957e5 100%); color: white; }',
+    '.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56,139,253,0.4); }',
+    '.btn-success { background: linear-gradient(135deg, #1f6feb 0%, #238636 100%); color: white; }',
+    '.btn-danger { background: linear-gradient(135deg, #da3633 0%, #da3633 100%); color: white; }',
     '.btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }',
-    '.status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }',
+    '.status-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }',
     '.status-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }',
     '.status-card .icon { font-size: 28px; margin-bottom: 8px; }',
     '.status-card .label { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 4px; }',
     '.status-card .value { font-size: 18px; font-weight: bold; }',
-    '.status-ok { border-color: rgba(56, 239, 125, 0.3); }',
-    '.status-ok .value { color: #38ef7d; }',
-    '.status-warn { border-color: rgba(255, 193, 7, 0.3); }',
-    '.status-warn .value { color: #ffc107; }',
-    '.status-error { border-color: rgba(244, 67, 54, 0.3); }',
-    '.status-error .value { color: #f44336; }',
+    '.status-ok { border-color: rgba(46,160,67,0.3); }',
+    '.status-ok .value { color: #3fb950; }',
+    '.status-warn { border-color: rgba(210,153,34,0.3); }',
+    '.status-warn .value { color: #e3b341; }',
+    '.status-error { border-color: rgba(248,81,73,0.3); }',
+    '.status-error .value { color: #ff7b72; }',
     '.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }',
     '.stat-box { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; text-align: center; }',
-    '.stat-box .number { font-size: 36px; font-weight: bold; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }',
+    '.stat-box .number { font-size: 36px; font-weight: bold; background: linear-gradient(135deg, #1f6feb 0%, #8957e5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }',
     '.stat-box .label { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 5px; }',
     '.test-tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }',
     '.test-tab { padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }',
     '.test-tab:hover { background: rgba(255,255,255,0.1); }',
-    '.test-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: transparent; }',
+    '.test-tab.active { background: linear-gradient(135deg, #1f6feb 0%, #8957e5 100%); border-color: transparent; }',
     '.test-results { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; max-height: 200px; overflow-y: auto; }',
     '.test-result { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }',
     '.test-result:last-child { border-bottom: none; }',
     '.test-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }',
-    '.test-pass { background: rgba(56, 239, 125, 0.2); color: #38ef7d; }',
-    '.test-fail { background: rgba(244, 67, 54, 0.2); color: #f44336; }',
+    '.test-pass { background: rgba(46,160,67,0.2); color: #3fb950; }',
+    '.test-fail { background: rgba(248,81,73,0.2); color: #ff7b72; }',
     '.test-category { font-size: 10px; color: rgba(255,255,255,0.5); min-width: 60px; }',
     '.test-name { flex: 1; font-size: 13px; }',
     '.test-detail { font-size: 11px; color: rgba(255,255,255,0.5); }',
-    '.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }',
+    '.quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }',
     '.action-btn { padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }',
     '.action-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }',
     '.action-btn .icon { font-size: 24px; margin-bottom: 5px; }',
     '.action-btn .label { font-size: 11px; color: rgba(255,255,255,0.7); }',
     '.loading { opacity: 0.6; pointer-events: none; }',
-    '.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }',
+    '.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #30363d; border-radius: 50%; animation: spin 0.8s linear infinite; }',
     '@keyframes spin { to { transform: rotate(360deg); } }',
     '.section-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }',
     '.timestamp { font-size: 11px; color: rgba(255,255,255,0.4); }',
@@ -6012,16 +6566,24 @@ function getSystemDashboardHtml_() {
     '  <div class="quick-actions">',
     '    <div class="action-btn" onclick="autoFix()"><div class="icon">🔧</div><div class="label">Auto-Fix Issues</div></div>',
     '    <div class="action-btn" onclick="setupTriggers()"><div class="icon">⚡</div><div class="label">Setup Triggers</div></div>',
-    '    <div class="action-btn" onclick="syncFinance()"><div class="icon">🔄</div><div class="label">Sync Finance</div></div>',
+    '    <div class="action-btn" onclick="syncFinance()"><div class="icon">🔄</div><div class="label">Sync Finance (Light)</div></div>',
     '    <div class="action-btn" onclick="runMigration()"><div class="icon">📦</div><div class="label">Run Migration</div></div>',
+    '    <div class="action-btn" onclick="fullCheck()"><div class="icon">🩺</div><div class="label">Full Health Check</div></div>',
+    '    <div class="action-btn" onclick="openGuide()"><div class="icon">📚</div><div class="label">Open the Guide</div></div>',
     '  </div>',
     '</div>',
     '',
     '<script>',
     'function refresh() { loadHealth(); }',
     '',
+    'function showError(err) {',
+    '  var msg = (err && err.message) ? err.message : String(err);',
+    '  document.getElementById("timestamp").innerText = "Error: " + msg;',
+    '  alert("That did not work:\\n" + msg);',
+    '}',
+    '',
     'function loadHealth() {',
-    '  google.script.run.withSuccessHandler(function(data) {',
+    '  google.script.run.withFailureHandler(showError).withSuccessHandler(function(data) {',
     '    document.getElementById("timestamp").innerText = "Updated: " + data.timestamp;',
     '    renderStatus(data);',
     '    renderStats(data.stats);',
@@ -6031,8 +6593,9 @@ function getSystemDashboardHtml_() {
     'function renderStatus(data) {',
     '  var html = "";',
     '  // Sheets',
+    '  // Only the sheets the system cannot run without count here; the others appear when first used',
     '  var allSheetsOk = true;',
-    '  for (var k in data.sheets) { if (!data.sheets[k].exists) allSheetsOk = false; }',
+    '  for (var k in data.sheets) { if (!data.sheets[k].exists && data.sheets[k].required) allSheetsOk = false; }',
     '  html += \'<div class="status-card \' + (allSheetsOk ? "status-ok" : "status-error") + \'"><div class="icon">📋</div><div class="label">Sheets</div><div class="value">\' + (allSheetsOk ? "✓ OK" : "⚠ Missing") + \'</div></div>\';',
     '  // Triggers',
     '  var triggersOk = data.triggers.onFormSubmit && data.triggers.onEdit;',
@@ -6043,6 +6606,8 @@ function getSystemDashboardHtml_() {
     '  var pct = (data.rateLimit.emailsSentThisHour / data.rateLimit.maxPerHour) * 100;',
     '  var rateClass = pct < 70 ? "status-ok" : (pct < 90 ? "status-warn" : "status-error");',
     '  html += \'<div class="status-card \' + rateClass + \'"><div class="icon">📧</div><div class="label">Rate Limit</div><div class="value">\' + data.rateLimit.emailsSentThisHour + \'/\' + data.rateLimit.maxPerHour + \'</div></div>\';',
+    '  // Anonymized folders',
+    '  if (data.anonFolders) html += \'<div class="status-card \' + (data.anonFolders.ready ? "status-ok" : "status-warn") + \'"><div class="icon">📁</div><div class="label">Anon Folders</div><div class="value">\' + (data.anonFolders.ready ? "✓ Set" : "⚠ Not set") + \'</div></div>\';',
     '  document.getElementById("statusGrid").innerHTML = html;',
     '}',
     '',
@@ -6057,7 +6622,7 @@ function getSystemDashboardHtml_() {
     '  document.querySelectorAll(".test-tab").forEach(function(t) { t.classList.remove("active"); });',
     '  event.target.classList.add("active");',
     '  document.getElementById("testResults").innerHTML = \'<div style="text-align:center;padding:20px;"><div class="spinner"></div> Running tests...</div>\';',
-    '  google.script.run.withSuccessHandler(renderTests).runSystemTests(type);',
+    '  google.script.run.withFailureHandler(showError).withSuccessHandler(renderTests).runSystemTests(type);',
     '}',
     '',
     'function renderTests(results) {',
@@ -6075,18 +6640,21 @@ function getSystemDashboardHtml_() {
     '}',
     '',
     'function autoFix() {',
-    '  google.script.run.withSuccessHandler(function(result) {',
-    '    alert("Fixed " + result.count + " issue(s):\\n" + result.fixed.join("\\n"));',
+    '  google.script.run.withFailureHandler(showError).withSuccessHandler(function(result) {',
+    '    alert(result.count ? ("Done:\\n" + result.fixed.join("\\n")) : "Nothing needed fixing.");',
     '    refresh();',
     '  }).autoFixSystemIssues();',
     '}',
     '',
-    'function setupTriggers() { google.script.run.withSuccessHandler(function() { alert("Triggers created!"); refresh(); }).createTriggers(); }',
-    'function syncFinance() { google.script.run.withSuccessHandler(function() { alert("Finance synced!"); refresh(); }).rebuildFinanceDashboardFull(); }',
-    'function runMigration() { google.script.run.withSuccessHandler(function() { alert("Migration complete!"); refresh(); }).runSmartMigration(); }',
+    '// Each of these tools shows its own confirmation and result, so the dashboard only refreshes afterwards',
+    'function setupTriggers() { google.script.run.withFailureHandler(showError).withSuccessHandler(refresh).createTriggers(); }',
+    'function syncFinance() { google.script.run.withFailureHandler(showError).withSuccessHandler(refresh).syncDashboard(); }',
+    'function runMigration() { google.script.run.withFailureHandler(showError).withSuccessHandler(refresh).runSmartMigration(); }',
+    'function fullCheck() { google.script.run.withFailureHandler(showError).runSystemHealthCheck(); }',
+    'function openGuide() { google.script.run.withFailureHandler(showError).showSystemIntroduction(); }',
     '',
     'function exportReport() {',
-    '  google.script.run.withSuccessHandler(function(report) {',
+    '  google.script.run.withFailureHandler(showError).withSuccessHandler(function(report) {',
     '    var blob = new Blob([report], {type: "text/plain"});',
     '    var a = document.createElement("a");',
     '    a.href = URL.createObjectURL(blob);',
@@ -6232,203 +6800,194 @@ function previewReferralRemoval() {
 }
 
 /**
- * Show preview options dialog for email templates
+ * Total referral cashback a referrer holds after `count` paid referrals
+ * (first referral pays INITIAL, each later one pays SUBSEQUENT).
+ */
+function referralCashbackTotal_(count) {
+  var reward = SYSTEM_CONFIG.PRICING.REFERRAL_REWARD;
+  count = Number(count || 0);
+  return count <= 0 ? 0 : reward.INITIAL + (count - 1) * reward.SUBSEQUENT;
+}
+
+/**
+ * Sample competition selections for the preview dialogs. They are built from
+ * SYSTEM_CONFIG.PRICING.SINGLE and priced by the real PricingEngine, so the labels can
+ * never disagree with the actual prices.
+ * @returns {Array<{key:string,label:string,value:string,price:number}>}
+ */
+function getPreviewCompetitionSamples_() {
+  var names = Object.keys(SYSTEM_CONFIG.PRICING.SINGLE);
+  var standard = names.filter(function (n) { return !isSpecialCompetition_(n); });
+  var special = names.filter(function (n) { return isSpecialCompetition_(n); });
+  var samples = [];
+  function shortName(n) { return String(n).replace(/\s+Competition$/i, ""); }
+
+  standard.forEach(function (n, i) { samples.push({ key: "single" + i, label: shortName(n) + " only", value: n }); });
+  if (special.length) samples.push({ key: "special", label: shortName(special[0]) + " only", value: special[0] });
+  if (standard.length >= 2) samples.push({ key: "two", label: "2 standard competitions", value: standard.slice(0, 2).join(", ") });
+  if (standard.length >= 3) samples.push({ key: "three", label: "3 standard competitions", value: standard.slice(0, 3).join(", ") });
+  if (standard.length >= 3 && special.length) {
+    samples.push({ key: "all", label: "3 standard + " + shortName(special[0]), value: standard.slice(0, 3).concat([special[0]]).join(", ") });
+  }
+
+  samples.forEach(function (sample) {
+    sample.price = PricingEngine.calculate("", sample.value).finalPrice;
+  });
+  return samples;
+}
+
+/**
+ * <option> list for the samples above. `selectedKey` picks the default ("two", "all", ...).
+ */
+function getPreviewCompetitionOptionsHtml_(selectedKey) {
+  var samples = getPreviewCompetitionSamples_();
+  var hasSelected = samples.some(function (sample) { return sample.key === selectedKey; });
+  return samples.map(function (sample, i) {
+    var isSelected = hasSelected ? sample.key === selectedKey : i === 0;
+    return '<option value="' + Utils.escapeHtml(sample.value) + '"' + (isSelected ? ' selected' : '') + '>' +
+      Utils.escapeHtml(sample.label) + ' (' + Utils.formatCurrencyShort(sample.price) + ')</option>';
+  }).join("");
+}
+
+/**
+ * A coupon to use in previews: the first ACTIVE coupon in the Coupon Manager sheet, so the
+ * preview shows a real code and its real value. Falls back to the member-code default.
+ * @returns {{code:string,value:number}}
+ */
+function getPreviewSampleCoupon_() {
+  try {
+    var sheet = new SheetRepository().getCouponSheet();
+    if (sheet && sheet.getLastRow() > 1) {
+      var C = SYSTEM_CONFIG.COLS.COUPON;
+      var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(C.STATUS, C.VALUE, C.CODE)).getValues();
+      for (var i = 0; i < rows.length; i++) {
+        var code = String(rows[i][C.CODE - 1] || "").trim();
+        var value = Number(rows[i][C.VALUE - 1] || 0);
+        var status = String(rows[i][C.STATUS - 1] || "ACTIVE").toUpperCase().trim();
+        if (code && value > 0 && status === "ACTIVE") return { code: code.toUpperCase(), value: value };
+      }
+    }
+  } catch (e) {
+    Logger.log("getPreviewSampleCoupon_: " + e);
+  }
+  return { code: "SAMPLE", value: Number(SYSTEM_CONFIG.MEMBER_COUPON.DEFAULT_DISCOUNT || 0) };
+}
+
+/**
+ * Show preview options dialog for email templates.
+ * Every amount shown here is read from SYSTEM_CONFIG (prices, referral discount, referral
+ * rewards) or from the Coupon Manager sheet, so the dialog stays correct when those change.
  */
 function showPreviewOptionsDialog(emailType) {
   var title = "";
   var options = "";
-  
+  var peso = Utils.formatCurrencyShort;
+  var reward = SYSTEM_CONFIG.PRICING.REFERRAL_REWARD;
+  var refDiscount = Number(SYSTEM_CONFIG.PRICING.REFERRAL_DISCOUNT_PER_USE || 0);
+  var coupon = getPreviewSampleCoupon_();
+  var couponLabel = "Yes (" + Utils.escapeHtml(coupon.code) + ": " + peso(coupon.value) + " discount)";
+
+  function field(label, inner) {
+    return '<div class="ui-field"><label>' + label + '</label>' + inner + '</div>';
+  }
+  function select(id, optionsHtml) {
+    return '<select id="' + id + '" class="input">' + optionsHtml + '</select>';
+  }
+  function yesNo(id, yesLabel, yesSelected) {
+    return select(id,
+      '<option value="no"' + (yesSelected ? '' : ' selected') + '>No</option>' +
+      '<option value="yes"' + (yesSelected ? ' selected' : '') + '>' + yesLabel + '</option>');
+  }
+  var privacyNote = '<div class="ui-callout"><div class="i">&#x1F512;</div><div>The referred person\'s name is never shown in this email, for privacy.</div></div>';
+
   if (emailType === "registration") {
     title = "Preview Registration Email";
-    options = `
-      <h3>Registration Email Preview Options</h3>
-      <div class="form-group">
-        <label>Participant Name:</label>
-        <input type="text" id="name" value="Juan Dela Cruz" class="input">
-      </div>
-      <div class="form-group">
-        <label>Competitions:</label>
-        <select id="competitions" class="input">
-          <option value="Speech Competition">Speech Only (₱349)</option>
-          <option value="Essay Writing Competition">Essay Only (₱349)</option>
-          <option value="Mobile Phone Photography Competition">Photography Only (₱349)</option>
-          <option value="Short Film Making">Short Film Only (₱349)</option>
-          <option value="Speech Competition, Essay Writing Competition" selected>2 Competitions (₱649)</option>
-          <option value="Speech Competition, Essay Writing Competition, Mobile Phone Photography Competition">3 Competitions (₱899)</option>
-          <option value="Speech Competition, Essay Writing Competition, Mobile Phone Photography Competition, Short Film Making">All 4 Competitions (₱999)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Has Referral Code Used?</label>
-        <select id="hasReferral" class="input">
-          <option value="no">No</option>
-          <option value="yes" selected>Yes (₱50 discount)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Has Coupon?</label>
-        <select id="hasCoupon" class="input">
-          <option value="no">No</option>
-          <option value="yes" selected>Yes (₱50 discount)</option>
-        </select>
-      </div>
-    `;
+    options =
+      field('Participant Name:', '<input type="text" id="name" value="Juan Dela Cruz" class="input">') +
+      field('Competitions:', select('competitions', getPreviewCompetitionOptionsHtml_("two"))) +
+      field('Has Referral Code Used?', yesNo('hasReferral', 'Yes (' + peso(refDiscount) + ' discount)', true)) +
+      field('Has Coupon?', yesNo('hasCoupon', couponLabel, true));
+
   } else if (emailType === "receipt") {
     title = "Preview Acknowledgement Receipt";
-    options = `
-      <h3>Acknowledgement Receipt Preview Options</h3>
-      <div class="form-group">
-        <label>Participant Name:</label>
-        <input type="text" id="name" value="Juan Dela Cruz" class="input">
-      </div>
-      <div class="form-group">
-        <label>School/Affiliation:</label>
-        <input type="text" id="school" value="Philippine Science High School" class="input">
-      </div>
-      <div class="form-group">
-        <label>Competitions:</label>
-        <select id="competitions" class="input">
-          <option value="Speech Competition">Speech Only (₱349)</option>
-          <option value="Essay Writing Competition">Essay Only (₱349)</option>
-          <option value="Mobile Phone Photography Competition">Photography Only (₱349)</option>
-          <option value="Short Film Making">Short Film Only (₱349)</option>
-          <option value="Speech Competition, Essay Writing Competition">2 Competitions (₱649)</option>
-          <option value="Speech Competition, Essay Writing Competition, Mobile Phone Photography Competition">3 Competitions (₱899)</option>
-          <option value="Speech Competition, Essay Writing Competition, Mobile Phone Photography Competition, Short Film Making" selected>All 4 Competitions (₱999)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Payment Method:</label>
-        <select id="payMode" class="input">
-          <option value="GCash" selected>GCash</option>
-          <option value="Maya">Maya</option>
-          <option value="Bank Transfer">Bank Transfer</option>
-          <option value="Cash">Cash</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Has Referral Discount?</label>
-        <select id="hasReferral" class="input">
-          <option value="no">No</option>
-          <option value="yes" selected>Yes (₱50 discount)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Has Coupon?</label>
-        <select id="hasCoupon" class="input">
-          <option value="no">No</option>
-          <option value="yes">Yes (₱50 discount)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Has Cashback Earned?</label>
-        <select id="hasCashback" class="input">
-          <option value="no">No referrals yet</option>
-          <option value="yes" selected>Yes (₱50 - 1 referral)</option>
-          <option value="multi">Yes (₱60 - 2 referrals)</option>
-        </select>
-      </div>
-    `;
+    options =
+      field('Participant Name:', '<input type="text" id="name" value="Juan Dela Cruz" class="input">') +
+      field('School/Affiliation:', '<input type="text" id="school" value="Philippine Science High School" class="input">') +
+      field('Competitions:', select('competitions', getPreviewCompetitionOptionsHtml_("all"))) +
+      field('Payment Method:', select('payMode',
+        '<option value="GCash" selected>GCash</option><option value="Maya">Maya</option>' +
+        '<option value="Bank Transfer">Bank Transfer</option><option value="Cash">Cash</option>')) +
+      field('Has Referral Discount?', yesNo('hasReferral', 'Yes (' + peso(refDiscount) + ' discount)', true)) +
+      field('Has Coupon?', yesNo('hasCoupon', couponLabel, false)) +
+      field('Has Cashback Earned?', select('hasCashback',
+        '<option value="no">No referrals yet</option>' +
+        '<option value="yes" selected>Yes (' + peso(referralCashbackTotal_(1)) + ' - 1 referral)</option>' +
+        '<option value="multi">Yes (' + peso(referralCashbackTotal_(2)) + ' - 2 referrals)</option>'));
+
   } else if (emailType === "referral_success") {
     title = "Preview Referral Credit Notification";
-    options = `
-      <h3>Referral Credit Notification Preview</h3>
-      <p style="font-size:12px;color:#666;margin-bottom:15px;">Note: The referred person's name is NOT shown in the email for privacy reasons.</p>
-      <div class="form-group">
-        <label>Referrer Name (Person A - receives notification):</label>
-        <input type="text" id="referrerName" value="Maria Santos" class="input">
-      </div>
-      <div class="form-group">
-        <label>Referral Count (how many referrals they now have):</label>
-        <select id="refCount" class="input">
-          <option value="1" selected>1st Referral (₱50 cashback)</option>
-          <option value="2">2nd Referral (₱10 cashback, ₱60 total)</option>
-          <option value="3">3rd Referral (₱10 cashback, ₱70 total)</option>
-          <option value="5">5th Referral (₱10 cashback, ₱90 total)</option>
-        </select>
-      </div>
-    `;
+    var countOptions = [1, 2, 3, 5].map(function (n, i) {
+      var earned = (n === 1) ? reward.INITIAL : reward.SUBSEQUENT;
+      var ordinal = n + (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th");
+      return '<option value="' + n + '"' + (i === 0 ? ' selected' : '') + '>' + ordinal + ' Referral (' +
+        peso(earned) + ' cashback, ' + peso(referralCashbackTotal_(n)) + ' total)</option>';
+    }).join("");
+    options =
+      privacyNote +
+      field('Referrer Name (Person A - receives notification):', '<input type="text" id="referrerName" value="Maria Santos" class="input">') +
+      field('Referral Count (how many referrals they now have):', select('refCount', countOptions));
+
   } else if (emailType === "referral_removal") {
     title = "Preview Referral Removal Notification";
-    options = `
-      <h3>Referral Removal Notification Preview</h3>
-      <p style="font-size:12px;color:#666;margin-bottom:15px;">Note: The referred person's name is NOT shown in the email for privacy reasons.</p>
-      <div class="form-group">
-        <label>Referrer Name (Person A - receives notification):</label>
-        <input type="text" id="referrerName" value="Maria Santos" class="input">
-      </div>
-      <div class="form-group">
-        <label>Which referral was removed?</label>
-        <select id="prevCount" class="input">
-          <option value="1" selected>Was 1st Referral (₱50 removed)</option>
-          <option value="2">Was 2nd+ Referral (₱10 removed)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Remaining Referrals After Removal:</label>
-        <select id="remainingCount" class="input">
-          <option value="0" selected>0 referrals left (₱0 total)</option>
-          <option value="1">1 referral left (₱50 total)</option>
-          <option value="2">2 referrals left (₱60 total)</option>
-        </select>
-      </div>
-    `;
+    options =
+      privacyNote +
+      field('Referrer Name (Person A - receives notification):', '<input type="text" id="referrerName" value="Maria Santos" class="input">') +
+      field('Which referral was removed?', select('prevCount',
+        '<option value="1" selected>Was 1st Referral (' + peso(reward.INITIAL) + ' removed)</option>' +
+        '<option value="2">Was 2nd+ Referral (' + peso(reward.SUBSEQUENT) + ' removed)</option>')) +
+      field('Remaining Referrals After Removal:', select('remainingCount',
+        [0, 1, 2].map(function (n, i) {
+          return '<option value="' + n + '"' + (i === 0 ? ' selected' : '') + '>' + n + ' referral' + (n === 1 ? '' : 's') +
+            ' left (' + peso(referralCashbackTotal_(n)) + ' total)</option>';
+        }).join("")));
+  } else {
+    SpreadsheetApp.getUi().alert("Unknown email type: " + emailType);
+    return;
   }
-  
-  var htmlContent = `
-    <style>
-      body { font-family: Arial, sans-serif; padding: 20px; }
-      .form-group { margin-bottom: 15px; }
-      label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
-      .input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
-      .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-      .btn-primary { background: #1E4FB8; color: white; }
-      .btn-secondary { background: #6c757d; color: white; }
-      .btn:hover { opacity: 0.9; }
-      h3 { margin-top: 0; color: #1E4FB8; }
-      .actions { margin-top: 20px; text-align: right; }
-    </style>
-    ${options}
-    <div class="actions">
-      <button class="btn btn-secondary" onclick="google.script.host.close()">Cancel</button>
-      <button class="btn btn-primary" onclick="showPreview()">Show Preview</button>
-    </div>
-    <script>
-      function showPreview() {
-        var data = { emailType: '${emailType}' };
-        
-        if ('${emailType}' === 'registration' || '${emailType}' === 'receipt') {
-          data.name = document.getElementById('name').value;
-          data.competitions = document.getElementById('competitions').value;
-          data.hasReferral = document.getElementById('hasReferral').value;
-          data.hasCoupon = document.getElementById('hasCoupon').value;
-        }
-        if ('${emailType}' === 'receipt') {
-          data.school = document.getElementById('school').value;
-          data.payMode = document.getElementById('payMode').value;
-          data.hasCashback = document.getElementById('hasCashback').value;
-        }
-        if ('${emailType}' === 'referral_success') {
-          data.referrerName = document.getElementById('referrerName').value;
-          data.refCount = document.getElementById('refCount').value;
-        }
-        if ('${emailType}' === 'referral_removal') {
-          data.referrerName = document.getElementById('referrerName').value;
-          data.prevCount = document.getElementById('prevCount').value;
-          data.remainingCount = document.getElementById('remainingCount').value;
-        }
-        
-        google.script.run.withSuccessHandler(function() {
-          google.script.host.close();
-        }).generatePreviewWithOptions(data);
-      }
-    </script>
-  `;
-  
-  var html = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(450)
-    .setHeight(500);
-  
+
+  var bodyHtml =
+    '<p class="ui-lead">Choose what the sample looks like, then open the preview. Nothing is sent.</p>' +
+    options +
+    '<div class="ui-bar">' +
+    '<button class="ui-btn" onclick="google.script.host.close()">Cancel</button>' +
+    '<button class="ui-btn primary" id="previewBtn" onclick="showPreview()">Show preview</button>' +
+    '</div>';
+  var pageScript =
+    'var EMAIL_TYPE = ' + JSON.stringify(emailType) + ';\n' +
+    'function val(id) { var el = document.getElementById(id); return el ? el.value : ""; }\n' +
+    'function showPreview() {\n' +
+    '  var data = { emailType: EMAIL_TYPE };\n' +
+    '  ["name", "competitions", "hasReferral", "hasCoupon", "school", "payMode", "hasCashback", "referrerName", "refCount", "prevCount", "remainingCount"].forEach(function (id) {\n' +
+    '    if (document.getElementById(id)) data[id] = val(id);\n' +
+    '  });\n' +
+    '  var btn = document.getElementById("previewBtn");\n' +
+    '  btn.disabled = true; btn.textContent = "Building preview...";\n' +
+    '  google.script.run\n' +
+    '    .withSuccessHandler(function () { google.script.host.close(); })\n' +
+    '    .withFailureHandler(function (err) { btn.disabled = false; btn.textContent = "Show preview"; alert("Preview failed: " + (err.message || err)); })\n' +
+    '    .generatePreviewWithOptions(data);\n' +
+    '}';
+
+  var html = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F441;&#xFE0F;",
+      title: title,
+      subtitle: "Built with sample data and the current prices",
+      body: bodyHtml,
+      script: pageScript
+    }), "email"))
+    .setWidth(520)
+    .setHeight(640);
+
   SpreadsheetApp.getUi().showModalDialog(html, title);
 }
 
@@ -6436,90 +6995,92 @@ function showPreviewOptionsDialog(emailType) {
  * Generate preview with user-selected options
  */
 function generatePreviewWithOptions(data) {
+  data = data || {};
   var html = "";
   var title = "";
-  
+  var reward = SYSTEM_CONFIG.PRICING.REFERRAL_REWARD;
+  var pricing, referralDiscount, coupon, couponDiscount, finalAmount, sample;
+
+  if (data.emailType === "registration" || data.emailType === "receipt") {
+    pricing = PricingEngine.calculate("", data.competitions);
+    referralDiscount = data.hasReferral === "yes" ? Number(SYSTEM_CONFIG.PRICING.REFERRAL_DISCOUNT_PER_USE || 0) : 0;
+    coupon = getPreviewSampleCoupon_();
+    couponDiscount = data.hasCoupon === "yes" ? coupon.value : 0;
+    finalAmount = Math.max(0, pricing.finalPrice - referralDiscount - couponDiscount);
+  }
+
   if (data.emailType === "registration") {
-    var pricing = PricingEngine.calculate("", data.competitions);
-    var referralDiscount = data.hasReferral === "yes" ? SYSTEM_CONFIG.PRICING.REFERRAL_DISCOUNT_PER_USE : 0;
-    var couponDiscount = data.hasCoupon === "yes" ? 50 : 0;
-    var finalAmount = Math.max(0, pricing.finalPrice - referralDiscount - couponDiscount);
-    
-    var sample = {
+    sample = {
       name: data.name,
-      genId: "REF-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
-      couponCode: data.hasCoupon === "yes" ? "DISCOUNT50" : "",
-      refCodeUsed: data.hasReferral === "yes" ? "REF-ABC123" : "",
+      genId: Utils.generateId("REF"),
+      couponCode: data.hasCoupon === "yes" ? coupon.code : "",
+      refCodeUsed: data.hasReferral === "yes" ? Utils.generateId("REF") : "",
       finalAmount: finalAmount,
       payMode: "GCash"
     };
-    
+
     html = EmailBuilder.buildRegistrationConfirmedHtml(sample, pricing, couponDiscount, referralDiscount, { preview: true });
     title = "Registration Email Preview";
-    
+
   } else if (data.emailType === "receipt") {
-    var pricing = PricingEngine.calculate("", data.competitions);
-    var referralDiscount = data.hasReferral === "yes" ? SYSTEM_CONFIG.PRICING.REFERRAL_DISCOUNT_PER_USE : 0;
-    var couponDiscount = data.hasCoupon === "yes" ? 50 : 0;
-    var finalAmount = Math.max(0, pricing.finalPrice - referralDiscount - couponDiscount);
     var cashback = 0;
-    if (data.hasCashback === "yes") cashback = 50;
-    else if (data.hasCashback === "multi") cashback = 60;
-    
-    var sample = {
-      genId: "REF-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+    if (data.hasCashback === "yes") cashback = referralCashbackTotal_(1);
+    else if (data.hasCashback === "multi") cashback = referralCashbackTotal_(2);
+
+    sample = {
+      genId: Utils.generateId("REF"),
       name: data.name,
       school: data.school,
       payMode: data.payMode,
       competitions: data.competitions,
       finalAmount: finalAmount,
-      couponCode: data.hasCoupon === "yes" ? "DISCOUNT50" : "",
+      couponCode: data.hasCoupon === "yes" ? coupon.code : "",
+      couponDiscount: couponDiscount,
       referralDiscount: referralDiscount,
       cashback: cashback,
       paidAt: new Date()
     };
-    
+
     html = EmailBuilder.buildReceiptHtml(sample, false, { preview: true });
     title = "Acknowledgement Receipt Preview";
-    
+
   } else if (data.emailType === "referral_success") {
-    var refCount = parseInt(data.refCount);
-    var cashbackEarned = refCount === 1 ? 50 : 10;
-    var totalCashback = refCount === 1 ? 50 : (50 + (refCount - 1) * 10);
-    
-    var sample = {
+    var refCount = parseInt(data.refCount, 10) || 1;
+
+    sample = {
       referrerName: data.referrerName,
-      referrerCode: "REF-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+      referrerCode: Utils.generateId("REF"),
       referredName: "Someone", // Privacy: Not shown in email
       newCount: refCount,
-      newCashback: totalCashback,
-      cashbackEarned: cashbackEarned
+      newCashback: referralCashbackTotal_(refCount),
+      cashbackEarned: refCount === 1 ? reward.INITIAL : reward.SUBSEQUENT
     };
-    
+
     html = EmailBuilder.buildReferralSuccessHtml(sample, { preview: true });
     title = "Referral Credit Notification Preview";
-    
+
   } else if (data.emailType === "referral_removal") {
-    var prevCount = parseInt(data.prevCount);
-    var remainingCount = parseInt(data.remainingCount);
-    var cashbackRemoved = prevCount === 1 ? 50 : 10;
-    var remainingCashback = remainingCount === 0 ? 0 : (remainingCount === 1 ? 50 : (50 + (remainingCount - 1) * 10));
-    
-    var sample = {
+    var prevCount = parseInt(data.prevCount, 10) || 1;
+    var remainingCount = parseInt(data.remainingCount, 10) || 0;
+
+    sample = {
       referrerName: data.referrerName,
-      referrerCode: "REF-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+      referrerCode: Utils.generateId("REF"),
       referredName: "A participant", // Privacy: Not shown in email
       newCount: remainingCount,
-      newCashback: remainingCashback,
-      cashbackRemoved: cashbackRemoved
+      newCashback: referralCashbackTotal_(remainingCount),
+      cashbackRemoved: prevCount === 1 ? reward.INITIAL : reward.SUBSEQUENT
     };
-    
+
     html = EmailBuilder.buildReferralRemovedHtml(sample, { preview: true });
     title = "Referral Removal Notification Preview";
+
+  } else {
+    throw new Error("Unknown email type: " + data.emailType);
   }
-  
+
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutput(html).setWidth(900).setHeight(900),
+    HtmlService.createHtmlOutput(withGuideLink_(buildEmailPreviewDialog_(title, html), "email")).setWidth(900).setHeight(820),
     title
   );
 }
@@ -6529,558 +7090,9 @@ function generatePreviewWithOptions(data) {
 // ============================================================================
 
 // Backward-compatible wrappers — main menu references these names
-// Redirected to Premium V2 dashboards (PART 99 at end of file)
+// (the dashboards themselves are AdminDashboard_showAnalytics / AdminDashboard_showFinance)
 function showAnalyticsDashboard() { AdminDashboard_showAnalytics(); }
 function showFinanceDashboard() { AdminDashboard_showFinance(); }
-
-// ── OLD Helper (kept for reference, V2 version at end of file) ──
-function dashboardLevenshtein_OLD_(a, b) {
-    var la = a.length, lb = b.length;
-    if (la === 0) return lb;
-    if (lb === 0) return la;
-    var matrix = [];
-    for (var i = 0; i <= la; i++) matrix[i] = [i];
-    for (var j = 0; j <= lb; j++) matrix[0][j] = j;
-    for (var i2 = 1; i2 <= la; i2++) {
-        for (var j2 = 1; j2 <= lb; j2++) {
-            var cost = a.charAt(i2 - 1) === b.charAt(j2 - 1) ? 0 : 1;
-            matrix[i2][j2] = Math.min(matrix[i2 - 1][j2] + 1, matrix[i2][j2 - 1] + 1, matrix[i2 - 1][j2 - 1] + cost);
-        }
-    }
-    return matrix[la][lb];
-}
-
-function dashboardNormalizeSchool_OLD_(s) {
-    return String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function dashboardClusterSchools_OLD_(entries) {
-    var clusters = [], MAX_DIST = 3;
-    for (var i = 0; i < entries.length; i++) {
-        var entry = entries[i];
-        if (!entry.normalized) continue;
-        var matched = false;
-        for (var c = 0; c < clusters.length; c++) {
-            if (entry.normalized === clusters[c].normalized ||
-                dashboardLevenshtein_OLD_(entry.normalized, clusters[c].normalized) <= MAX_DIST) {
-                clusters[c].count += 1;
-                clusters[c].revenue += (entry.revenue || 0);
-                clusters[c].originals[entry.original] = (clusters[c].originals[entry.original] || 0) + 1;
-                matched = true;
-                break;
-            }
-        }
-        if (!matched) {
-            var orig = {};
-            orig[entry.original] = 1;
-            clusters.push({ normalized: entry.normalized, originals: orig, count: 1, revenue: entry.revenue || 0 });
-        }
-    }
-    var result = [];
-    for (var k = 0; k < clusters.length; k++) {
-        var cl = clusters[k], bestName = "", bestCount = 0;
-        var origKeys = Object.keys(cl.originals);
-        for (var o = 0; o < origKeys.length; o++) {
-            if (cl.originals[origKeys[o]] > bestCount) { bestCount = cl.originals[origKeys[o]]; bestName = origKeys[o]; }
-        }
-        result.push({ displayName: bestName, count: cl.count, revenue: cl.revenue });
-    }
-    return result;
-}
-
-// ── Data API: Analytics ──
-function dashboardGetAnalyticsData_() {
-    var repo = new SheetRepository();
-    var regSheet = repo.getRegistrationSheet();
-    if (!regSheet) throw new Error("Registration sheet not found.");
-    var lastRow = regSheet.getLastRow();
-    if (lastRow < 2) return { totalRegistrations: 0, uniqueSchools: 0, competitionCount: 0, avgPerDay: 0, dailyTrend: {}, competitions: {}, schools: [], regions: {}, gradeLevels: {}, sexDistribution: {} };
-
-    var data = regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).getValues();
-    var totalRegistrations = 0, dailyTrend = {}, competitions = {}, schoolEntries = [];
-    var regions = {}, gradeLevels = {}, sexDistribution = {}, schoolSet = {};
-
-    for (var r = 0; r < data.length; r++) {
-        var row = data[r];
-        var email = String(row[SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "").trim();
-        if (!email) continue;
-        totalRegistrations++;
-
-        var ts = row[SYSTEM_CONFIG.COLS.REG.TIMESTAMP - 1];
-        if (ts) { try { var dateKey = Utilities.formatDate(new Date(ts), SYSTEM_CONFIG.META.TIMEZONE, "yyyy-MM-dd"); dailyTrend[dateKey] = (dailyTrend[dateKey] || 0) + 1; } catch (e) { } }
-
-        var comp = String(row[SYSTEM_CONFIG.COLS.REG.COMPETITION - 1] || "").trim();
-        if (comp) { var cArr = comp.split(","); for (var ci = 0; ci < cArr.length; ci++) { var cn = cArr[ci].trim(); if (cn) competitions[cn] = (competitions[cn] || 0) + 1; } }
-
-        var school = String(row[SYSTEM_CONFIG.COLS.REG.SCHOOL - 1] || "").trim();
-        if (school) { schoolEntries.push({ original: school, normalized: dashboardNormalizeSchool_OLD_(school), revenue: 0 }); var ns = dashboardNormalizeSchool_OLD_(school); if (!schoolSet[ns]) schoolSet[ns] = true; }
-
-        var region = String(row[SYSTEM_CONFIG.COLS.REG.REGION - 1] || "").trim();
-        if (region) regions[region] = (regions[region] || 0) + 1;
-
-        var grade = String(row[SYSTEM_CONFIG.COLS.REG.GRADE_LEVEL - 1] || "").trim();
-        if (grade) gradeLevels[grade] = (gradeLevels[grade] || 0) + 1;
-
-        var sex = String(row[SYSTEM_CONFIG.COLS.REG.SEX - 1] || "").trim();
-        if (sex) sexDistribution[sex] = (sexDistribution[sex] || 0) + 1;
-    }
-
-    var clustered = dashboardClusterSchools_OLD_(schoolEntries);
-    clustered.sort(function (a, b) { return b.count - a.count; });
-    var dateKeys = Object.keys(dailyTrend);
-
-    return {
-        totalRegistrations: totalRegistrations,
-        uniqueSchools: Object.keys(schoolSet).length,
-        competitionCount: Object.keys(competitions).length,
-        avgPerDay: dateKeys.length > 0 ? Math.round(totalRegistrations / dateKeys.length) : 0,
-        dailyTrend: dailyTrend,
-        competitions: competitions,
-        schools: clustered,
-        regions: regions,
-        gradeLevels: gradeLevels,
-        sexDistribution: sexDistribution
-    };
-}
-
-// ── Data API: Finance ──
-function dashboardGetFinanceData_() {
-    var repo = new SheetRepository();
-    var regSheet = repo.getRegistrationSheet();
-    var finSheet = repo.getFinanceSheet();
-    if (!regSheet) throw new Error("Registration sheet not found.");
-    if (!finSheet) throw new Error("Finance sheet not found.");
-    var lastRow = regSheet.getLastRow();
-    if (lastRow < 2) return { totalRevenue: 0, totalPaid: 0, totalPending: 0, totalFree: 0, avgFee: 0, totalDiscounts: 0, paymentStatuses: {}, paymentModes: {}, revenueByComp: {}, revenueBySchool: [], dailyRevenue: {}, discountSummary: {} };
-
-    var data = regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).getValues();
-    var totalRevenue = 0, totalPaid = 0, totalPending = 0, totalFree = 0;
-    var paymentStatuses = {}, paymentModes = {}, revenueByComp = {};
-    var schoolEntries = [], dailyRevenue = {};
-    var totalBundleDiscount = 0, totalCouponDiscount = 0, totalRefDiscount = 0, totalCashback = 0;
-    var feeList = [];
-    var safeN = function (v) { var n = Number(v || 0); return isNaN(n) ? 0 : n; };
-
-    for (var r = 0; r < data.length; r++) {
-        var row = data[r];
-        var email = String(row[SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "").trim();
-        if (!email) continue;
-
-        var fee = safeN(row[SYSTEM_CONFIG.COLS.REG.TOTAL_FEE - 1]);
-        totalRevenue += fee;
-        if (fee > 0) feeList.push(fee);
-
-        var payStatus = String(row[SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS - 1] || "").trim();
-        if (payStatus) {
-            paymentStatuses[payStatus] = (paymentStatuses[payStatus] || 0) + 1;
-            var psLow = payStatus.toLowerCase();
-            if (psLow.indexOf("paid") >= 0 || psLow === "verified") totalPaid++;
-            else if (psLow.indexOf("pending") >= 0) totalPending++;
-            else if (psLow.indexOf("free") >= 0) totalFree++;
-        } else { totalPending++; paymentStatuses["(No Status)"] = (paymentStatuses["(No Status)"] || 0) + 1; }
-
-        var payMode = String(row[SYSTEM_CONFIG.COLS.REG.PAY_MODE - 1] || "").trim();
-        if (payMode) paymentModes[payMode] = (paymentModes[payMode] || 0) + 1;
-
-        var comp = String(row[SYSTEM_CONFIG.COLS.REG.COMPETITION - 1] || "").trim();
-        if (comp && fee > 0) { var cArr = comp.split(","); var share = fee / cArr.length; for (var ci = 0; ci < cArr.length; ci++) { var cn = cArr[ci].trim(); if (cn) revenueByComp[cn] = (revenueByComp[cn] || 0) + share; } }
-
-        var school = String(row[SYSTEM_CONFIG.COLS.REG.SCHOOL - 1] || "").trim();
-        if (school) schoolEntries.push({ original: school, normalized: dashboardNormalizeSchool_OLD_(school), revenue: fee });
-
-        var ts = row[SYSTEM_CONFIG.COLS.REG.TIMESTAMP - 1];
-        if (ts && fee > 0) { try { var dk = Utilities.formatDate(new Date(ts), SYSTEM_CONFIG.META.TIMEZONE, "yyyy-MM-dd"); dailyRevenue[dk] = (dailyRevenue[dk] || 0) + fee; } catch (e) { } }
-
-        totalBundleDiscount += safeN(row[SYSTEM_CONFIG.COLS.REG.BUNDLE_DISCOUNT - 1]);
-        totalCouponDiscount += safeN(row[SYSTEM_CONFIG.COLS.REG.COUPON_DISCOUNT - 1]);
-        totalRefDiscount += safeN(row[SYSTEM_CONFIG.COLS.REG.REF_DISCOUNT - 1]);
-        totalCashback += safeN(row[SYSTEM_CONFIG.COLS.REG.CASHBACK - 1]);
-    }
-
-    var clustered = dashboardClusterSchools_OLD_(schoolEntries);
-    clustered.sort(function (a, b) { return b.revenue - a.revenue; });
-    var rbc = {};
-    var rcKeys = Object.keys(revenueByComp);
-    for (var rk = 0; rk < rcKeys.length; rk++) rbc[rcKeys[rk]] = Math.round(revenueByComp[rcKeys[rk]] * 100) / 100;
-
-    return {
-        totalRevenue: totalRevenue,
-        totalPaid: totalPaid,
-        totalPending: totalPending,
-        totalFree: totalFree,
-        avgFee: feeList.length > 0 ? Math.round(totalRevenue / feeList.length) : 0,
-        totalDiscounts: totalBundleDiscount + totalCouponDiscount + totalRefDiscount,
-        paymentStatuses: paymentStatuses,
-        paymentModes: paymentModes,
-        revenueByComp: rbc,
-        revenueBySchool: clustered.slice(0, 20),
-        dailyRevenue: dailyRevenue,
-        discountSummary: { bundle: totalBundleDiscount, coupon: totalCouponDiscount, referral: totalRefDiscount, cashback: totalCashback }
-    };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// ANALYTICS DASHBOARD — Light theme, indigo/violet accent
-// ══════════════════════════════════════════════════════════════════
-function showAnalyticsDashboard_() {
-    var data = dashboardGetAnalyticsData_();
-    var h = [];
-    h.push('<!DOCTYPE html><html><head><base target="_top"><style>');
-    h.push([
-        'body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e;}',
-        '.dash{padding:20px;max-width:960px;margin:0 auto;}',
-        '.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}',
-        '.dash-title{font-size:20px;font-weight:900;letter-spacing:.3px;}',
-        '.dash-sub{color:#6b7280;font-size:12px;margin-top:2px;}',
-
-        '.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}',
-        '.kpi{background:#fff;border-radius:14px;padding:16px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative;overflow:hidden;}',
-        '.kpi::after{content:"";position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px;}',
-        '.kpi:nth-child(1)::after{background:linear-gradient(180deg,#6366f1,#4f46e5);}',
-        '.kpi:nth-child(2)::after{background:linear-gradient(180deg,#06b6d4,#0891b2);}',
-        '.kpi:nth-child(3)::after{background:linear-gradient(180deg,#f59e0b,#d97706);}',
-        '.kpi:nth-child(4)::after{background:linear-gradient(180deg,#10b981,#059669);}',
-        '.kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6b7280;margin-bottom:6px;}',
-        '.kpi-value{font-size:26px;font-weight:900;color:#111827;}',
-        '.kpi-icon{position:absolute;top:12px;right:14px;font-size:22px;opacity:.55;}',
-
-        '.section{background:#fff;border-radius:14px;padding:18px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px;}',
-        '.section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;}',
-        '.section-title .emoji{font-size:16px;}',
-
-        '.bar-chart{display:flex;flex-direction:column;gap:6px;}',
-        '.bar-row{display:flex;align-items:center;gap:8px;}',
-        '.bar-label{width:180px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}',
-        '.bar-track{flex:1;height:22px;background:#f3f4f6;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;}',
-        '.bar-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(.22,1,.36,1);position:relative;}',
-        '.bar-fill.c1{background:linear-gradient(90deg,#6366f1,#818cf8);}',
-        '.bar-fill.c2{background:linear-gradient(90deg,#06b6d4,#67e8f9);}',
-        '.bar-fill.c3{background:linear-gradient(90deg,#f59e0b,#fbbf24);}',
-        '.bar-fill.c4{background:linear-gradient(90deg,#10b981,#34d399);}',
-        '.bar-fill.c5{background:linear-gradient(90deg,#ef4444,#f87171);}',
-        '.bar-fill.c6{background:linear-gradient(90deg,#8b5cf6,#a78bfa);}',
-        '.bar-count{font-size:11px;font-weight:700;color:#374151;min-width:36px;text-align:right;}',
-        '.bar-track:hover .bar-fill{filter:brightness(1.08);}',
-        '.bar-track[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none;}',
-
-        '.school-search{width:100%;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:10px;outline:none;}',
-        '.school-search:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);}',
-        '.school-table{width:100%;border-collapse:collapse;font-size:12px;}',
-        '.school-table th{background:#f9fafb;padding:8px 10px;text-align:left;font-weight:800;border-bottom:2px solid #e5e7eb;cursor:pointer;user-select:none;}',
-        '.school-table th:hover{background:#f3f4f6;}',
-        '.school-table td{padding:8px 10px;border-bottom:1px solid #f3f4f6;}',
-        '.school-table tr:hover td{background:#f8faff;}',
-        '.school-table .rank{width:36px;text-align:center;font-weight:800;color:#6b7280;}',
-        '.school-table .count-col{text-align:right;font-weight:700;}',
-
-        '.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}',
-        '.trend-container{overflow-x:auto;}',
-        '.trend-chart{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:10px;}',
-        '.trend-bar{flex:1;min-width:8px;max-width:28px;background:linear-gradient(180deg,#6366f1,#818cf8);border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s ease;position:relative;}',
-        '.trend-bar:hover{filter:brightness(1.15);transform:scaleX(1.15);}',
-        '.trend-bar[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:10px;padding:3px 7px;border-radius:5px;white-space:nowrap;z-index:10;}',
-
-        '.refresh-btn{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}',
-        '.refresh-btn:hover{filter:brightness(1.1);} .refresh-btn:active{transform:scale(.97);}'
-    ].join('\n'));
-    h.push('</style></head><body><div class="dash">');
-
-    // Header
-    h.push('<div class="dash-header"><div><div class="dash-title">📊 Analytics Dashboard</div><div class="dash-sub">Last updated: ' + new Date().toLocaleString() + '</div></div>');
-    h.push('<button class="refresh-btn" onclick="google.script.run.withSuccessHandler(function(){google.script.host.close();google.script.run.showAnalyticsDashboard();}).showAnalyticsDashboard()">🔄 Refresh</button></div>');
-
-    // KPIs
-    h.push('<div class="kpi-row">');
-    h.push('<div class="kpi"><div class="kpi-icon">👥</div><div class="kpi-label">Total Registrations</div><div class="kpi-value">' + data.totalRegistrations.toLocaleString() + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">🏫</div><div class="kpi-label">Unique Schools</div><div class="kpi-value">' + data.uniqueSchools.toLocaleString() + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">🏆</div><div class="kpi-label">Competitions</div><div class="kpi-value">' + data.competitionCount + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">📈</div><div class="kpi-label">Avg / Day</div><div class="kpi-value">' + data.avgPerDay + '</div></div>');
-    h.push('</div>');
-
-    // Daily Trend
-    h.push('<div class="section"><div class="section-title"><span class="emoji">📈</span> Registration Trend (Daily)</div><div class="trend-container"><div class="trend-chart">');
-    var tKeys = Object.keys(data.dailyTrend).sort();
-    var tMax = 0;
-    for (var ti = 0; ti < tKeys.length; ti++) { if (data.dailyTrend[tKeys[ti]] > tMax) tMax = data.dailyTrend[tKeys[ti]]; }
-    if (tMax === 0) tMax = 1;
-    for (var tj = 0; tj < tKeys.length; tj++) {
-        var tPct = (data.dailyTrend[tKeys[tj]] / tMax) * 100;
-        h.push('<div class="trend-bar" style="height:' + Math.max(tPct, 4) + '%" data-tip="' + tKeys[tj] + ': ' + data.dailyTrend[tKeys[tj]] + '"></div>');
-    }
-    if (tKeys.length === 0) h.push('<div style="color:#999;font-size:12px;">No data</div>');
-    h.push('</div></div></div>');
-
-    // Competition + Region side by side
-    h.push('<div class="grid-2">');
-    h.push('<div class="section"><div class="section-title"><span class="emoji">🏆</span> Competition Popularity</div><div class="bar-chart">');
-    buildBarChart_(h, data.competitions, ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'], false);
-    h.push('</div></div>');
-    h.push('<div class="section"><div class="section-title"><span class="emoji">🌍</span> Region Distribution</div><div class="bar-chart">');
-    buildBarChart_(h, data.regions, ['c2', 'c4', 'c1', 'c3', 'c5', 'c6'], false);
-    h.push('</div></div>');
-    h.push('</div>');
-
-    // Grade Level + Sex Distribution side by side
-    h.push('<div class="grid-2">');
-    h.push('<div class="section"><div class="section-title"><span class="emoji">📚</span> Grade Level Distribution</div><div class="bar-chart">');
-    buildBarChart_(h, data.gradeLevels, ['c3', 'c1', 'c4', 'c2', 'c5', 'c6'], false);
-    h.push('</div></div>');
-    h.push('<div class="section"><div class="section-title"><span class="emoji">⚤</span> Sex Distribution</div><div class="bar-chart">');
-    buildBarChart_(h, data.sexDistribution, ['c6', 'c4', 'c1', 'c2', 'c3', 'c5'], false);
-    h.push('</div></div>');
-    h.push('</div>');
-
-    // Top Schools
-    h.push('<div class="section"><div class="section-title"><span class="emoji">🏫</span> Top Schools / Affiliations</div>');
-    h.push('<input type="text" class="school-search" id="schoolSearch" placeholder="🔍 Search schools..." oninput="filterSchools()">');
-    h.push('<table class="school-table" id="schoolTable"><thead><tr>');
-    h.push('<th class="rank">#</th><th onclick="sortSchools(\'name\')" id="thName">School ▾</th><th class="count-col" onclick="sortSchools(\'count\')" id="thCount">Count</th>');
-    h.push('</tr></thead><tbody id="schoolBody">');
-    var schools = data.schools || [];
-    for (var si = 0; si < schools.length; si++) {
-        h.push('<tr><td class="rank">' + (si + 1) + '</td><td>' + escHtml_(schools[si].displayName) + '</td><td class="count-col">' + schools[si].count + '</td></tr>');
-    }
-    if (schools.length === 0) h.push('<tr><td colspan="3" style="text-align:center;color:#999;padding:16px;">No data</td></tr>');
-    h.push('</tbody></table></div>');
-
-    // Schools JS (search + sort)
-    h.push('<script>');
-    h.push('var _schools = ' + JSON.stringify(schools) + ';');
-    h.push('var _sortState = { key: "count", asc: false };');
-    h.push([
-        'function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}',
-        'function drawTable(s){var tb=document.getElementById("schoolBody");tb.innerHTML="";for(var i=0;i<s.length;i++){var tr=document.createElement("tr");tr.innerHTML=\'<td class="rank">\'+(i+1)+\'</td><td>\'+escH(s[i].displayName)+\'</td><td class="count-col">\'+s[i].count+\'</td>\';tb.appendChild(tr);}if(!s.length)tb.innerHTML=\'<tr><td colspan="3" style="text-align:center;color:#999;padding:16px">No matching schools</td></tr>\';}',
-        'function filterSchools(){var q=document.getElementById("schoolSearch").value.trim().toLowerCase();if(!q){drawTable(_schools);return;}drawTable(_schools.filter(function(s){return s.displayName.toLowerCase().indexOf(q)>=0;}));}',
-        'function sortSchools(key){if(_sortState.key===key)_sortState.asc=!_sortState.asc;else{_sortState.key=key;_sortState.asc=key==="name";}_schools.sort(function(a,b){var va,vb;if(key==="name"){va=a.displayName.toLowerCase();vb=b.displayName.toLowerCase();}else{va=a.count;vb=b.count;}if(va<vb)return _sortState.asc?-1:1;if(va>vb)return _sortState.asc?1:-1;return 0;});document.getElementById("thName").textContent="School"+(key==="name"?(_sortState.asc?" ▴":" ▾"):"");document.getElementById("thCount").textContent="Count"+(key==="count"?(_sortState.asc?" ▴":" ▾"):"");filterSchools();}'
-    ].join('\n'));
-    h.push('<\/script>');
-
-    h.push('</div></body></html>');
-
-    var output = HtmlService.createHtmlOutput(h.join('\n'))
-        .setWidth(960).setHeight(700).setTitle('📊 Analytics Dashboard');
-    SpreadsheetApp.getUi().showModalDialog(output, '📊 Analytics Dashboard');
-}
-
-// ── Build horizontal bar chart HTML ──
-function buildBarChart_(h, obj, colors, isMoney) {
-    var entries = [], keys = Object.keys(obj);
-    for (var i = 0; i < keys.length; i++) entries.push({ label: keys[i], value: obj[keys[i]] });
-    entries.sort(function (a, b) { return b.value - a.value; });
-    var maxVal = entries.length > 0 ? entries[0].value : 1;
-    if (maxVal === 0) maxVal = 1;
-    var total = 0;
-    for (var t = 0; t < entries.length; t++) total += entries[t].value;
-
-    for (var j = 0; j < entries.length; j++) {
-        var pct = (entries[j].value / maxVal) * 100;
-        var pctOfTotal = total > 0 ? Math.round((entries[j].value / total) * 100) : 0;
-        var colorClass = colors[j % colors.length];
-        var displayVal = isMoney ? fmtPesoDash_(entries[j].value) : String(entries[j].value);
-        h.push('<div class="bar-row"><div class="bar-label" title="' + escHtml_(entries[j].label) + '">' + escHtml_(entries[j].label) + '</div>');
-        h.push('<div class="bar-track" data-tip="' + escHtml_(entries[j].label) + ': ' + displayVal + ' (' + pctOfTotal + '%)"><div class="bar-fill ' + colorClass + '" style="width:' + Math.max(pct, 2) + '%"></div></div>');
-        h.push('<div class="bar-count">' + displayVal + '</div></div>');
-    }
-    if (entries.length === 0) h.push('<div style="color:#999;font-size:12px;">No data</div>');
-}
-
-function escHtml_(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function fmtPesoDash_(n) {
-    n = Number(n || 0);
-    try { return "\u20B1" + n.toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 0 }); } catch (e) { return "\u20B1" + Math.round(n); }
-}
-
-function fmtPeso2Dash_(n) {
-    n = Number(n || 0);
-    try { return "\u20B1" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return "\u20B1" + n.toFixed(2); }
-}
-
-// ══════════════════════════════════════════════════════════════════
-// FINANCE DASHBOARD — Light theme, green/emerald accent
-// ══════════════════════════════════════════════════════════════════
-function showFinanceDashboard_() {
-    var data = dashboardGetFinanceData_();
-    var h = [];
-    h.push('<!DOCTYPE html><html><head><base target="_top"><style>');
-    h.push([
-        'body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e;}',
-        '.dash{padding:20px;max-width:960px;margin:0 auto;}',
-        '.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}',
-        '.dash-title{font-size:20px;font-weight:900;letter-spacing:.3px;}',
-        '.dash-sub{color:#6b7280;font-size:12px;margin-top:2px;}',
-
-        '.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}',
-        '.kpi{background:#fff;border-radius:14px;padding:14px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative;overflow:hidden;}',
-        '.kpi::after{content:"";position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px;}',
-        '.kpi:nth-child(1)::after{background:linear-gradient(180deg,#10b981,#059669);}',
-        '.kpi:nth-child(2)::after{background:linear-gradient(180deg,#6366f1,#4f46e5);}',
-        '.kpi:nth-child(3)::after{background:linear-gradient(180deg,#f59e0b,#d97706);}',
-        '.kpi:nth-child(4)::after{background:linear-gradient(180deg,#06b6d4,#0891b2);}',
-        '.kpi:nth-child(5)::after{background:linear-gradient(180deg,#ef4444,#dc2626);}',
-        '.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#6b7280;margin-bottom:4px;}',
-        '.kpi-value{font-size:22px;font-weight:900;color:#111827;}',
-        '.kpi-value.green{color:#059669;} .kpi-value.red{color:#dc2626;}',
-        '.kpi-icon{position:absolute;top:10px;right:12px;font-size:20px;opacity:.5;}',
-
-        '.section{background:#fff;border-radius:14px;padding:18px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px;}',
-        '.section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;}',
-        '.section-title .emoji{font-size:16px;}',
-
-        '.donut-wrap{display:flex;align-items:center;gap:24px;}',
-        '.donut-ring{width:140px;height:140px;border-radius:50%;position:relative;flex-shrink:0;}',
-        '.donut-center{position:absolute;inset:25px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;}',
-        '.donut-center-val{font-size:20px;font-weight:900;color:#111827;}',
-        '.donut-center-lbl{font-size:10px;color:#6b7280;font-weight:600;}',
-        '.donut-legend{display:flex;flex-direction:column;gap:6px;}',
-        '.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;}',
-        '.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}',
-
-        '.bar-chart{display:flex;flex-direction:column;gap:6px;}',
-        '.bar-row{display:flex;align-items:center;gap:8px;}',
-        '.bar-label{width:160px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}',
-        '.bar-track{flex:1;height:22px;background:#f3f4f6;border-radius:6px;overflow:hidden;position:relative;cursor:pointer;}',
-        '.bar-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(.22,1,.36,1);}',
-        '.bar-fill.g1{background:linear-gradient(90deg,#10b981,#34d399);}',
-        '.bar-fill.g2{background:linear-gradient(90deg,#6366f1,#818cf8);}',
-        '.bar-fill.g3{background:linear-gradient(90deg,#f59e0b,#fbbf24);}',
-        '.bar-fill.g4{background:linear-gradient(90deg,#06b6d4,#67e8f9);}',
-        '.bar-fill.g5{background:linear-gradient(90deg,#ef4444,#f87171);}',
-        '.bar-fill.g6{background:linear-gradient(90deg,#8b5cf6,#a78bfa);}',
-        '.bar-count{font-size:11px;font-weight:700;color:#374151;min-width:60px;text-align:right;}',
-        '.bar-track:hover .bar-fill{filter:brightness(1.08);}',
-        '.bar-track[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none;}',
-
-        '.school-table{width:100%;border-collapse:collapse;font-size:12px;}',
-        '.school-table th{background:#f9fafb;padding:8px 10px;text-align:left;font-weight:800;border-bottom:2px solid #e5e7eb;cursor:pointer;user-select:none;}',
-        '.school-table th:hover{background:#f3f4f6;}',
-        '.school-table td{padding:8px 10px;border-bottom:1px solid #f3f4f6;}',
-        '.school-table tr:hover td{background:#f8faff;}',
-        '.school-table .rank{width:36px;text-align:center;font-weight:800;color:#6b7280;}',
-        '.school-table .money-col{text-align:right;font-weight:700;font-family:ui-monospace,monospace;}',
-        '.school-table .count-col{text-align:right;font-weight:600;color:#6b7280;}',
-
-        '.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}',
-        '.trend-container{overflow-x:auto;}',
-        '.trend-chart{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:10px;}',
-        '.trend-bar{flex:1;min-width:8px;max-width:28px;background:linear-gradient(180deg,#10b981,#34d399);border-radius:4px 4px 0 0;cursor:pointer;transition:all .2s ease;position:relative;}',
-        '.trend-bar:hover{filter:brightness(1.15);transform:scaleX(1.15);}',
-        '.trend-bar[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:10px;padding:3px 7px;border-radius:5px;white-space:nowrap;z-index:10;}',
-
-        '.discount-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}',
-        '.discount-card{background:#f9fafb;border-radius:10px;padding:12px;border:1px solid #e5e7eb;text-align:center;}',
-        '.discount-card .dc-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;letter-spacing:.5px;margin-bottom:4px;}',
-        '.discount-card .dc-value{font-size:18px;font-weight:900;color:#dc2626;}',
-
-        '.refresh-btn{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}',
-        '.refresh-btn:hover{filter:brightness(1.1);} .refresh-btn:active{transform:scale(.97);}'
-    ].join('\n'));
-    h.push('</style></head><body><div class="dash">');
-
-    // Header
-    h.push('<div class="dash-header"><div><div class="dash-title">💰 Finance Dashboard</div><div class="dash-sub">Last updated: ' + new Date().toLocaleString() + '</div></div>');
-    h.push('<button class="refresh-btn" onclick="google.script.run.withSuccessHandler(function(){google.script.host.close();google.script.run.showFinanceDashboard();}).showFinanceDashboard()">🔄 Refresh</button></div>');
-
-    // KPIs
-    h.push('<div class="kpi-row">');
-    h.push('<div class="kpi"><div class="kpi-icon">💰</div><div class="kpi-label">Total Revenue</div><div class="kpi-value green">' + fmtPesoDash_(data.totalRevenue) + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-label">Total Paid</div><div class="kpi-value">' + data.totalPaid + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">⏳</div><div class="kpi-label">Pending</div><div class="kpi-value">' + data.totalPending + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">📊</div><div class="kpi-label">Avg Fee</div><div class="kpi-value">' + fmtPesoDash_(data.avgFee) + '</div></div>');
-    h.push('<div class="kpi"><div class="kpi-icon">🏷️</div><div class="kpi-label">Total Discounts</div><div class="kpi-value red">-' + fmtPesoDash_(data.totalDiscounts) + '</div></div>');
-    h.push('</div>');
-
-    // Payment Status Donut + Payment Mode
-    h.push('<div class="grid-2">');
-
-    // Donut
-    h.push('<div class="section"><div class="section-title"><span class="emoji">📋</span> Payment Status</div><div class="donut-wrap">');
-    var DCOL = ['#10b981', '#6366f1', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6', '#ec4899', '#84cc16'];
-    var stKeys = Object.keys(data.paymentStatuses);
-    var stTotal = 0;
-    for (var si = 0; si < stKeys.length; si++) stTotal += data.paymentStatuses[stKeys[si]];
-    if (stTotal === 0) stTotal = 1;
-    // Conic gradient
-    var segments = [], angle = 0;
-    for (var sj = 0; sj < stKeys.length; sj++) {
-        var pct = (data.paymentStatuses[stKeys[sj]] / stTotal) * 100;
-        segments.push(DCOL[sj % DCOL.length] + ' ' + angle + '% ' + (angle + pct) + '%');
-        angle += pct;
-    }
-    h.push('<div class="donut-ring" style="background:conic-gradient(' + segments.join(', ') + ')"><div class="donut-center"><div class="donut-center-val">' + stTotal + '</div><div class="donut-center-lbl">Total</div></div></div>');
-    h.push('<div class="donut-legend">');
-    for (var sk = 0; sk < stKeys.length; sk++) {
-        var pctVal = Math.round((data.paymentStatuses[stKeys[sk]] / stTotal) * 100);
-        h.push('<div class="legend-item"><div class="legend-dot" style="background:' + DCOL[sk % DCOL.length] + '"></div><span><strong>' + data.paymentStatuses[stKeys[sk]] + '</strong> ' + escHtml_(stKeys[sk]) + ' (' + pctVal + '%)</span></div>');
-    }
-    h.push('</div></div></div>');
-
-    // Payment Mode bars
-    h.push('<div class="section"><div class="section-title"><span class="emoji">💳</span> Payment Mode Breakdown</div><div class="bar-chart">');
-    buildBarChart_(h, data.paymentModes, ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'], false);
-    h.push('</div></div>');
-    h.push('</div>'); // end grid-2
-
-    // Daily Revenue Trend
-    h.push('<div class="section"><div class="section-title"><span class="emoji">📈</span> Daily Revenue Trend</div><div class="trend-container"><div class="trend-chart">');
-    var rKeys = Object.keys(data.dailyRevenue).sort();
-    var rMax = 0;
-    for (var ri = 0; ri < rKeys.length; ri++) { if (data.dailyRevenue[rKeys[ri]] > rMax) rMax = data.dailyRevenue[rKeys[ri]]; }
-    if (rMax === 0) rMax = 1;
-    for (var rj = 0; rj < rKeys.length; rj++) {
-        var rPct = (data.dailyRevenue[rKeys[rj]] / rMax) * 100;
-        h.push('<div class="trend-bar" style="height:' + Math.max(rPct, 4) + '%" data-tip="' + rKeys[rj] + ': ' + fmtPesoDash_(data.dailyRevenue[rKeys[rj]]) + '"></div>');
-    }
-    if (rKeys.length === 0) h.push('<div style="color:#999;font-size:12px;">No data</div>');
-    h.push('</div></div></div>');
-
-    // Revenue by Competition
-    h.push('<div class="section"><div class="section-title"><span class="emoji">🏆</span> Revenue by Competition</div><div class="bar-chart">');
-    buildBarChart_(h, data.revenueByComp, ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'], true);
-    h.push('</div></div>');
-
-    // Revenue by School
-    var revSchools = data.revenueBySchool || [];
-    h.push('<div class="section"><div class="section-title"><span class="emoji">🏫</span> Revenue by School (Top 20)</div>');
-    h.push('<table class="school-table" id="revSchoolTable"><thead><tr>');
-    h.push('<th class="rank">#</th><th onclick="sortSchools(\'name\')">School</th><th class="count-col" onclick="sortSchools(\'count\')">Participants</th><th class="money-col" onclick="sortSchools(\'revenue\')">Revenue</th>');
-    h.push('</tr></thead><tbody id="revSchoolBody">');
-    for (var rsi = 0; rsi < revSchools.length; rsi++) {
-        h.push('<tr><td class="rank">' + (rsi + 1) + '</td><td>' + escHtml_(revSchools[rsi].displayName) + '</td><td class="count-col">' + revSchools[rsi].count + '</td><td class="money-col">' + fmtPeso2Dash_(revSchools[rsi].revenue) + '</td></tr>');
-    }
-    if (revSchools.length === 0) h.push('<tr><td colspan="4" style="text-align:center;color:#999;padding:16px;">No data</td></tr>');
-    h.push('</tbody></table></div>');
-
-    // Discount Summary
-    var ds = data.discountSummary || {};
-    h.push('<div class="section"><div class="section-title"><span class="emoji">🏷️</span> Discount Summary</div><div class="discount-grid">');
-    h.push('<div class="discount-card"><div class="dc-label">Bundle Discounts</div><div class="dc-value">-' + fmtPesoDash_(ds.bundle) + '</div></div>');
-    h.push('<div class="discount-card"><div class="dc-label">Coupon Discounts</div><div class="dc-value">-' + fmtPesoDash_(ds.coupon) + '</div></div>');
-    h.push('<div class="discount-card"><div class="dc-label">Referral Discounts</div><div class="dc-value">-' + fmtPesoDash_(ds.referral) + '</div></div>');
-    h.push('<div class="discount-card"><div class="dc-label">Cashback Given</div><div class="dc-value">-' + fmtPesoDash_(ds.cashback) + '</div></div>');
-    h.push('</div></div>');
-
-    // School sort JS
-    h.push('<script>');
-    h.push('var _revSchools = ' + JSON.stringify(revSchools) + ';');
-    h.push('var _sortState = { key: "revenue", asc: false };');
-    h.push([
-        'function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}',
-        'function fmtP(n){n=Number(n||0);try{return"\\u20B1"+n.toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});}catch(e){return"\\u20B1"+n.toFixed(2);}}',
-        'function drawTable(s){var tb=document.getElementById("revSchoolBody");tb.innerHTML="";for(var i=0;i<s.length;i++){var tr=document.createElement("tr");tr.innerHTML=\'<td class="rank">\'+(i+1)+\'</td><td>\'+escH(s[i].displayName)+\'</td><td class="count-col">\'+s[i].count+\'</td><td class="money-col">\'+fmtP(s[i].revenue)+\'</td>\';tb.appendChild(tr);}if(!s.length)tb.innerHTML=\'<tr><td colspan="4" style="text-align:center;color:#999;padding:16px">No data</td></tr>\';}',
-        'function sortSchools(key){if(_sortState.key===key)_sortState.asc=!_sortState.asc;else{_sortState.key=key;_sortState.asc=key==="name";}_revSchools.sort(function(a,b){var va,vb;if(key==="name"){va=a.displayName.toLowerCase();vb=b.displayName.toLowerCase();}else if(key==="count"){va=a.count;vb=b.count;}else{va=a.revenue;vb=b.revenue;}if(va<vb)return _sortState.asc?-1:1;if(va>vb)return _sortState.asc?1:-1;return 0;});drawTable(_revSchools);}'
-    ].join('\n'));
-    h.push('<\/script>');
-
-    h.push('</div></body></html>');
-
-    var output = HtmlService.createHtmlOutput(h.join('\n'))
-        .setWidth(960).setHeight(700).setTitle('💰 Finance Dashboard');
-    SpreadsheetApp.getUi().showModalDialog(output, '💰 Finance Dashboard');
-}
-
 
 function testLogoPermissions() {
   var inline = LogoService.getInlineImages();
@@ -7093,8 +7105,17 @@ function runQuickSelfTest() {
   var ui = SpreadsheetApp.getUi();
   
   // Test 1: Pricing with Q2 priority
-  var q1Wrong = "STANDARD B: 2 Competitions (₱499)";
-  var q2Truth = "Essay Writing, Short Film Making";
+  // Inputs come from the shared competition list, expected prices from the bundle table
+  var stdComps = getCompetitions_().filter(function (c) { return !c.special; });
+  var spcComps = getCompetitions_().filter(function (c) { return c.special; });
+  if (stdComps.length < 3 || spcComps.length < 1) {
+    ui.alert("Quick Self-Test", "This test needs at least 3 standard and 1 special competition in SYSTEM_CONFIG.COMPETITIONS.", ui.ButtonSet.OK);
+    return;
+  }
+  var B = SYSTEM_CONFIG.PRICING.BUNDLES;
+  var money = Utils.formatCurrencyShort;
+  var q1Wrong = "STANDARD B: 2 Competitions (" + money(B.STD_2_SPC_0) + ")";
+  var q2Truth = stdComps[0].shortName + ", " + spcComps[0].registrationName;
   var p = PricingEngine.calculate(q1Wrong, q2Truth);
 
   Logger.log("SELF TEST - normalizedCompetitions: " + p.normalizedCompetitions);
@@ -7102,18 +7123,18 @@ function runQuickSelfTest() {
   Logger.log("SELF TEST - finalPrice: " + p.finalPrice);
   Logger.log("SELF TEST - bundleDiscount: " + p.bundleDiscount);
 
-  // V16.0 TEST: Short Film Making (Special Competition) parsing
-  var q1Test = "STANDARD A: 1 Competition (₱349)";
-  var q2Test = "Speech Competition, Mobile Phone Photography Competition, Short Film Making (Special Competition)";
+  // TEST: Short Film Making (Special Competition) parsing
+  var q1Test = "STANDARD A: 1 Competition (" + money(B.STD_1_SPC_0) + ")";
+  var q2Test = stdComps[1].registrationName + ", " + stdComps[2].registrationName + ", " + spcComps[0].registrationName + " (Special Competition)";
   var p2 = PricingEngine.calculate(q1Test, q2Test);
   
-  Logger.log("V16 SELF TEST - Input: " + q2Test);
-  Logger.log("V16 SELF TEST - normalizedCompetitions: " + p2.normalizedCompetitions);
-  Logger.log("V16 SELF TEST - rawTotal: " + p2.rawTotal);
-  Logger.log("V16 SELF TEST - finalPrice: " + p2.finalPrice + " (expected: 899 for 2std+1spc)");
+  Logger.log("SELF TEST - Input: " + q2Test);
+  Logger.log("SELF TEST - normalizedCompetitions: " + p2.normalizedCompetitions);
+  Logger.log("SELF TEST - rawTotal: " + p2.rawTotal);
+  Logger.log("SELF TEST - finalPrice: " + p2.finalPrice + " (expected: " + SYSTEM_CONFIG.PRICING.BUNDLES.STD_2_SPC_1 + " for 2std+1spc)");
   
-  var v16TestPassed = p2.finalPrice === 899 && p2.normalizedCompetitions.indexOf("Short Film Making") >= 0;
-  Logger.log("V16 SELF TEST - PASSED: " + v16TestPassed);
+  var v16TestPassed = p2.finalPrice === SYSTEM_CONFIG.PRICING.BUNDLES.STD_2_SPC_1 && p2.normalizedCompetitions.indexOf(spcComps[0].registrationName) >= 0;
+  Logger.log("SELF TEST - PASSED: " + v16TestPassed);
 
   // Test 2: Email validation
   var validEmail = Utils.isValidEmail("test@example.com");
@@ -7131,15 +7152,16 @@ function runQuickSelfTest() {
 
   ui.alert(
     "✅ Quick Self-Test Complete\n\n" +
-    "PRICING TEST 1 (Basic):\n" +
+    "PRICING TEST 1 (the competition list wins over the count answer):\n" +
+    "• Input: " + q2Truth + "\n" +
     "• Normalized: " + p.normalizedCompetitions + "\n" +
-    "• Raw Total: ₱" + p.rawTotal + "\n" +
-    "• Final Price: ₱" + p.finalPrice + "\n" +
-    "• Bundle Discount: ₱" + p.bundleDiscount + "\n\n" +
-    "V16 TEST (Short Film Special):\n" +
-    "• Input: Speech, Photography, Short Film (Special Competition)\n" +
+    "• Raw Total: " + money(p.rawTotal) + "\n" +
+    "• Final Price: " + money(p.finalPrice) + " (expected: " + money(B.STD_1_SPC_1) + ")\n" +
+    "• Bundle Discount: " + money(p.bundleDiscount) + "\n\n" +
+    "PRICING TEST 2 (2 standard + 1 special, with \"(Special Competition)\" in the name):\n" +
+    "• Input: " + q2Test + "\n" +
     "• Normalized: " + p2.normalizedCompetitions + "\n" +
-    "• Final Price: ₱" + p2.finalPrice + " (expected: ₱899)\n" +
+    "• Final Price: " + money(p2.finalPrice) + " (expected: " + money(B.STD_2_SPC_1) + ")\n" +
     "• TEST " + (v16TestPassed ? "PASSED ✅" : "FAILED ❌") + "\n\n" +
     "VALIDATION TESTS:\n" +
     "• Valid email: " + validEmail + "\n" +
@@ -7153,20 +7175,32 @@ function runQuickSelfTest() {
 }
 
 // ============================================================================
-// PART 11.4: DEPERSONALIZATION SYSTEM TEST SUITE (V23.3)
+// PART 11.4: DEPERSONALIZATION SYSTEM TEST SUITE
 // ============================================================================
 
 /**
- * V23.3: Comprehensive test suite for the depersonalization & submission system.
+ * Comprehensive test suite for the depersonalization & submission system.
  * Simulates the full lifecycle: new submission → edit (same competition) → 
  * add competition via edit → admin reprocess → cleanup.
  * 
  * Creates a temporary test row on Submission Form, processes it through
  * the pipeline, validates all SYS columns, and cleans up afterwards.
  * 
- * Run from: Husay Admin → 🧪 Test Depersonalization System
+ * Run from: Admin Center → Submission & Depersonalization → Test Depersonalization System
  */
 function runDepersonalizationTestSuite() {
+  // Competition names and number prefixes used by these tests come from the shared list
+  var TC = { SPEECH: getCompetitionByKey_("SPEECH"), ESSAY: getCompetitionByKey_("ESSAY"), PHOTO: getCompetitionByKey_("PHOTO") };
+  if (!TC.SPEECH || !TC.ESSAY || !TC.PHOTO) {
+    SpreadsheetApp.getUi().alert("Test not run", "These tests use the SPEECH, ESSAY and PHOTO entries of SYSTEM_CONFIG.COMPETITIONS, and one of them is missing.", SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
+  var sampleEssayNum = sampleParticipantNumber_("ESSAY", 2);
+  // A participant number is "<prefix>-<digits>", with the prefix and the number of digits from the settings
+  var numberFormat = function (prefix) {
+    return new RegExp("^" + prefix + "-\\d{" + (SYSTEM_CONFIG.DEPERSONALIZATION.COUNTER_DIGITS || 4) + "}$");
+  };
+  var sampleTwoNums = sampleParticipantNumber_("SPEECH", 1) + ", " + sampleEssayNum;
   var ui = SpreadsheetApp.getUi();
   var startTime = new Date();
   
@@ -7174,7 +7208,7 @@ function runDepersonalizationTestSuite() {
     "🧪 Depersonalization Test Suite",
     "This will run a comprehensive test of the submission & depersonalization system.\n\n" +
     "What it does:\n" +
-    "• Creates a temporary test row on Submission Form\n" +
+    "• Creates a temporary test row on " + SYSTEM_CONFIG.SHEETS.SUBMISSIONS + "\n" +
     "• Simulates new submission processing\n" +
     "• Simulates form edit (same competition)\n" +
     "• Simulates adding a new competition via edit\n" +
@@ -7194,7 +7228,7 @@ function runDepersonalizationTestSuite() {
   var subSheet = repo.getSubmissionSheet();
   
   if (!subSheet) {
-    ui.alert("❌ Test Failed", "Could not find 'Submission Form' sheet.", ui.ButtonSet.OK);
+    ui.alert("❌ Test Failed", "Could not find the '" + SYSTEM_CONFIG.SHEETS.SUBMISSIONS + "' sheet.", ui.ButtonSet.OK);
     return;
   }
   
@@ -7232,7 +7266,7 @@ function runDepersonalizationTestSuite() {
     var emptyRow = new Array(width).fill("");
     emptyRow[S.TIMESTAMP - 1] = testTimestamp;
     emptyRow[S.EMAIL - 1] = testEmail;
-    emptyRow[S.COMPETITION_TYPE - 1] = "Speech Competition";
+    emptyRow[S.COMPETITION_TYPE - 1] = TC.SPEECH.submissionName;
     emptyRow[S.SPEECH_NAME - 1] = "TEST PARTICIPANT NAME";
     emptyRow[S.SPEECH_REGION - 1] = "NCR";
     emptyRow[S.SPEECH_SCHOOL - 1] = "TEST UNIVERSITY";
@@ -7242,7 +7276,7 @@ function runDepersonalizationTestSuite() {
     // Note: No actual file uploads for test (SPEECH_VIDEO, SPEECH_WRITTEN left empty)
     
     subSheet.getRange(testRow, 1, 1, width).setValues([emptyRow]);
-    pass("Setup: Create test row", "Row " + testRow + " created with Speech Competition data");
+    pass("Setup: Create test row", "Row " + testRow + " created with " + TC.SPEECH.submissionName + " data");
     
     // =========================================================================
     // TEST 1: Fresh submission processing (new entry)
@@ -7260,10 +7294,10 @@ function runDepersonalizationTestSuite() {
     
     // Validate participant number format
     var num1 = getSysVal(testRow, "SYS_PARTICIPANT_NUM");
-    if (/^SP-\d{4}$/.test(num1)) {
-      pass("Test 1b: Participant number format", "Got: " + num1 + " (valid SP-XXXX format)");
+    if (numberFormat(TC.SPEECH.prefix).test(num1)) {
+      pass("Test 1b: Participant number format", "Got: " + num1 + " (valid " + TC.SPEECH.prefix + "-number format)");
     } else {
-      fail("Test 1b: Participant number format", "Expected SP-XXXX, got: " + num1);
+      fail("Test 1b: Participant number format", "Expected " + sampleParticipantNumber_("SPEECH", 1) + " style, got: " + num1);
     }
     
     // Validate SYS_SUB_STATUS is set
@@ -7360,7 +7394,7 @@ function runDepersonalizationTestSuite() {
     }
     
     // Process Essay (temporarily override competition type)
-    rowVals3[S.COMPETITION_TYPE - 1] = "Essay Writing Competition";
+    rowVals3[S.COMPETITION_TYPE - 1] = TC.ESSAY.submissionName;
     var result3 = DepersonalizationService.processSubmission(subSheet, sysCols, testRow, rowVals3, repo);
     
     if (result3.success) {
@@ -7370,10 +7404,10 @@ function runDepersonalizationTestSuite() {
     }
     
     // Check Essay got a different prefix
-    if (result3.success && /^ES-\d{4}$/.test(result3.participantNum)) {
-      pass("Test 3d: Essay number format", "Got: " + result3.participantNum + " (valid ES-XXXX format)");
+    if (result3.success && numberFormat(TC.ESSAY.prefix).test(result3.participantNum)) {
+      pass("Test 3d: Essay number format", "Got: " + result3.participantNum + " (valid " + TC.ESSAY.prefix + "-number format)");
     } else if (result3.success) {
-      fail("Test 3d: Essay number format", "Expected ES-XXXX, got: " + result3.participantNum);
+      fail("Test 3d: Essay number format", "Expected " + sampleParticipantNumber_("ESSAY", 1) + " style, got: " + result3.participantNum);
     }
     
     // =========================================================================
@@ -7382,7 +7416,7 @@ function runDepersonalizationTestSuite() {
     AuditLogService.info("TEST_4", "=== TEST 4: Admin Reprocess ===");
     
     // Reset competition type back to Speech for reprocess
-    subSheet.getRange(testRow, S.COMPETITION_TYPE).setValue("Speech Competition");
+    subSheet.getRange(testRow, S.COMPETITION_TYPE).setValue(TC.SPEECH.submissionName);
     
     // Write combined numbers for reprocess to find
     var combinedNums = num1;
@@ -7413,7 +7447,7 @@ function runDepersonalizationTestSuite() {
     AuditLogService.info("TEST_5", "=== TEST 5: Cleanup Verification ===");
     
     // Test cleanupOldAnonFiles with empty IDs (should not error)
-    var cleanCount = DepersonalizationService.cleanupOldAnonFiles("", "SP");
+    var cleanCount = DepersonalizationService.cleanupOldAnonFiles("", TC.SPEECH.prefix);
     if (cleanCount === 0) {
       pass("Test 5a: cleanupOldAnonFiles with empty input", "Returns 0 (no-op)");
     } else {
@@ -7421,13 +7455,13 @@ function runDepersonalizationTestSuite() {
     }
     
     // Test cleanupOldAnonFiles with invalid IDs (should handle gracefully)
-    var cleanCount2 = DepersonalizationService.cleanupOldAnonFiles("invalid_id_12345,another_bad_id", "SP");
+    var cleanCount2 = DepersonalizationService.cleanupOldAnonFiles("invalid_id_12345,another_bad_id", TC.SPEECH.prefix);
     pass("Test 5b: cleanupOldAnonFiles with invalid IDs", "Handled gracefully, trashed: " + cleanCount2);
     
     // Test getExistingParticipantNum with edge cases
     var edgeTest1 = DepersonalizationService.getExistingParticipantNum("", "SPEECH");
-    var edgeTest2 = DepersonalizationService.getExistingParticipantNum("SP-0001, ES-0002", "PHOTO");
-    var edgeTest3 = DepersonalizationService.getExistingParticipantNum("SP-0001, ES-0002", "ESSAY");
+    var edgeTest2 = DepersonalizationService.getExistingParticipantNum(sampleTwoNums, "PHOTO");
+    var edgeTest3 = DepersonalizationService.getExistingParticipantNum(sampleTwoNums, "ESSAY");
     
     if (edgeTest1 === null) {
       pass("Test 5c: getExistingParticipantNum with empty", "Returns null");
@@ -7436,15 +7470,15 @@ function runDepersonalizationTestSuite() {
     }
     
     if (edgeTest2 === null) {
-      pass("Test 5d: getExistingParticipantNum no match", "PHOTO not in 'SP,ES' → null");
+      pass("Test 5d: getExistingParticipantNum no match", "PHOTO not in '" + sampleTwoNums + "' → null");
     } else {
       fail("Test 5d: getExistingParticipantNum no match", "Expected null, got: " + edgeTest2);
     }
     
-    if (edgeTest3 === "ES-0002") {
-      pass("Test 5e: getExistingParticipantNum match", "ESSAY in 'SP,ES' → ES-0002");
+    if (edgeTest3 === sampleEssayNum) {
+      pass("Test 5e: getExistingParticipantNum match", "ESSAY in '" + sampleTwoNums + "' → " + sampleEssayNum);
     } else {
-      fail("Test 5e: getExistingParticipantNum match", "Expected ES-0002, got: " + edgeTest3);
+      fail("Test 5e: getExistingParticipantNum match", "Expected " + sampleEssayNum + ", got: " + edgeTest3);
     }
     
     // =========================================================================
@@ -7466,11 +7500,11 @@ function runDepersonalizationTestSuite() {
       fail("Test 6b: No PII in clean title", "False positive: " + pii2.matches.join(", "));
     }
     
-    var pii3 = DepersonalizationService.flagPiiInTitle_("Research Paper from UPLB School of Sociology", "Test Name", "UPLB");
+    var pii3 = DepersonalizationService.flagPiiInTitle_("Research Paper from Mabini School of Science", "Test Name", "Mabini");
     if (pii3.flagged) {
       pass("Test 6c: School name PII detected in title", "Matches: " + pii3.matches.join(", "));
     } else {
-      fail("Test 6c: School name PII detected in title", "Expected flagged for UPLB");
+      fail("Test 6c: School name PII detected in title", "Expected the school name to be flagged");
     }
     
     // =========================================================================
@@ -7480,7 +7514,7 @@ function runDepersonalizationTestSuite() {
     
     // Build a mock row with Speech + Photo data (name + file URLs present)
     var mockRow = new Array(width).fill("");
-    mockRow[S.COMPETITION_TYPE - 1] = "Speech Competition";
+    mockRow[S.COMPETITION_TYPE - 1] = TC.SPEECH.submissionName;
     mockRow[S.SPEECH_NAME - 1] = "Mock Speaker";
     mockRow[S.SPEECH_VIDEO - 1] = "https://drive.google.com/file/d/abc123/view";
     mockRow[S.PHOTO_NAME - 1] = "Mock Photographer";
@@ -7488,20 +7522,20 @@ function runDepersonalizationTestSuite() {
     
     var mockDetected = DepersonalizationService.detectCompetitionsFromData(mockRow);
     
-    if (mockDetected.indexOf("Speech Competition") >= 0) {
+    if (mockDetected.indexOf(TC.SPEECH.submissionName) >= 0) {
       pass("Test 7a: Speech detected from mock data", "Speech found in detected list");
     } else {
       fail("Test 7a: Speech detected from mock data", "Speech NOT found in: [" + mockDetected.join(", ") + "]");
     }
     
-    if (mockDetected.indexOf("Mobile Phone Photography Competition") >= 0) {
+    if (mockDetected.indexOf(TC.PHOTO.submissionName) >= 0) {
       pass("Test 7b: Photo detected from mock data", "Photo found in detected list");
     } else {
       fail("Test 7b: Photo detected from mock data", "Photo NOT found in: [" + mockDetected.join(", ") + "]");
     }
     
     // Verify that Essay is NOT detected (no file data for it)
-    if (mockDetected.indexOf("Essay Writing Competition") < 0) {
+    if (mockDetected.indexOf(TC.ESSAY.submissionName) < 0) {
       pass("Test 7c: Essay NOT detected (no file data)", "Correctly excluded");
     } else {
       fail("Test 7c: Essay NOT detected (no file data)", "False positive: Essay detected without file");
@@ -7543,10 +7577,27 @@ function runDepersonalizationTestSuite() {
     // =========================================================================
     if (testRow) {
       try {
-        subSheet.deleteRow(testRow);
-        pass("Cleanup: Test row deleted", "Row " + testRow + " removed from Submission Form");
+        // Delete the test row by finding its unique test email, never by the remembered row
+        // number: a real submission arriving during the test could shift rows, and deleting
+        // by number would then remove a participant's entry.
+        var cleanupLast = subSheet.getLastRow();
+        var cleanupEmails = cleanupLast >= 2
+          ? subSheet.getRange(2, SYSTEM_CONFIG.COLS.SUB.EMAIL, cleanupLast - 1, 1).getValues()
+          : [];
+        var deletedTestRows = 0;
+        for (var cr = cleanupEmails.length - 1; cr >= 0; cr--) {
+          if (String(cleanupEmails[cr][0] || "").trim() === testEmail) {
+            subSheet.deleteRow(cr + 2);
+            deletedTestRows++;
+          }
+        }
+        if (deletedTestRows > 0) {
+          pass("Cleanup: Test row deleted", "Test row removed from " + SYSTEM_CONFIG.SHEETS.SUBMISSIONS);
+        } else {
+          fail("Cleanup: Test row deleted", "Test row (" + testEmail + ") was not found; nothing was deleted");
+        }
       } catch (cleanErr) {
-        fail("Cleanup: Test row deleted", "Could not delete row " + testRow + ": " + cleanErr);
+        fail("Cleanup: Test row deleted", "Could not delete the test row: " + cleanErr);
       }
     }
   }
@@ -7564,31 +7615,31 @@ function runDepersonalizationTestSuite() {
   // Build report HTML
   var h = [];
   h.push('<html><head><style>');
-  h.push('body { font-family: "Google Sans", "Segoe UI", sans-serif; margin: 0; padding: 20px; background: #0f0f23; color: #ccc; }');
+  h.push('body { font-family: "Google Sans", "Segoe UI", sans-serif; margin: 0; padding: 20px; background: #0d1117; color: #c9d1d9; }');
   h.push('.header { text-align: center; margin-bottom: 20px; }');
   h.push('.header h1 { color: #fff; font-size: 20px; margin: 0; }');
-  h.push('.header .subtitle { color: #888; font-size: 12px; }');
+  h.push('.header .subtitle { color: #8b949e; font-size: 12px; }');
   h.push('.summary { display: flex; gap: 12px; justify-content: center; margin: 16px 0; }');
   h.push('.stat { padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 80px; }');
   h.push('.stat .num { font-size: 24px; font-weight: bold; }');
   h.push('.stat .lbl { font-size: 11px; text-transform: uppercase; margin-top: 4px; }');
-  h.push('.stat-pass { background: #0d3320; color: #34d399; }');
-  h.push('.stat-fail { background: #3b1219; color: #f87171; }');
-  h.push('.stat-total { background: #1e1e3a; color: #818cf8; }');
-  h.push('.stat-time { background: #1e2a1e; color: #a3e635; }');
+  h.push('.stat-pass { background: rgba(46,160,67,0.15); color: #3fb950; }');
+  h.push('.stat-fail { background: rgba(248,81,73,0.15); color: #ff7b72; }');
+  h.push('.stat-total { background: #161b22; color: #58a6ff; }');
+  h.push('.stat-time { background: #0d1117; color: #3fb950; }');
   h.push('.results { max-height: 400px; overflow-y: auto; }');
-  h.push('.row { display: flex; align-items: center; padding: 6px 12px; border-bottom: 1px solid #1a1a2e; font-size: 13px; }');
-  h.push('.row:hover { background: #1a1a2e; }');
+  h.push('.row { display: flex; align-items: center; padding: 6px 12px; border-bottom: 1px solid #21262d; font-size: 13px; }');
+  h.push('.row:hover { background: #0d1117; }');
   h.push('.icon { width: 20px; text-align: center; margin-right: 8px; }');
-  h.push('.name { flex: 1; color: #ddd; }');
-  h.push('.detail { color: #888; font-size: 11px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }');
-  h.push('.pass .icon { color: #34d399; }');
-  h.push('.fail .icon { color: #f87171; }');
-  h.push('.fail .name { color: #f87171; }');
+  h.push('.name { flex: 1; color: #c9d1d9; }');
+  h.push('.detail { color: #8b949e; font-size: 11px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }');
+  h.push('.pass .icon { color: #3fb950; }');
+  h.push('.fail .icon { color: #ff7b72; }');
+  h.push('.fail .name { color: #ff7b72; }');
   h.push('</style></head><body>');
   h.push('<div class="header">');
   h.push('<h1>🧪 Depersonalization Test Suite</h1>');
-  h.push('<div class="subtitle">V23.3 System Validation</div>');
+  h.push('<div class="subtitle">System Validation</div>');
   h.push('</div>');
   
   h.push('<div class="summary">');
@@ -7613,18 +7664,18 @@ function runDepersonalizationTestSuite() {
   
   // Overall verdict
   if (failed === 0) {
-    h.push('<div style="text-align:center;margin-top:20px;padding:12px;background:#0d3320;border-radius:8px;color:#34d399;font-weight:bold;">');
+    h.push('<div style="text-align:center;margin-top:20px;padding:12px;background:rgba(46,160,67,0.15);border-radius:8px;color:#3fb950;font-weight:bold;">');
     h.push('🎉 ALL TESTS PASSED — Depersonalization system is working correctly!');
     h.push('</div>');
   } else {
-    h.push('<div style="text-align:center;margin-top:20px;padding:12px;background:#3b1219;border-radius:8px;color:#f87171;font-weight:bold;">');
-    h.push('⚠️ ' + failed + ' TEST(S) FAILED — Check System Logs for details.');
+    h.push('<div style="text-align:center;margin-top:20px;padding:12px;background:rgba(248,81,73,0.15);border-radius:8px;color:#ff7b72;font-weight:bold;">');
+    h.push('⚠️ ' + failed + ' TEST(S) FAILED — Check the ' + Utils.escapeHtml(SYSTEM_CONFIG.SHEETS.LOGS) + ' sheet for details.');
     h.push('</div>');
   }
   
   h.push('</body></html>');
   
-  var output = HtmlService.createHtmlOutput(h.join('\n'))
+  var output = HtmlService.createHtmlOutput(withGuideLink_(h.join('\n'), "submit"))
     .setWidth(620).setHeight(580).setTitle('Depersonalization Test Results');
   SpreadsheetApp.getUi().showModalDialog(output, '🧪 Depersonalization Test Results');
 }
@@ -7728,7 +7779,7 @@ function rebuildFinanceDashboardFull() {
 
     // QA
     var qa = validateFinanceDashboard_({ silent: true });
-    // V22: Reapply merge group accounting (prevents merged totals from being overwritten by Rebuild)
+    // Reapply merge group accounting (prevents merged totals from being overwritten by Rebuild)
     try {
       MergeService.reapplyAllMerges({ silent: true });
     } catch (e) {
@@ -7790,6 +7841,10 @@ function validateFinanceDashboard_(opts) {
     ? regSheet.getRange(2, 1, regLastRow - 1, regSheet.getLastColumn()).getValues()
     : [];
 
+  // Rows in a merge group carry a group total (primary) or 0 (members), so their
+  // Finance amount is not expected to equal their own Registration amount.
+  var mergeGroupCol = ColumnManager.headerMap(regSheet)[V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID] || 0;
+
   var regByEmail = {};
   for (var i = 0; i < regData.length; i++) {
     var rr = regData[i];
@@ -7806,9 +7861,15 @@ function validateFinanceDashboard_(opts) {
     var q2 = rr[SYSTEM_CONFIG.COLS.REG.COMPETITION - 1];
     var pricing = PricingEngine.calculate(q1, q2);
 
+    // Finance "Total Amount" is stored NET of referral cashback (see handleSubmission /
+    // Sync / Rebuild), so that is the value to compare against.
+    var regFinal = Number(rr[SYSTEM_CONFIG.COLS.REG.FINAL_AMOUNT - 1] || 0);
+    var regCashback = Number(rr[SYSTEM_CONFIG.COLS.REG.CASHBACK - 1] || 0);
+
     regByEmail[key] = {
       email: email,
-      expectedFinal: Number(rr[SYSTEM_CONFIG.COLS.REG.FINAL_AMOUNT - 1] || 0),
+      expectedFinal: Math.max(0, regFinal - regCashback),
+      merged: mergeGroupCol ? String(rr[mergeGroupCol - 1] || "").trim() !== "" : false,
       normalizedCompetitions: pricing.normalizedCompetitions || String(q2 || "")
     };
   }
@@ -7832,14 +7893,14 @@ function validateFinanceDashboard_(opts) {
 
     var key2 = emailCell.toLowerCase();
     if (seenFinance[key2]) {
-      rows.push(["DUP_FIN_EMAIL", emailCell, "Duplicate email in Finance Dashboard.", "Run Full Rebuild."]);
+      rows.push(["DUP_FIN_EMAIL", emailCell, "Duplicate email in Finance Dashboard.", "Run " + getMenuPathText_("rebuildFinanceDashboardFull") + "."]);
     }
     seenFinance[key2] = true;
 
     // Status validation
     var statusCell = finCols.Status ? String(row[finCols.Status - 1] || "").trim() : "";
     if (statusCell && !validStatuses[statusCell]) {
-      rows.push(["BAD_STATUS", emailCell, "Invalid Status: " + statusCell, 'Use only: "PAID" or "NOT YET PAID".']);
+      rows.push(["BAD_STATUS", emailCell, "Invalid Status: " + statusCell, 'Use only: "' + SYSTEM_CONFIG.ADMIN.TRIGGER_WORD + '" or "' + SYSTEM_CONFIG.ADMIN.NOT_YET_WORD + '".']);
     }
 
     // Amount validation
@@ -7849,10 +7910,10 @@ function validateFinanceDashboard_(opts) {
       continue;
     }
 
-    if (finCols.TotalAmount) {
+    if (finCols.TotalAmount && !reg.merged) {
       var finAmt = Number(row[finCols.TotalAmount - 1] || 0);
       if (Math.abs(finAmt - reg.expectedFinal) > 0.0001) {
-        rows.push(["AMOUNT_MISMATCH", emailCell, "Finance Total=" + finAmt + " but Registration Final=" + reg.expectedFinal, "Run Force Reprocess or Full Rebuild."]);
+        rows.push(["AMOUNT_MISMATCH", emailCell, "Finance Total=" + finAmt + " but Registration Final less cashback=" + reg.expectedFinal, "Run Force Reprocess or Full Rebuild."]);
       }
     }
   }
@@ -8029,6 +8090,7 @@ function openCouponGenerator() {
   var p2 = ui.prompt("Coupon Generator", "Value (PHP)?", ui.ButtonSet.OK_CANCEL);
   if (p2.getSelectedButton() !== ui.Button.OK) return;
   var value = Number(p2.getResponseText() || 0);
+  if (!(value > 0)) return ui.alert("Invalid value. Enter the discount in pesos, for example 50.");
 
   var p3 = ui.prompt("Coupon Generator", "Prefix (e.g., EARLY)?", ui.ButtonSet.OK_CANCEL);
   if (p3.getSelectedButton() !== ui.Button.OK) return;
@@ -8037,21 +8099,34 @@ function openCouponGenerator() {
   var p4 = ui.prompt("Coupon Generator", "Max uses? (Leave blank or 0 = UNLIMITED)", ui.ButtonSet.OK_CANCEL);
   if (p4.getSelectedButton() !== ui.Button.OK) return;
   var maxUse = Number(p4.getResponseText() || 0);
+  if (isNaN(maxUse) || maxUse < 0) return ui.alert("Invalid max uses. Enter a number, or leave it blank for unlimited.");
+
+  // A code is only accepted between its Start and End dates (both included), so both are set here
+  var p5 = ui.prompt("Coupon Generator", "Valid for how many days from today? (Leave blank = 30)", ui.ButtonSet.OK_CANCEL);
+  if (p5.getSelectedButton() !== ui.Button.OK) return;
+  var validDays = Number(String(p5.getResponseText() || "").trim() || 30);
+  if (!(validDays >= 1)) return ui.alert("Invalid number of days.");
 
   var newRows = [];
-  var today = new Date();
-  var nextMonth = new Date(); 
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  var today = Utils.midnightToday();
+  var nextMonth = new Date(today.getTime());
+  nextMonth.setDate(nextMonth.getDate() + Math.round(validDays));
 
   for (var i = 0; i < count; i++) {
-    var code = prefix + "-" + Utils.generateId("").substring(0, 6);
+    // 6 random characters (the old substring kept "REF-" plus only 2 random characters)
+    var code = prefix + "-" + Utils.generateId("X").split("-")[1].substring(0, 6);
     // [CODE, VALUE, START, END, MAX_USE, CURRENT_USE, STATUS, TYPE, OWNER]
     newRows.push([code, value, today, nextMonth, maxUse, 0, "ACTIVE", "PROMO", ""]);
   }
 
   ensureCouponHeaders_(sheet);
   sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 9).setValues(newRows);
-  ui.alert("✅ Generated " + count + " promo coupon(s).");
+  var dateText = function (d) { return Utilities.formatDate(d, SYSTEM_CONFIG.META.TIMEZONE, "MMM d, yyyy"); };
+  ui.alert("✅ Generated " + count + " promo coupon(s)",
+    "Worth " + Utils.formatCurrencyShort(value) + " each, " + (maxUse > 0 ? "usable " + maxUse + " time(s) each" : "unlimited uses") + ".\n" +
+    "Valid from " + dateText(today) + " to " + dateText(nextMonth) + " (that day included).\n\n" +
+    "They are at the bottom of the '" + SYSTEM_CONFIG.SHEETS.COUPONS + "' sheet. Change the Start / End cells there to change the dates.",
+    ui.ButtonSet.OK);
 }
 
 /**
@@ -8076,115 +8151,76 @@ function ensureCouponHeaders_(sheet) {
 }
 
 // ============================================================================
-// MEMBER AMBASSADOR COUPON SYSTEM (V20)
+// MEMBER AMBASSADOR COUPON SYSTEM
 // ============================================================================
 
 /**
  * Open dialog to generate member ambassador codes
  */
 function openMemberCodeGenerator() {
-  var htmlContent = `
-    <style>
-      body { font-family: Arial, sans-serif; padding: 20px; }
-      h3 { color: #1E4FB8; margin-top: 0; }
-      .info-box { background: #e7f3ff; border: 1px solid #b3d7ff; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 13px; }
-      .form-group { margin-bottom: 15px; }
-      label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
-      input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box; }
-      textarea { height: 150px; font-family: monospace; }
-      .hint { font-size: 11px; color: #666; margin-top: 5px; }
-      .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 10px; }
-      .btn-primary { background: #1E4FB8; color: white; }
-      .btn-secondary { background: #6c757d; color: white; }
-      .config-row { display: flex; gap: 15px; }
-      .config-row .form-group { flex: 1; }
-    </style>
-    
-    <h3>🎖️ Member Ambassador Code Generator</h3>
-    
-    <div class="info-box">
-      <strong>How it works:</strong><br>
-      Each SOK member gets a personal code (e.g., SOK-JUAN) that participants can use for a discount.
-      Members earn compensation based on how many times their code is used.<br><br>
-      <strong>Compensation Structure:</strong><br>
-      • 1-5 uses: ₱10 per use<br>
-      • 6-10 uses: ₱15 per use<br>
-      • 11+ uses: ₱20 per use<br>
-      • Bonuses: ₱50 at 10 uses, ₱100 at 25 uses, ₱200 at 50 uses
-    </div>
-    
-    <div class="form-group">
-      <label>Member Names (one per line):</label>
-      <textarea id="memberNames" placeholder="Juan Dela Cruz&#10;Maria Santos&#10;Pedro Reyes"></textarea>
-      <div class="hint">Enter full names or first names. Codes will be generated as SOK-FIRSTNAME</div>
-    </div>
-    
-    <div class="config-row">
-      <div class="form-group">
-        <label>Code Prefix:</label>
-        <input type="text" id="prefix" value="SOK">
-      </div>
-      <div class="form-group">
-        <label>Discount Amount (₱):</label>
-        <input type="number" id="discount" value="25">
-      </div>
-      <div class="form-group">
-        <label>Max Uses:</label>
-        <input type="number" id="maxUses" value="100">
-      </div>
-    </div>
-    
-    <div class="form-group">
-      <label>Validity Period:</label>
-      <select id="validity">
-        <option value="1">1 Month</option>
-        <option value="2">2 Months</option>
-        <option value="3" selected>3 Months (Registration Period)</option>
-        <option value="6">6 Months</option>
-      </select>
-    </div>
-    
-    <div style="margin-top: 20px; text-align: right;">
-      <button class="btn btn-secondary" onclick="google.script.host.close()">Cancel</button>
-      <button class="btn btn-primary" onclick="generateCodes()">Generate Member Codes</button>
-    </div>
-    
-    <script>
-      function generateCodes() {
-        var names = document.getElementById('memberNames').value;
-        var prefix = document.getElementById('prefix').value;
-        var discount = document.getElementById('discount').value;
-        var maxUses = document.getElementById('maxUses').value;
-        var validity = document.getElementById('validity').value;
-        
-        if (!names.trim()) {
-          alert('Please enter at least one member name.');
-          return;
-        }
-        
-        google.script.run
-          .withSuccessHandler(function(result) {
-            alert(result);
-            google.script.host.close();
-          })
-          .withFailureHandler(function(err) {
-            alert('Error: ' + err);
-          })
-          .generateMemberCodes({
-            names: names,
-            prefix: prefix,
-            discount: Number(discount),
-            maxUses: Number(maxUses),
-            validityMonths: Number(validity)
-          });
-      }
-    </script>
-  `;
-  
-  var html = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(550)
-    .setHeight(620);
-  
+  // Everything shown here is read from SYSTEM_CONFIG.MEMBER_COUPON
+  var MC = SYSTEM_CONFIG.MEMBER_COUPON;
+  var esc = Utils.escapeHtml;
+  var peso = Utils.formatCurrencyShort;
+  var memberPrefix = esc(MC.PREFIX);
+
+  var tierRows = Object.keys(MC.COMPENSATION).map(function (k) { return MC.COMPENSATION[k]; })
+    .sort(function (a, b) { return a.MIN - b.MIN; })
+    .map(function (t) {
+      return [(t.MAX >= 999) ? (t.MIN + " or more uses") : (t.MIN + " to " + t.MAX + " uses"), '<b>' + esc(peso(t.RATE)) + '</b> per use'];
+    });
+  var bonusText = Object.keys(MC.MILESTONES || {}).sort(function (a, b) { return Number(a) - Number(b); })
+    .map(function (k) { return esc(peso(MC.MILESTONES[k])) + " at " + k + " uses"; }).join(" · ");
+
+  var body =
+    uiCallout_("", "&#x1F396;&#xFE0F;", "Each member gets a personal code (for example <code>" + memberPrefix + "-JUAN</code>) that participants can use for a discount. " +
+      "The member earns for every use.") +
+    uiCard_("What members earn", uiTable_(["Uses of the code", "Earns"], tierRows) +
+      (bonusText ? '<div class="ui-hint">Bonuses: ' + bonusText + '</div>' : '')) +
+    '<div class="ui-field"><label for="memberNames">Member names, one per line</label>' +
+      '<textarea id="memberNames" placeholder="Juan Dela Cruz&#10;Maria Santos&#10;Pedro Reyes"></textarea>' +
+      '<div class="ui-hint">Full names or first names. Codes are made as ' + memberPrefix + '-FIRSTNAME.</div></div>' +
+    '<div class="ui-row">' +
+      '<div class="ui-field"><label for="prefix">Code prefix</label><input type="text" id="prefix" value="' + memberPrefix + '"></div>' +
+      '<div class="ui-field"><label for="discount">Discount (&#8369;)</label><input type="number" id="discount" value="' + Number(MC.DEFAULT_DISCOUNT) + '"></div>' +
+      '<div class="ui-field"><label for="maxUses">Maximum uses</label><input type="number" id="maxUses" value="' + Number(MC.DEFAULT_MAX_USES) + '"></div>' +
+    '</div>' +
+    '<div class="ui-field"><label for="validity">Valid for</label>' +
+      '<select id="validity"><option value="1">1 month</option><option value="2">2 months</option>' +
+      '<option value="3" selected>3 months (registration period)</option><option value="6">6 months</option></select></div>' +
+    '<div class="ui-bar">' +
+      '<button class="ui-btn" onclick="google.script.host.close()">Cancel</button>' +
+      '<button class="ui-btn primary" id="goBtn" onclick="generateCodes()">Generate member codes</button>' +
+    '</div>';
+
+  var script =
+    'function generateCodes() {\n' +
+    '  var names = document.getElementById("memberNames").value;\n' +
+    '  if (!names.trim()) { alert("Please enter at least one member name."); return; }\n' +
+    '  var btn = document.getElementById("goBtn");\n' +
+    '  btn.disabled = true; btn.textContent = "Generating...";\n' +
+    '  google.script.run\n' +
+    '    .withSuccessHandler(function (result) { alert(result); google.script.host.close(); })\n' +
+    '    .withFailureHandler(function (err) { btn.disabled = false; btn.textContent = "Generate member codes"; alert("Error: " + (err && err.message ? err.message : err)); })\n' +
+    '    .generateMemberCodes({\n' +
+    '      names: names,\n' +
+    '      prefix: document.getElementById("prefix").value,\n' +
+    '      discount: Number(document.getElementById("discount").value),\n' +
+    '      maxUses: Number(document.getElementById("maxUses").value),\n' +
+    '      validityMonths: Number(document.getElementById("validity").value)\n' +
+    '    });\n' +
+    '}';
+
+  var html = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F396;&#xFE0F;",
+      title: "Member ambassador codes",
+      subtitle: "One personal discount code per member",
+      body: body,
+      script: script
+    }), "codes"))
+    .setWidth(580)
+    .setHeight(680);
+
   SpreadsheetApp.getUi().showModalDialog(html, "Member Ambassador Code Generator");
 }
 
@@ -8198,20 +8234,20 @@ function generateMemberCodes(options) {
   var nameLines = options.names.split("\n").filter(function(n) { return n.trim() !== ""; });
   if (nameLines.length === 0) throw new Error("No valid names provided.");
   
-  var prefix = Utils.upper(options.prefix || "SOK");
+  var prefix = Utils.upper(options.prefix || SYSTEM_CONFIG.MEMBER_COUPON.PREFIX);
   var discount = Number(options.discount) || SYSTEM_CONFIG.MEMBER_COUPON.DEFAULT_DISCOUNT;
   var maxUses = Number(options.maxUses) || SYSTEM_CONFIG.MEMBER_COUPON.DEFAULT_MAX_USES;
   var validityMonths = Number(options.validityMonths) || 3;
   
-  var today = new Date();
-  var endDate = new Date();
+  var today = Utils.midnightToday();
+  var endDate = new Date(today.getTime());
   endDate.setMonth(endDate.getMonth() + validityMonths);
   
   // Load existing codes to check for duplicates
   var existingData = sheet.getDataRange().getValues();
   var existingCodes = {};
   for (var i = 1; i < existingData.length; i++) {
-    existingCodes[Utils.upper(existingData[i][0])] = true;
+    existingCodes[Utils.upper(existingData[i][SYSTEM_CONFIG.COLS.COUPON.CODE - 1])] = true;
   }
   
   var newRows = [];
@@ -8242,7 +8278,8 @@ function generateMemberCodes(options) {
   
   AuditLogService.info("MEMBER_CODES", "Generated " + newRows.length + " member codes");
   
-  return "✅ Generated " + newRows.length + " member code(s):\n\n" + generated.join("\n");
+  return "✅ Generated " + newRows.length + " member code(s), each " + Utils.formatCurrencyShort(discount) + " off, valid until " +
+    Utilities.formatDate(endDate, SYSTEM_CONFIG.META.TIMEZONE, "MMM d, yyyy") + ":\n\n" + generated.join("\n");
 }
 
 /**
@@ -8258,7 +8295,7 @@ function calculateMemberCompensation(uses) {
     var tier1Uses = Math.min(uses, config.COMPENSATION.TIER_1.MAX);
     var tier1Amount = tier1Uses * config.COMPENSATION.TIER_1.RATE;
     compensation += tier1Amount;
-    breakdown.push("Tier 1 (1-5): " + tier1Uses + " × ₱" + config.COMPENSATION.TIER_1.RATE + " = ₱" + tier1Amount);
+    breakdown.push("Tier 1 (" + config.COMPENSATION.TIER_1.MIN + "-" + config.COMPENSATION.TIER_1.MAX + "): " + tier1Uses + " × ₱" + config.COMPENSATION.TIER_1.RATE + " = ₱" + tier1Amount);
   }
   
   if (uses >= config.COMPENSATION.TIER_2.MIN) {
@@ -8266,7 +8303,7 @@ function calculateMemberCompensation(uses) {
     if (tier2Uses > 0) {
       var tier2Amount = tier2Uses * config.COMPENSATION.TIER_2.RATE;
       compensation += tier2Amount;
-      breakdown.push("Tier 2 (6-10): " + tier2Uses + " × ₱" + config.COMPENSATION.TIER_2.RATE + " = ₱" + tier2Amount);
+      breakdown.push("Tier 2 (" + config.COMPENSATION.TIER_2.MIN + "-" + config.COMPENSATION.TIER_2.MAX + "): " + tier2Uses + " × ₱" + config.COMPENSATION.TIER_2.RATE + " = ₱" + tier2Amount);
     }
   }
   
@@ -8275,7 +8312,7 @@ function calculateMemberCompensation(uses) {
     if (tier3Uses > 0) {
       var tier3Amount = tier3Uses * config.COMPENSATION.TIER_3.RATE;
       compensation += tier3Amount;
-      breakdown.push("Tier 3 (11+): " + tier3Uses + " × ₱" + config.COMPENSATION.TIER_3.RATE + " = ₱" + tier3Amount);
+      breakdown.push("Tier 3 (" + config.COMPENSATION.TIER_3.MIN + "+): " + tier3Uses + " × ₱" + config.COMPENSATION.TIER_3.RATE + " = ₱" + tier3Amount);
     }
   }
   
@@ -8457,16 +8494,21 @@ function viewMemberCodeStats() {
   var promoUses = 0;
   var activeMember = 0;
   var activePromo = 0;
-  
+  var memberCompensationTotal = 0;
+
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
+    if (!String(row[SYSTEM_CONFIG.COLS.COUPON.CODE - 1] || "").trim()) continue; // blank row
     var type = typeCol >= 0 ? String(row[typeCol] || "").toUpperCase().trim() : "";
     var uses = currentUseCol >= 0 ? Number(row[currentUseCol] || 0) : 0;
     var status = statusCol >= 0 ? String(row[statusCol] || "").toUpperCase().trim() : "";
-    
+
     if (type === "MEMBER") {
       memberCodes++;
       memberUses += uses;
+      // Tiers and milestone bonuses apply per member, so add up each member's own amount
+      // (running the tier formula once on everyone's combined uses overstated the total)
+      memberCompensationTotal += calculateMemberCompensation(uses).totalCompensation;
       if (status === "ACTIVE") activeMember++;
     } else {
       promoCodes++;
@@ -8474,8 +8516,8 @@ function viewMemberCodeStats() {
       if (status === "ACTIVE") activePromo++;
     }
   }
-  
-  var totalComp = calculateMemberCompensation(memberUses);
+
+  var totalComp = { totalCompensation: memberCompensationTotal };
   
   SpreadsheetApp.getUi().alert(
     "📊 COUPON STATISTICS\n\n" +
@@ -8519,8 +8561,12 @@ function migrateCouponSheet() {
     return ui.alert("✅ Coupon sheet already has TYPE and OWNER columns. No migration needed.");
   }
   
-  // Add headers
+  // Add headers (make room first: getRange fails beyond the sheet's last physical column)
   var lastCol = headers.length;
+  var neededCouponCols = lastCol + (hasTypeCol ? 0 : 1) + (hasOwnerCol ? 0 : 1);
+  if (couponSheet.getMaxColumns() < neededCouponCols) {
+    couponSheet.insertColumnsAfter(couponSheet.getMaxColumns(), neededCouponCols - couponSheet.getMaxColumns());
+  }
   if (!hasTypeCol) {
     couponSheet.getRange(1, lastCol + 1).setValue("Type").setFontWeight("bold").setBackground("#1E4FB8").setFontColor("white");
     lastCol++;
@@ -8614,7 +8660,7 @@ var ErrorNotifier = (function() {
     
     try {
       var subject = "[HNS ALERT] " + errorType;
-      var body = "A critical error occurred in the Husay ng Soksay Registration System.\n\n" +
+      var body = "A critical error occurred in the " + SYSTEM_CONFIG.META.NAME + " Registration System.\n\n" +
         "Error Type: " + errorType + "\n" +
         "Details: " + details + "\n" +
         "User Email: " + (userEmail || "N/A") + "\n" +
@@ -8767,7 +8813,8 @@ function resetRateLimiter() {
   var keys = props.getKeys();
   
   for (var i = 0; i < keys.length; i++) {
-    if (keys[i].indexOf("EMAIL_RATE_") === 0 || keys[i].indexOf("HNS_EMAIL_") === 0) {
+    // The limiter's two keys are HNS_EMAIL_COUNTER and HNS_LAST_EMAIL_SEND
+    if (keys[i].indexOf("EMAIL_RATE_") === 0 || keys[i].indexOf("HNS_EMAIL_") === 0 || keys[i] === "HNS_LAST_EMAIL_SEND") {
       props.deleteProperty(keys[i]);
     }
   }
@@ -8781,353 +8828,12 @@ function resetRateLimiter() {
 // PART 17: EXTENDED ADMIN MENU
 // ============================================================================
 
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('Husay Admin')
-    .addItem('🛡️ Payment Verification Center', 'openPaymentVerificationCenter')
-    .addSeparator()
-    .addItem('📝 Manual Response Editor', 'openManualResponseEditor')
-    .addItem('👥 Combined Registration Merge', 'openCombinedRegistrationMerge')
-    .addSeparator()
-    .addItem('🔧 Column Validator', 'checkAndFixColumns')
-    .addToUi();
-}
-
 // NOTE: openManualResponseEditor() and openCombinedRegistrationMerge()
-// are defined in the V22 section below (PART 99).
-// PART 18: COLUMN STRUCTURE VALIDATOR & FIXER (V18.1)
+// are defined in the section below (PART 99).
+// PART 18: COLUMN STRUCTURE VALIDATOR & FIXER
 // ============================================================================
 
 var ColumnStructure = (function() {
-  
-  /**
-   * Expected column headers for Registration sheet
-   * Maps from our config column numbers to expected header names
-   */
-  var EXPECTED_REG_HEADERS = {
-    1: "Timestamp",
-    2: "Email Address",  // Could also be "Email"
-    // Columns 3-4 may vary depending on form
-    5: "Name",           // Could also be "Full Name", "Complete Name"
-    14: "School",        // Could also be "School/University", "Institution"
-    19: "Competition Count", // Could vary
-    20: "Competition",   // Could also be "Competitions", "Competition Selection"
-    21: "Payment Mode",  // Could also be "Mode of Payment"
-    22: "Proof of Payment", // Could also be "Payment Proof", "Proof Link"
-    24: "Referral Code", // Could also be "Referral", "Ref Code"
-    25: "Coupon Code",   // Could also be "Coupon", "Discount Code"
-    // System-managed columns (will be created if missing)
-    26: "Gen. ID",
-    27: "Ref Count",
-    28: "Cashback",
-    29: "Final Amount",
-    30: "LOCKED_COUPON",
-    31: "LOCKED_REF",
-    32: "MASTER_SUBJECT"
-  };
-  
-  /**
-   * Alternative names that are acceptable for each column
-   */
-  var HEADER_ALIASES = {
-    "Email Address": ["Email", "E-mail", "Email ID"],
-    "Name": ["Full Name", "Complete Name", "Participant Name", "Your Name"],
-    "School": ["School/University", "Institution", "University", "School Name"],
-    "Competition": ["Competitions", "Competition Selection", "Selected Competitions", "What competition(s)"],
-    "Payment Mode": ["Mode of Payment", "Payment Method", "How will you pay"],
-    "Proof of Payment": ["Payment Proof", "Proof Link", "Proof", "Upload Proof"],
-    "Referral Code": ["Referral", "Ref Code", "Referral Code (Optional)", "Enter Referral Code"],
-    "Coupon Code": ["Coupon", "Discount Code", "Coupon Code (Optional)", "Enter Coupon Code"]
-  };
-  
-  /**
-   * System-managed columns that should be created if missing
-   */
-  var SYSTEM_COLUMNS = [
-    { col: 26, header: "Gen. ID", description: "Generated unique ID for each participant" },
-    { col: 27, header: "Ref Count", description: "Number of successful referrals" },
-    { col: 28, header: "Cashback", description: "Total cashback earned from referrals" },
-    { col: 29, header: "Final Amount", description: "Final amount to pay after discounts" },
-    { col: 30, header: "LOCKED_COUPON", description: "Validated/locked coupon code" },
-    { col: 31, header: "LOCKED_REF", description: "Validated/locked referral code" },
-    { col: 32, header: "MASTER_SUBJECT", description: "Email threading subject line" }
-  ];
-  
-  /**
-   * Checks if a header matches the expected value (with aliases)
-   */
-  function headerMatches_(actual, expected) {
-    if (!actual || !expected) return false;
-    var actualClean = String(actual).trim().toUpperCase();
-    var expectedClean = String(expected).trim().toUpperCase();
-    
-    // Direct match
-    if (actualClean === expectedClean) return true;
-    
-    // Check aliases
-    var aliases = HEADER_ALIASES[expected];
-    if (aliases) {
-      for (var i = 0; i < aliases.length; i++) {
-        if (actualClean === String(aliases[i]).trim().toUpperCase()) return true;
-      }
-    }
-    
-    // Partial match (header contains expected)
-    if (actualClean.indexOf(expectedClean) >= 0 || expectedClean.indexOf(actualClean) >= 0) {
-      return true;
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Analyzes the current column structure of the Registration sheet
-   * Returns detailed report of matches, mismatches, and missing columns
-   */
-  function analyzeRegistrationColumns() {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-    
-    if (!regSheet) {
-      return {
-        success: false,
-        error: "Registration sheet '" + SYSTEM_CONFIG.SHEETS.REGISTRATION + "' not found!"
-      };
-    }
-    
-    var lastCol = regSheet.getLastColumn();
-    var headers = [];
-    if (lastCol > 0) {
-      headers = regSheet.getRange(1, 1, 1, lastCol).getValues()[0];
-    }
-    
-    var report = {
-      success: true,
-      sheetName: regSheet.getName(),
-      totalColumns: lastCol,
-      totalRows: regSheet.getLastRow(),
-      matches: [],
-      mismatches: [],
-      missing: [],
-      systemColumnsStatus: [],
-      detectedMapping: {},
-      suggestedFixes: []
-    };
-    
-    // Check key columns from config
-    var keyColumns = [
-      { key: "TIMESTAMP", col: SYSTEM_CONFIG.COLS.REG.TIMESTAMP, name: "Timestamp" },
-      { key: "EMAIL", col: SYSTEM_CONFIG.COLS.REG.EMAIL, name: "Email" },
-      { key: "NAME", col: SYSTEM_CONFIG.COLS.REG.NAME, name: "Name" },
-      { key: "SCHOOL", col: SYSTEM_CONFIG.COLS.REG.SCHOOL, name: "School" },
-      { key: "COMPETITION_COUNT", col: SYSTEM_CONFIG.COLS.REG.COMPETITION_COUNT, name: "Competition Count" },
-      { key: "COMPETITION", col: SYSTEM_CONFIG.COLS.REG.COMPETITION, name: "Competition" },
-      { key: "PAY_MODE", col: SYSTEM_CONFIG.COLS.REG.PAY_MODE, name: "Payment Mode" },
-      { key: "PAY_PROOF", col: SYSTEM_CONFIG.COLS.REG.PAY_PROOF, name: "Proof of Payment" },
-      { key: "REF_INPUT", col: SYSTEM_CONFIG.COLS.REG.REF_INPUT, name: "Referral Code" },
-      { key: "COUPON_INPUT", col: SYSTEM_CONFIG.COLS.REG.COUPON_INPUT, name: "Coupon Code" }
-    ];
-    
-    for (var i = 0; i < keyColumns.length; i++) {
-      var kc = keyColumns[i];
-      var colIndex = kc.col - 1; // 0-based
-      var actualHeader = (colIndex < headers.length) ? headers[colIndex] : null;
-      var expected = EXPECTED_REG_HEADERS[kc.col] || kc.name;
-      
-      if (actualHeader && headerMatches_(actualHeader, expected)) {
-        report.matches.push({
-          key: kc.key,
-          column: kc.col,
-          expected: expected,
-          actual: actualHeader,
-          status: "✅ OK"
-        });
-        report.detectedMapping[kc.key] = kc.col;
-      } else if (actualHeader) {
-        report.mismatches.push({
-          key: kc.key,
-          column: kc.col,
-          expected: expected,
-          actual: actualHeader,
-          status: "⚠️ MISMATCH"
-        });
-        report.suggestedFixes.push({
-          type: "HEADER_MISMATCH",
-          column: kc.col,
-          message: "Column " + kc.col + " header is '" + actualHeader + "' but expected '" + expected + "'"
-        });
-      } else {
-        report.missing.push({
-          key: kc.key,
-          column: kc.col,
-          expected: expected,
-          actual: null,
-          status: "❌ MISSING"
-        });
-      }
-    }
-    
-    // Check system-managed columns
-    for (var j = 0; j < SYSTEM_COLUMNS.length; j++) {
-      var sc = SYSTEM_COLUMNS[j];
-      var scIndex = sc.col - 1;
-      var scHeader = (scIndex < headers.length) ? headers[scIndex] : null;
-      
-      if (scHeader && headerMatches_(scHeader, sc.header)) {
-        report.systemColumnsStatus.push({
-          column: sc.col,
-          header: sc.header,
-          actual: scHeader,
-          status: "✅ EXISTS"
-        });
-      } else if (scHeader) {
-        report.systemColumnsStatus.push({
-          column: sc.col,
-          header: sc.header,
-          actual: scHeader,
-          status: "⚠️ WRONG HEADER"
-        });
-        report.suggestedFixes.push({
-          type: "SYSTEM_HEADER",
-          column: sc.col,
-          message: "System column " + sc.col + " has header '" + scHeader + "' but should be '" + sc.header + "'"
-        });
-      } else {
-        report.systemColumnsStatus.push({
-          column: sc.col,
-          header: sc.header,
-          actual: null,
-          status: "❌ NEEDS CREATION"
-        });
-        report.suggestedFixes.push({
-          type: "CREATE_COLUMN",
-          column: sc.col,
-          header: sc.header,
-          message: "Need to create column " + sc.col + " with header '" + sc.header + "'"
-        });
-      }
-    }
-    
-    report.hasIssues = (report.mismatches.length > 0 || report.suggestedFixes.length > 0);
-    
-    return report;
-  }
-  
-  /**
-   * Attempts to auto-detect column positions by searching for matching headers
-   */
-  function autoDetectColumns() {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-    
-    if (!regSheet) {
-      return { success: false, error: "Registration sheet not found" };
-    }
-    
-    var lastCol = regSheet.getLastColumn();
-    var headers = [];
-    if (lastCol > 0) {
-      headers = regSheet.getRange(1, 1, 1, lastCol).getValues()[0];
-    }
-    
-    var detected = {};
-    var searchPatterns = [
-      { key: "TIMESTAMP", patterns: ["timestamp", "date", "submitted"] },
-      { key: "EMAIL", patterns: ["email", "e-mail", "email address"] },
-      { key: "NAME", patterns: ["name", "full name", "complete name", "participant"] },
-      { key: "SCHOOL", patterns: ["school", "university", "institution", "college"] },
-      { key: "COMPETITION", patterns: ["competition", "event", "contest", "category"] },
-      { key: "PAY_MODE", patterns: ["payment", "mode", "method", "how will you pay"] },
-      { key: "PAY_PROOF", patterns: ["proof", "screenshot", "receipt", "upload"] },
-      { key: "REF_INPUT", patterns: ["referral", "ref code", "referred by"] },
-      { key: "COUPON_INPUT", patterns: ["coupon", "discount", "promo", "voucher"] },
-      { key: "GEN_ID", patterns: ["gen. id", "gen id", "generated id", "participant id"] }
-    ];
-    
-    for (var i = 0; i < headers.length; i++) {
-      var h = String(headers[i] || "").toLowerCase().trim();
-      if (!h) continue;
-      
-      for (var j = 0; j < searchPatterns.length; j++) {
-        var sp = searchPatterns[j];
-        if (detected[sp.key]) continue; // Already found
-        
-        for (var k = 0; k < sp.patterns.length; k++) {
-          if (h.indexOf(sp.patterns[k]) >= 0) {
-            detected[sp.key] = {
-              column: i + 1,
-              header: headers[i]
-            };
-            break;
-          }
-        }
-      }
-    }
-    
-    return {
-      success: true,
-      detected: detected,
-      headers: headers
-    };
-  }
-  
-  /**
-   * Creates or fixes system-managed columns
-   */
-  function fixSystemColumns() {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-    
-    if (!regSheet) {
-      return { success: false, error: "Registration sheet not found" };
-    }
-    
-    var fixed = [];
-    var errors = [];
-    
-    // Ensure sheet has enough columns
-    var currentCols = regSheet.getMaxColumns();
-    var maxNeeded = 32; // MASTER_SUBJECT is column 32
-    
-    if (currentCols < maxNeeded) {
-      try {
-        regSheet.insertColumnsAfter(currentCols, maxNeeded - currentCols);
-        fixed.push("Expanded sheet from " + currentCols + " to " + maxNeeded + " columns");
-      } catch (e) {
-        errors.push("Failed to expand columns: " + e);
-      }
-    }
-    
-    // Create/fix each system column header
-    for (var i = 0; i < SYSTEM_COLUMNS.length; i++) {
-      var sc = SYSTEM_COLUMNS[i];
-      try {
-        var currentHeader = regSheet.getRange(1, sc.col).getValue();
-        if (!currentHeader || !headerMatches_(currentHeader, sc.header)) {
-          regSheet.getRange(1, sc.col).setValue(sc.header);
-          fixed.push("Set column " + sc.col + " header to '" + sc.header + "'");
-        }
-      } catch (e) {
-        errors.push("Failed to fix column " + sc.col + ": " + e);
-      }
-    }
-    
-    // Also ensure SYS_ columns from SYS_REG_HEADERS exist
-    try {
-      var sysRegCols = ColumnManager.ensureSysColsOnRegistration(regSheet);
-      fixed.push("Ensured SYS_* columns exist");
-    } catch (e) {
-      errors.push("Failed to ensure SYS_* columns: " + e);
-    }
-    
-    SpreadsheetApp.flush();
-    
-    return {
-      success: errors.length === 0,
-      fixed: fixed,
-      errors: errors
-    };
-  }
   
   /**
    * Tests if the system can correctly read data from configured columns
@@ -9181,13 +8887,13 @@ var ColumnStructure = (function() {
       tests.push({
         name: "Finance Sheet",
         status: "✅ EXISTS",
-        message: "Financial Dashboard found"
+        message: "'" + SYSTEM_CONFIG.SHEETS.FINANCE + "' found"
       });
     } else {
       tests.push({
         name: "Finance Sheet",
         status: "⚠️ MISSING",
-        message: "Financial Dashboard not found - will be created when needed"
+        message: "'" + SYSTEM_CONFIG.SHEETS.FINANCE + "' not found - create it with " + getMenuPathText_("showSystemBuilder")
       });
     }
     
@@ -9197,13 +8903,13 @@ var ColumnStructure = (function() {
       tests.push({
         name: "Coupon Sheet",
         status: "✅ EXISTS",
-        message: "Coupon Manager found"
+        message: "'" + SYSTEM_CONFIG.SHEETS.COUPONS + "' found"
       });
     } else {
       tests.push({
         name: "Coupon Sheet",
         status: "⚠️ MISSING",
-        message: "Coupon Manager not found"
+        message: "'" + SYSTEM_CONFIG.SHEETS.COUPONS + "' not found - create it with " + getMenuPathText_("showSystemBuilder")
       });
     }
     
@@ -9216,16 +8922,12 @@ var ColumnStructure = (function() {
   }
   
   return {
-    analyzeRegistrationColumns: analyzeRegistrationColumns,
-    autoDetectColumns: autoDetectColumns,
-    fixSystemColumns: fixSystemColumns,
-    testColumnFunctionality: testColumnFunctionality,
-    SYSTEM_COLUMNS: SYSTEM_COLUMNS
+    testColumnFunctionality: testColumnFunctionality
   };
 })();
 
 // ============================================================================
-// PART 18.1: COLUMN FIX UI FUNCTIONS (V18.1)
+// PART 18.1: COLUMN FIX UI FUNCTIONS
 // ============================================================================
 
 /**
@@ -9237,11 +8939,10 @@ function checkAndFixColumns() {
   
   var choice = ui.alert("🔍 Check & Fix Columns + Data", 
     "This tool will:\n\n" +
-    "1. Check for MISSING system columns and ADD them\n" +
-    "2. Validate data integrity (Gen IDs, emails, pricing)\n" +
-    "3. Sync data between sheets (Finance ↔ Registration)\n" +
-    "4. Fix any issues found\n\n" +
-    "Click OK to start comprehensive check.",
+    "1. Check the Registration sheet for MISSING system columns\n" +
+    "2. Offer to ADD them at the end of the sheet\n\n" +
+    "Existing columns and data are not changed.\n\n" +
+    "Click OK to start the check.",
     ui.ButtonSet.OK_CANCEL);
   
   if (choice !== ui.Button.OK) return;
@@ -9250,7 +8951,7 @@ function checkAndFixColumns() {
   var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
   
   if (!regSheet) {
-    ui.alert("❌ Error", "Registration sheet not found!\n\nUse BUILD BUILD BUILD to create it.", ui.ButtonSet.OK);
+    ui.alert("❌ Error", "Registration sheet not found!\n\nUse " + getMenuPathText_("showSystemBuilder") + " to create it.", ui.ButtonSet.OK);
     return;
   }
   
@@ -9379,7 +9080,13 @@ function checkAndFixColumns() {
       
       var addedColumns = [];
       var currentLastCol = regSheet.getLastColumn();
-      
+
+      // Make room first: getRange fails beyond the sheet's last physical column
+      var neededCols = currentLastCol + missingColumns.length;
+      if (regSheet.getMaxColumns() < neededCols) {
+        regSheet.insertColumnsAfter(regSheet.getMaxColumns(), neededCols - regSheet.getMaxColumns());
+      }
+
       for (var a = 0; a < missingColumns.length; a++) {
         var newCol = currentLastCol + a + 1;
         regSheet.getRange(1, newCol).setValue(missingColumns[a].name);
@@ -9396,7 +9103,7 @@ function checkAndFixColumns() {
       // Add data validation for Payment Status
       if (columnMapping["PAYMENT_STATUS"]) {
         var statusRule = SpreadsheetApp.newDataValidation()
-          .requireValueInList(["NOT YET", "PAID", "PENDING", "CANCELLED"], true)
+          .requireValueInList(getRegistrationStatusOptions_(), true)
           .setAllowInvalid(true)
           .build();
         regSheet.getRange(2, columnMapping["PAYMENT_STATUS"], 999, 1).setDataValidation(statusRule);
@@ -9422,7 +9129,7 @@ function checkAndFixColumns() {
         addedColumns.join("\n") +
         "\n\n⚠️ IMPORTANT: Update SYSTEM_CONFIG.COLS.REG\n" +
         "to match the new column positions!\n\n" +
-        "Run 'Show All Column Headers' to see the mapping.",
+        "Run " + getMenuPathText_("showColumnMapping") + " to see the mapping.",
         ui.ButtonSet.OK);
       
       // Show column mapping for user to update config
@@ -9446,19 +9153,11 @@ function showColumnMappingAfterFix_(sheet, columnMapping, addedColumns) {
   var lastCol = sheet.getLastColumn();
   var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   
-  var html = '<!DOCTYPE html><html><head><style>' +
-    'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: #f8fafc; }' +
-    'h2 { color: #1e40af; }' +
-    '.new { background: #dcfce7; }' +
-    'table { border-collapse: collapse; width: 100%; }' +
-    'th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; font-size: 12px; }' +
-    'th { background: #1e40af; color: white; }' +
-    '.code { background: #1e293b; color: #10b981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; white-space: pre; overflow-x: auto; margin-top: 15px; }' +
-    '</style></head><body>' +
-    '<h2>📋 Updated Column Mapping</h2>' +
-    '<p>Your sheet now has these columns. <strong style="color:#dc2626;">Update SYSTEM_CONFIG.COLS.REG</strong> with these values:</p>' +
-    '<table><tr><th>#</th><th>Header</th><th>Config Key</th></tr>';
-  
+  var html =
+    '<p class="ui-lead">Your sheet now has these columns; new ones are highlighted. ' +
+    '<b>Update <code>SYSTEM_CONFIG.COLS.REG</code></b> with the block under the table.</p>' +
+    '<div class="ui-scroll" style="max-height:250px;"><table class="ui-table"><thead><tr><th>#</th><th>Header</th><th>Setting</th></tr></thead><tbody>';
+
   // Key columns to highlight
   var keyColumns = {
     "TIMESTAMP": "TIMESTAMP",
@@ -9499,7 +9198,7 @@ function showColumnMappingAfterFix_(sheet, columnMapping, addedColumns) {
     
     html += '<tr' + (isNew ? ' class="new"' : '') + '>' +
       '<td>' + (i + 1) + '</td>' +
-      '<td>' + h + (isNew ? ' <strong>(NEW)</strong>' : '') + '</td>' +
+      '<td>' + Utils.escapeHtml(h) + (isNew ? ' <span class="ui-badge ok">new</span>' : '') + '</td>' +
       '<td>' + (configKey || '-') + '</td>' +
       '</tr>';
     
@@ -9510,331 +9209,20 @@ function showColumnMappingAfterFix_(sheet, columnMapping, addedColumns) {
   
   configCode += "  }\n}";
   
-  html += '</table>' +
-    '<div class="code">' + configCode + '</div>' +
-    '<p style="margin-top:15px;"><strong>Copy the code above</strong> and update your SYSTEM_CONFIG in the script.</p>' +
-    '</body></html>';
-  
-  var dialog = HtmlService.createHtmlOutput(html)
-    .setWidth(600)
-    .setHeight(500);
+  html += '</tbody></table></div>' +
+    '<pre class="ui-code" style="margin-top:14px;">' + Utils.escapeHtml(configCode) + '</pre>' +
+    '<div class="ui-hint">Copy the block above over the COLS.REG part of SYSTEM_CONFIG in the script.</div>';
+
+  var dialog = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F4CB;",
+      title: "Updated column mapping",
+      subtitle: "Update your settings to match the sheet",
+      actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+      body: html
+    }), "sheets"))
+    .setWidth(680)
+    .setHeight(620);
   SpreadsheetApp.getUi().showModalDialog(dialog, "📋 Column Mapping - UPDATE YOUR CONFIG");
-}
-
-/**
- * Validate all data in Registration and Finance sheets
- */
-function validateAllData_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
-  
-  var result = {
-    totalRows: 0,
-    genIds: { valid: 0, missing: 0, invalidFormat: 0, rowsToFix: [] },
-    emails: { valid: 0, missing: 0, invalid: 0, rowsToFix: [] },
-    pricing: { correct: 0, mismatched: 0, missing: 0, rowsToFix: [] },
-    financeSync: { inSync: 0, missingInFinance: 0, statusMismatch: 0, rowsToFix: [] },
-    referrals: { validCodes: 0, invalidCodes: 0, creditIssues: 0, rowsToFix: [] }
-  };
-  
-  if (!regSheet) return result;
-  
-  var regData = regSheet.getDataRange().getValues();
-  var regLastRow = regSheet.getLastRow();
-  result.totalRows = regLastRow - 1;
-  
-  if (result.totalRows < 1) return result;
-  
-  // Get Finance data for sync check
-  var financeEmails = {};
-  if (finSheet && finSheet.getLastRow() > 1) {
-    var finData = finSheet.getDataRange().getValues();
-    for (var f = 1; f < finData.length; f++) {
-      var finEmail = String(finData[f][1] || "").toLowerCase().trim(); // Column B = Email
-      var finStatus = String(finData[f][5] || "").toUpperCase().trim(); // Column F = Status
-      if (finEmail) {
-        financeEmails[finEmail] = { row: f + 1, status: finStatus };
-      }
-    }
-  }
-  
-  // Get all existing Gen IDs for referral validation
-  var existingGenIds = {};
-  for (var g = 1; g < regData.length; g++) {
-    var gid = String(regData[g][SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "").trim();
-    if (gid) existingGenIds[gid.toUpperCase()] = true;
-  }
-  
-  // Validate each row
-  for (var i = 1; i < regData.length; i++) {
-    var row = i + 1;
-    var rowData = regData[i];
-    
-    // 1. Validate Gen ID
-    var genId = String(rowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "").trim();
-    if (!genId) {
-      result.genIds.missing++;
-      result.genIds.rowsToFix.push({ row: row, issue: "missing" });
-    } else if (!/^REF-[A-Z0-9]{8}$/i.test(genId)) {
-      result.genIds.invalidFormat++;
-      result.genIds.rowsToFix.push({ row: row, issue: "invalid", value: genId });
-    } else {
-      result.genIds.valid++;
-    }
-    
-    // 2. Validate Email
-    var email = String(rowData[SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "").trim();
-    if (!email) {
-      result.emails.missing++;
-      result.emails.rowsToFix.push({ row: row, issue: "missing" });
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      result.emails.invalid++;
-      result.emails.rowsToFix.push({ row: row, issue: "invalid", value: email });
-    } else {
-      result.emails.valid++;
-    }
-    
-    // 3. Validate Pricing
-    var totalFee = parseFloat(rowData[SYSTEM_CONFIG.COLS.REG.TOTAL_FEE - 1]) || 0;
-    if (totalFee <= 0) {
-      result.pricing.missing++;
-      result.pricing.rowsToFix.push({ row: row, issue: "missing" });
-    } else {
-      // Recalculate to verify
-      var categories = [];
-      for (var c = SYSTEM_CONFIG.COLS.REG.CATEGORIES_START; c <= SYSTEM_CONFIG.COLS.REG.CATEGORIES_END; c++) {
-        var cat = String(rowData[c - 1] || "").trim();
-        if (cat) categories.push(cat);
-      }
-      var calculated = PricingEngine.calculate("", categories.join(", "));
-      
-      // Apply discounts - note: calculated.finalPrice already has bundle discount applied
-      var couponDiscount = parseFloat(rowData[SYSTEM_CONFIG.COLS.REG.COUPON_DISCOUNT - 1]) || 0;
-      var refDiscount = parseFloat(rowData[SYSTEM_CONFIG.COLS.REG.REF_DISCOUNT - 1]) || 0;
-      var expectedTotal = Math.max(0, calculated.finalPrice - couponDiscount - refDiscount);
-      
-      if (Math.abs(totalFee - expectedTotal) > 1) { // Allow 1 peso variance
-        result.pricing.mismatched++;
-        result.pricing.rowsToFix.push({ 
-          row: row, 
-          issue: "mismatch", 
-          current: totalFee, 
-          expected: expectedTotal 
-        });
-      } else {
-        result.pricing.correct++;
-      }
-    }
-    
-    // 4. Check Finance Sync
-    if (email) {
-      var emailLower = email.toLowerCase();
-      if (!financeEmails[emailLower]) {
-        result.financeSync.missingInFinance++;
-        result.financeSync.rowsToFix.push({ row: row, email: email, issue: "missing" });
-      } else {
-        // Check status consistency
-        var regStatus = String(rowData[SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS - 1] || "").toUpperCase().trim();
-        var finStatus = financeEmails[emailLower].status;
-        
-        if (regStatus && finStatus && regStatus !== finStatus) {
-          result.financeSync.statusMismatch++;
-          result.financeSync.rowsToFix.push({ 
-            row: row, 
-            email: email, 
-            issue: "status", 
-            regStatus: regStatus, 
-            finStatus: finStatus 
-          });
-        } else {
-          result.financeSync.inSync++;
-        }
-      }
-    }
-    
-    // 5. Validate Referral Codes
-    var usedRefCode = String(rowData[SYSTEM_CONFIG.COLS.REG.USED_REFERRAL - 1] || "").trim();
-    if (usedRefCode) {
-      // Check if the referral code exists as someone's Gen ID
-      if (existingGenIds[usedRefCode.toUpperCase()]) {
-        result.referrals.validCodes++;
-      } else {
-        result.referrals.invalidCodes++;
-        result.referrals.rowsToFix.push({ row: row, issue: "invalid_code", code: usedRefCode });
-      }
-    }
-    
-    // Check referral credit consistency
-    var refCount = parseInt(rowData[SYSTEM_CONFIG.COLS.REG.REF_COUNT - 1]) || 0;
-    var refEarnings = parseFloat(rowData[SYSTEM_CONFIG.COLS.REG.REF_EARNINGS - 1]) || 0;
-    
-    if (refCount > 0) {
-      // Calculate expected earnings: ₱50 first + ₱10 for rest
-      var expectedEarnings = 50 + Math.max(0, refCount - 1) * 10;
-      if (Math.abs(refEarnings - expectedEarnings) > 1) {
-        result.referrals.creditIssues++;
-        result.referrals.rowsToFix.push({ 
-          row: row, 
-          issue: "earnings", 
-          count: refCount, 
-          current: refEarnings, 
-          expected: expectedEarnings 
-        });
-      }
-    }
-  }
-  
-  return result;
-}
-
-/**
- * Fix all identified data issues
- */
-function fixAllDataIssues_(validation, columnAnalysis, needsCreation) {
-  var result = { fixed: [], failed: [] };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
-  
-  // 1. Fix column structure first
-  if (needsCreation.length > 0) {
-    try {
-      var fixResult = ColumnStructure.fixSystemColumns();
-      if (fixResult.success) {
-        result.fixed.push("Created " + needsCreation.length + " missing columns");
-      } else {
-        result.failed.push("Column creation: " + fixResult.errors.join(", "));
-      }
-    } catch (e) {
-      result.failed.push("Column fix error: " + e.message);
-    }
-  }
-  
-  // 2. Fix missing Gen IDs
-  if (validation.genIds.rowsToFix.length > 0) {
-    var genIdFixed = 0;
-    for (var i = 0; i < validation.genIds.rowsToFix.length; i++) {
-      var fix = validation.genIds.rowsToFix[i];
-      if (fix.issue === "missing") {
-        try {
-          var newId = IdGenerator.generate();
-          regSheet.getRange(fix.row, SYSTEM_CONFIG.COLS.REG.GEN_ID).setValue(newId);
-          genIdFixed++;
-        } catch (e) {
-          Logger.log("Gen ID fix error row " + fix.row + ": " + e);
-        }
-      }
-    }
-    if (genIdFixed > 0) {
-      result.fixed.push("Generated " + genIdFixed + " missing Gen IDs");
-    }
-  }
-  
-  // 3. Fix Finance sync (add missing entries)
-  if (validation.financeSync.rowsToFix.length > 0) {
-    var financeFixed = 0;
-    var regData = regSheet.getDataRange().getValues();
-    
-    for (var j = 0; j < validation.financeSync.rowsToFix.length; j++) {
-      var syncFix = validation.financeSync.rowsToFix[j];
-      if (syncFix.issue === "missing" && finSheet) {
-        try {
-          var rowData = regData[syncFix.row - 1];
-          var name = rowData[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "";
-          var email = syncFix.email;
-          var genId = rowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "";
-          var totalFee = rowData[SYSTEM_CONFIG.COLS.REG.TOTAL_FEE - 1] || 0;
-          
-          // Add to Finance sheet
-          var finLastRow = finSheet.getLastRow() + 1;
-          finSheet.getRange(finLastRow, 1, 1, 6).setValues([[
-            name,
-            email,
-            genId,
-            new Date(),
-            totalFee,
-            "NOT YET"
-          ]]);
-          financeFixed++;
-        } catch (e) {
-          Logger.log("Finance sync error: " + e);
-        }
-      }
-    }
-    if (financeFixed > 0) {
-      result.fixed.push("Added " + financeFixed + " missing Finance entries");
-    }
-  }
-  
-  // 4. Fix status mismatches (update Registration to match Finance)
-  var statusFixed = 0;
-  for (var k = 0; k < validation.financeSync.rowsToFix.length; k++) {
-    var statusFix = validation.financeSync.rowsToFix[k];
-    if (statusFix.issue === "status") {
-      try {
-        // Finance is source of truth for payment status
-        regSheet.getRange(statusFix.row, SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS).setValue(statusFix.finStatus);
-        statusFixed++;
-      } catch (e) {
-        Logger.log("Status fix error: " + e);
-      }
-    }
-  }
-  if (statusFixed > 0) {
-    result.fixed.push("Synced " + statusFixed + " payment statuses from Finance");
-  }
-  
-  // 5. Fix referral earnings calculations
-  if (validation.referrals.rowsToFix.length > 0) {
-    var earningsFixed = 0;
-    for (var m = 0; m < validation.referrals.rowsToFix.length; m++) {
-      var refFix = validation.referrals.rowsToFix[m];
-      if (refFix.issue === "earnings") {
-        try {
-          regSheet.getRange(refFix.row, SYSTEM_CONFIG.COLS.REG.REF_EARNINGS).setValue(refFix.expected);
-          earningsFixed++;
-        } catch (e) {
-          Logger.log("Earnings fix error: " + e);
-        }
-      }
-    }
-    if (earningsFixed > 0) {
-      result.fixed.push("Corrected " + earningsFixed + " referral earnings calculations");
-    }
-  }
-  
-  // 6. Fix pricing mismatches
-  if (validation.pricing.rowsToFix.length > 0) {
-    var pricingFixed = 0;
-    for (var n = 0; n < validation.pricing.rowsToFix.length; n++) {
-      var priceFix = validation.pricing.rowsToFix[n];
-      if (priceFix.issue === "mismatch") {
-        try {
-          regSheet.getRange(priceFix.row, SYSTEM_CONFIG.COLS.REG.TOTAL_FEE).setValue(priceFix.expected);
-          pricingFixed++;
-        } catch (e) {
-          Logger.log("Pricing fix error: " + e);
-        }
-      }
-    }
-    if (pricingFixed > 0) {
-      result.fixed.push("Corrected " + pricingFixed + " pricing calculations");
-    }
-  }
-  
-  // Report unfixable issues
-  var invalidEmails = validation.emails.rowsToFix.filter(function(r) { return r.issue === "invalid"; });
-  if (invalidEmails.length > 0) {
-    result.failed.push(invalidEmails.length + " invalid emails (need manual review)");
-  }
-  
-  var invalidRefs = validation.referrals.rowsToFix.filter(function(r) { return r.issue === "invalid_code"; });
-  if (invalidRefs.length > 0) {
-    result.failed.push(invalidRefs.length + " invalid referral codes (need manual review)");
-  }
-  
-  return result;
 }
 
 /**
@@ -9920,20 +9308,11 @@ function autoDetectColumnMapping() {
   }
   
   // Build HTML report
-  var html = '<!DOCTYPE html><html><head><style>' +
-    'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: #f8fafc; }' +
-    'h2 { color: #1e40af; margin-bottom: 5px; }' +
-    '.subtitle { color: #64748b; margin-bottom: 20px; }' +
-    '.section { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
-    '.section h3 { margin: 0 0 10px 0; color: #1e40af; font-size: 14px; }' +
-    '.code { background: #1e293b; color: #10b981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; white-space: pre; overflow-x: auto; max-height: 300px; overflow-y: auto; }' +
-    '.warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 0 8px 8px 0; margin: 10px 0; color: #92400e; font-size: 12px; }' +
-    '.success { background: #dcfce7; border-left: 4px solid #10b981; padding: 10px; border-radius: 0 8px 8px 0; margin: 10px 0; color: #166534; font-size: 12px; }' +
-    '.btn { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; }' +
-    '</style></head><body>' +
-    '<h2>🔎 Auto-Detected Column Mapping</h2>' +
-    '<p class="subtitle">Found ' + Object.keys(detected).length + ' system columns, ' + unmatched.length + ' unmatched</p>';
-  
+  var html = '<div class="ui-grid" style="margin-bottom:14px;">' +
+    uiStat_(Object.keys(detected).length, "System columns found", "ok") +
+    uiStat_(unmatched.length, "Not used by the system", "") +
+    '</div>';
+
   // Generate config code
   var configCode = "COLS: {\n  REG: {\n";
   var sortedKeys = Object.keys(detected).sort(function(a, b) {
@@ -9946,10 +9325,10 @@ function autoDetectColumnMapping() {
   }
   configCode += "  }\n}";
   
-  html += '<div class="section">' +
-    '<h3>📋 Generated SYSTEM_CONFIG.COLS.REG</h3>' +
-    '<p style="font-size:12px;color:#64748b;">Copy this and replace your current COLS.REG section:</p>' +
-    '<div class="code">' + configCode + '</div>' +
+  html += '<div class="ui-card">' +
+    '<h2 class="ui-card-title">Generated COLS.REG block</h2>' +
+    '<p class="ui-hint" style="margin:0 0 10px;">Copy this over the COLS.REG part of SYSTEM_CONFIG:</p>' +
+    '<pre class="ui-code">' + Utils.escapeHtml(configCode) + '</pre>' +
     '</div>';
   
   // Missing important columns warning
@@ -9964,7 +9343,7 @@ function autoDetectColumnMapping() {
   if (criticalMissing.length > 0) {
     html += '<div class="warning">' +
       '<strong>⚠️ Missing Critical Columns:</strong> ' + criticalMissing.join(", ") + '<br>' +
-      'Run "Check & Fix Columns + Data" to add these automatically!' +
+      'Run ' + Utils.escapeHtml(getMenuPathText_("checkAndFixColumns")) + ' to add these automatically!' +
       '</div>';
   } else {
     html += '<div class="success">' +
@@ -9974,22 +9353,25 @@ function autoDetectColumnMapping() {
   
   // Unmatched columns
   if (unmatched.length > 0) {
-    html += '<div class="section">' +
-      '<h3>❓ Unmatched Columns (' + unmatched.length + ')</h3>' +
-      '<p style="font-size:12px;color:#64748b;">These columns are not recognized by the system (usually form-only fields):</p>' +
+    html += '<div class="ui-card">' +
+      '<h2 class="ui-card-title">Columns the system does not use<span class="count">' + unmatched.length + '</span></h2>' +
+      '<p class="ui-hint" style="margin:0 0 10px;">Usually questions that only the form needs.</p>' +
       '<ul style="font-size:12px; max-height:150px; overflow-y:auto;">';
     for (var u = 0; u < unmatched.length; u++) {
-      html += '<li>Col ' + unmatched[u].col + ': ' + unmatched[u].header + '</li>';
+      html += '<li><b>' + columnToLetter_(unmatched[u].col) + '</b> ' + Utils.escapeHtml(String(unmatched[u].header)) + '</li>';
     }
     html += '</ul></div>';
   }
   
-  html += '<button class="btn" onclick="google.script.host.close()">Close</button>' +
-    '</body></html>';
-  
-  var dialog = HtmlService.createHtmlOutput(html)
-    .setWidth(650)
-    .setHeight(550);
+  var dialog = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F50E;",
+      title: "Auto-detected column mapping",
+      subtitle: "Read from the headers of " + SYSTEM_CONFIG.SHEETS.REGISTRATION,
+      actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+      body: html
+    }), "sheets"))
+    .setWidth(680)
+    .setHeight(620);
   ui.showModalDialog(dialog, "🔎 Auto-Detect Column Mapping");
 }
 
@@ -10034,55 +9416,63 @@ function showColumnMapping() {
   var ui = SpreadsheetApp.getUi();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  
+
   if (!regSheet) {
     ui.alert("❌ Error", "Registration sheet not found!", ui.ButtonSet.OK);
     return;
   }
-  
+
   var lastCol = regSheet.getLastColumn();
   var headers = lastCol > 0 ? regSheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
-  
-  var lines = [];
-  lines.push("📋 CURRENT COLUMN HEADERS");
-  lines.push("=========================");
-  lines.push("");
-  
+  var esc = Utils.escapeHtml;
+
+  // Every setting that points at a column (some columns have two names, e.g. TOTAL_FEE / FINAL_AMOUNT)
+  var keysByCol = {};
+  function note(col, key) { if (col) (keysByCol[col] = keysByCol[col] || []).push(key); }
+  Object.keys(SYSTEM_CONFIG.COLS.REG).forEach(function (key) { if (!/^CATEGORIES_/.test(key)) note(SYSTEM_CONFIG.COLS.REG[key], key); });
+  Object.keys(SYSTEM_CONFIG.SYS_REG_COLS || {}).forEach(function (key) { note(SYSTEM_CONFIG.SYS_REG_COLS[key], key); });
+  Object.keys(SYSTEM_CONFIG.SYS_REG_COLS_END || {}).forEach(function (key) { note(SYSTEM_CONFIG.SYS_REG_COLS_END[key], key); });
+
+  var used = 0;
+  var rows = [];
   for (var i = 0; i < headers.length; i++) {
-    var header = headers[i] || "(empty)";
     var col = i + 1;
-    
-    // Check if this column is in config
-    var configKey = "";
-    for (var key in SYSTEM_CONFIG.COLS.REG) {
-      if (SYSTEM_CONFIG.COLS.REG[key] === col) {
-        configKey = key;
-        break;
-      }
-    }
-    
-    var marker = configKey ? " ◄ " + configKey : "";
-    lines.push("Col " + col + ": " + header + marker);
+    var header = String(headers[i] === null || headers[i] === undefined ? "" : headers[i]).trim();
+    var keys = keysByCol[col] || [];
+    if (keys.length) used++;
+    rows.push([
+      '<b>' + columnToLetter_(col) + '</b> <span class="ui-muted">' + col + '</span>',
+      header ? esc(header.length > 80 ? header.substring(0, 80) + "…" : header) : '<span class="ui-muted">(empty)</span>',
+      keys.length ? '<code>' + esc(keys.join(" / ")) + '</code>' : '<span class="ui-muted">—</span>'
+    ]);
   }
-  
-  lines.push("");
-  lines.push("Total: " + lastCol + " columns");
-  
-  // Create HTML dialog for better display
-  var htmlContent = '<div style="font-family: monospace; font-size: 12px; white-space: pre-wrap;">' +
-    lines.join("\n").replace(/</g, "&lt;").replace(/>/g, "&gt;") +
-    '</div>';
-  
-  var html = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(500)
-    .setHeight(600)
+
+  var body =
+    '<div class="ui-grid" style="margin-bottom:14px;">' +
+      uiStat_(lastCol, "Columns in the sheet", "info") +
+      uiStat_(used, "Used by the system", "ok") +
+      uiStat_(lastCol - used, "Form-only columns", "") +
+    '</div>' +
+    '<p class="ui-lead">Each column of <b>' + esc(SYSTEM_CONFIG.SHEETS.REGISTRATION) + '</b>, with the setting that points at it. ' +
+    'A header that does not match its setting means a column was moved.</p>' +
+    '<div class="ui-scroll" style="max-height:none;">' + uiTable_(["Column", "Header in the sheet", "Setting"], rows, "The sheet has no columns yet.") + '</div>';
+
+  var html = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F4CB;",
+      title: "Column headers",
+      subtitle: SYSTEM_CONFIG.SHEETS.REGISTRATION,
+      actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+      body: body
+    }), "sheets"))
+    .setWidth(640)
+    .setHeight(640)
     .setTitle("Column Mapping");
-  
+
   ui.showModalDialog(html, "📋 Column Mapping");
 }
 
 // ============================================================================
-// PART 19: EMAIL MANAGEMENT SYSTEM (V19.0)
+// PART 19: EMAIL MANAGEMENT SYSTEM
 // ============================================================================
 
 /**
@@ -10160,13 +9550,23 @@ var EmailManager = (function() {
   /**
    * Check if an email was sent using ReceiptGuard tracking
    */
+  var propsSnapshot_ = null; // set only while getEmailStatusReport() is running
+
   function checkReceiptGuard_(genId, emailType) {
     var trackingKey = EMAIL_TYPES[emailType] ? EMAIL_TYPES[emailType].trackingKey : emailType;
     var key = "RECEIPT_HASH::" + trackingKey + "::" + genId;
     var metaKey = "RECEIPT_META::" + trackingKey + "::" + genId;
     
-    var hash = PropertiesService.getScriptProperties().getProperty(key);
-    var metaStr = PropertiesService.getScriptProperties().getProperty(metaKey);
+    // During a full report every tracking entry comes from one bulk read
+    // (two property reads per participant per email type made the report very slow)
+    var hash, metaStr;
+    if (propsSnapshot_) {
+      hash = propsSnapshot_[key];
+      metaStr = propsSnapshot_[metaKey];
+    } else {
+      hash = PropertiesService.getScriptProperties().getProperty(key);
+      metaStr = PropertiesService.getScriptProperties().getProperty(metaKey);
+    }
     
     if (!hash) {
       return { tracked: false, sent: false };
@@ -10180,7 +9580,8 @@ var EmailManager = (function() {
       sent: true,
       hash: hash,
       sentAt: meta.sentAt || "Unknown",
-      recipient: meta.recipient || "Unknown"
+      recipient: meta.recipient || "Unknown",
+      count: meta.count   // referral notifications: how many referrals the last notice covered
     };
   }
   
@@ -10188,6 +9589,15 @@ var EmailManager = (function() {
    * Get comprehensive email status report for all participants
    */
   function getEmailStatusReport() {
+    try {
+      propsSnapshot_ = PropertiesService.getScriptProperties().getProperties();
+      return buildEmailStatusReport_();
+    } finally {
+      propsSnapshot_ = null;
+    }
+  }
+
+  function buildEmailStatusReport_() {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
     var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
@@ -10354,7 +9764,10 @@ var EmailManager = (function() {
       // === Check Referral Notification Status ===
       if (refCount > 0) {
         var refGuard = checkReceiptGuard_(genId, "REFERRAL_SUCCESS");
-        if (refGuard.sent) {
+        // Notified, and that notice covered all the referrals they have now
+        var refNotified = refGuard.sent &&
+          !(refGuard.count !== undefined && refGuard.count !== null && Number(refGuard.count) < refCount);
+        if (refNotified) {
           participant.referralNotif.status = STATUS.SENT;
           participant.referralNotif.details = "Has " + refCount + " referral(s), notified";
           report.summary.referralNotif.sent++;
@@ -10436,24 +9849,8 @@ var EmailManager = (function() {
     
     var p = PricingEngine.calculate("", regData.competitions);
     
-    // V20.0 FIX: Get actual coupon discount value from Coupons sheet
-    var couponDiscountValue = 0;
-    if (regData.couponCode) {
-      try {
-        var couponSheet = repo.getCouponSheet();
-        if (couponSheet) {
-          var couponData = couponSheet.getDataRange().getValues();
-          for (var ci = 1; ci < couponData.length; ci++) {
-            if (Utils.upper(couponData[ci][0] || "") === Utils.upper(regData.couponCode)) {
-              couponDiscountValue = Number(couponData[ci][1] || 0);
-              break;
-            }
-          }
-        }
-      } catch (couponErr) {
-        Logger.log("Error fetching coupon value: " + couponErr);
-      }
-    }
+    // Actual coupon value from the Coupon Manager sheet (the lookup every feature shares)
+    var couponDiscountValue = regData.couponCode ? getCouponValue_(regData.couponCode, repo.getCouponSheet()) : 0;
     
     var paidData = {
       name: regData.name,
@@ -10463,7 +9860,7 @@ var EmailManager = (function() {
       genId: regData.genId,
       finalAmount: regData.finalAmount,
       couponCode: regData.couponCode,
-      couponDiscount: couponDiscountValue,  // V20.0 FIX: Actual coupon value
+      couponDiscount: couponDiscountValue,  // FIX: Actual coupon value
       referralDiscount: refDiscountApplied,
       cashback: regData.cashback,
       paidAt: paidAtDate
@@ -10677,7 +10074,7 @@ var EmailManager = (function() {
       
       // Rate limiting delay
       if (i < toResend.length - 1) {
-        Utilities.sleep(1500);
+        pauseBetweenEmails_();
       }
     }
     
@@ -10740,7 +10137,7 @@ var EmailManager = (function() {
 })();
 
 // ============================================================================
-// PART 19.1: EMAIL MANAGEMENT UI FUNCTIONS (V19.0)
+// PART 19.1: EMAIL MANAGEMENT UI FUNCTIONS
 // ============================================================================
 
 /**
@@ -10748,103 +10145,80 @@ var EmailManager = (function() {
  */
 function showEmailDashboard() {
   var ui = SpreadsheetApp.getUi();
-  
-  ui.alert("📧 Email Dashboard", 
-    "Loading email status report...\nThis may take a moment for large datasets.",
-    ui.ButtonSet.OK);
-  
+  SpreadsheetApp.getActiveSpreadsheet().toast("Reading the email status of every participant...", "📧 Email Status", 5);
+
   var report = EmailManager.getEmailStatusReport();
-  
+
   if (!report.success) {
     ui.alert("❌ Error", report.error, ui.ButtonSet.OK);
     return;
   }
-  
+
+  var esc = Utils.escapeHtml;
   var s = report.summary;
-  var lines = [];
-  lines.push("═══════════════════════════════════════════");
-  lines.push("📧 EMAIL STATUS DASHBOARD");
-  lines.push("═══════════════════════════════════════════");
-  lines.push("Generated: " + report.timestamp.toLocaleString());
-  lines.push("Total Participants: " + s.total);
-  lines.push("");
-  
-  lines.push("📝 REGISTRATION CONFIRMATION EMAILS:");
-  lines.push("   ✅ Sent: " + s.registration.sent);
-  lines.push("   ❌ Error: " + s.registration.error);
-  lines.push("   ⛔ Failed: " + s.registration.failed);
-  lines.push("   ⏭️ Skipped: " + s.registration.skipped);
-  lines.push("   ⏳ Pending/Unknown: " + s.registration.pending);
-  lines.push("");
-  
-  lines.push("🧾 OFFICIAL RECEIPT (OR) EMAILS:");
-  lines.push("   ✅ Sent: " + s.paidReceipt.sent);
-  lines.push("   ❌ Error: " + s.paidReceipt.error);
-  lines.push("   ⛔ Failed: " + s.paidReceipt.failed);
-  lines.push("   ⏭️ Skipped: " + s.paidReceipt.skipped);
-  lines.push("   ⏳ Pending (PAID but not sent): " + s.paidReceipt.pending);
-  lines.push("   ➖ Not Applicable: " + s.paidReceipt.notApplicable);
-  lines.push("");
-  
-  lines.push("🔗 REFERRAL NOTIFICATIONS:");
-  lines.push("   ✅ Sent: " + s.referralNotif.sent);
-  lines.push("   ⏳ Pending/Unknown: " + s.referralNotif.pending);
-  lines.push("");
-  
-  var issueCount = report.issues.paidReceiptErrors.length + 
-                   report.issues.pendingPaidReceipts.length;
-  
-  if (issueCount > 0) {
-    lines.push("═══════════════════════════════════════════");
-    lines.push("⚠️ ISSUES REQUIRING ATTENTION: " + issueCount);
-    lines.push("═══════════════════════════════════════════");
-    
-    if (report.issues.paidReceiptErrors.length > 0) {
-      lines.push("");
-      lines.push("❌ OR Emails with Errors (" + report.issues.paidReceiptErrors.length + "):");
-      for (var i = 0; i < Math.min(report.issues.paidReceiptErrors.length, 10); i++) {
-        var err = report.issues.paidReceiptErrors[i];
-        lines.push("   Row " + err.row + ": " + err.name + " (" + err.email + ")");
-      }
-      if (report.issues.paidReceiptErrors.length > 10) {
-        lines.push("   ... and " + (report.issues.paidReceiptErrors.length - 10) + " more");
-      }
-    }
-    
-    if (report.issues.pendingPaidReceipts.length > 0) {
-      lines.push("");
-      lines.push("⏳ PAID but OR Not Sent (" + report.issues.pendingPaidReceipts.length + "):");
-      for (var j = 0; j < Math.min(report.issues.pendingPaidReceipts.length, 10); j++) {
-        var pend = report.issues.pendingPaidReceipts[j];
-        lines.push("   Row " + pend.row + ": " + pend.name + " (" + pend.email + ")");
-      }
-      if (report.issues.pendingPaidReceipts.length > 10) {
-        lines.push("   ... and " + (report.issues.pendingPaidReceipts.length - 10) + " more");
-      }
-    }
-  } else {
-    lines.push("═══════════════════════════════════════════");
-    lines.push("✅ NO ISSUES FOUND - All emails OK!");
-    lines.push("═══════════════════════════════════════════");
+  var issues = report.issues || {};
+  var receiptErrors = issues.paidReceiptErrors || [];
+  var pendingReceipts = issues.pendingPaidReceipts || [];
+  var issueCount = receiptErrors.length + pendingReceipts.length;
+
+  function typeCard(title, stats) {
+    return uiCard_(title, '<div class="ui-grid" style="grid-template-columns:repeat(auto-fit,minmax(92px,1fr));">' + stats.join('') + '</div>');
   }
-  
-  // Create HTML dialog for better display
-  var htmlContent = '<div style="font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; padding: 15px; background: #f5f5f5; border-radius: 8px;">' +
-    lines.join("\n").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/✅/g, '<span style="color:green">✅</span>')
-      .replace(/❌/g, '<span style="color:red">❌</span>')
-      .replace(/⛔/g, '<span style="color:red">⛔</span>')
-      .replace(/⏳/g, '<span style="color:orange">⏳</span>')
-      .replace(/⚠️/g, '<span style="color:orange">⚠️</span>') +
-    '</div>';
-  
-  var html = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(550)
-    .setHeight(600)
+  function peopleTable(list) {
+    var rows = list.slice(0, 15).map(function (p) {
+      return [esc("Row " + p.row), '<b>' + esc(p.name || "") + '</b>', esc(p.email || "")];
+    });
+    var more = list.length > 15 ? '<div class="ui-hint">and ' + (list.length - 15) + ' more</div>' : '';
+    return uiTable_(["Where", "Name", "Email"], rows) + more;
+  }
+
+  var body = '';
+  body += issueCount === 0
+    ? uiCallout_("ok", "&#x2705;", "<b>Nothing needs attention.</b> Every " + esc(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) + " participant has their receipt.")
+    : uiCallout_("warn", "&#x26A0;&#xFE0F;", "<b>" + issueCount + " receipt" + (issueCount === 1 ? "" : "s") + " need attention.</b> They are listed below with the tools that fix them.");
+
+  body += typeCard("Registration Received", [
+    uiStat_(s.registration.sent, "Sent", "ok"),
+    uiStat_(s.registration.error, "Error", "bad"),
+    uiStat_(s.registration.failed, "Failed", "bad"),
+    uiStat_(s.registration.skipped, "Skipped", "warn"),
+    uiStat_(s.registration.pending, "Pending / unknown", "warn")
+  ]);
+  body += typeCard("Acknowledgement Receipt", [
+    uiStat_(s.paidReceipt.sent, "Sent", "ok"),
+    uiStat_(s.paidReceipt.error, "Error", "bad"),
+    uiStat_(s.paidReceipt.failed, "Failed", "bad"),
+    uiStat_(s.paidReceipt.skipped, "Skipped", "warn"),
+    uiStat_(s.paidReceipt.pending, "Paid, not sent", "warn"),
+    uiStat_(s.paidReceipt.notApplicable, "Not paid yet", "")
+  ]);
+  body += typeCard("Referral notifications", [
+    uiStat_(s.referralNotif.sent, "Sent", "ok"),
+    uiStat_(s.referralNotif.pending, "Pending / unknown", "warn")
+  ]);
+
+  if (receiptErrors.length) {
+    body += uiCard_("Receipts that failed", peopleTable(receiptErrors) +
+      '<div class="ui-hint">Fix the cause (usually a mistyped address), then run ' + esc(getMenuPathText_("resendAllFailedEmails")) + '.</div>', String(receiptErrors.length));
+  }
+  if (pendingReceipts.length) {
+    body += uiCard_(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD + " but no receipt sent", peopleTable(pendingReceipts) +
+      '<div class="ui-hint">Send them with ' + esc(getMenuPathText_("resendAllPendingOREmails")) + ', or one at a time with ' + esc(getMenuPathText_("resendSelectedRowEmailMenu")) + '.</div>', String(pendingReceipts.length));
+  }
+
+  var html = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F4E7;",
+      title: "Email status",
+      subtitle: s.total + " participant" + (s.total === 1 ? "" : "s") + " · read at " + Utils.nowTzString(),
+      actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+      body: body
+    }), "email"))
+    .setWidth(680)
+    .setHeight(640)
     .setTitle("Email Dashboard");
-  
+
   ui.showModalDialog(html, "📧 Email Status Dashboard");
-  
+
   AuditLogService.info("EMAIL_DASHBOARD_VIEWED", "Dashboard viewed. Issues: " + issueCount);
 }
 
@@ -11023,17 +10397,17 @@ function checkSelectedRowEmailStatus() {
   var ui = SpreadsheetApp.getUi();
   var sheet = SpreadsheetApp.getActiveSheet();
   var row = SpreadsheetApp.getActiveRange().getRow();
-  
+
   if (row < 2) {
     ui.alert("⚠️ Invalid Selection", "Please select a data row.", ui.ButtonSet.OK);
     return;
   }
-  
+
   var sheetName = sheet.getName();
   var genId = "";
   var email = "";
   var name = "";
-  
+
   if (sheetName === SYSTEM_CONFIG.SHEETS.REGISTRATION) {
     genId = sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.GEN_ID).getValue();
     email = sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.EMAIL).getValue();
@@ -11047,62 +10421,50 @@ function checkSelectedRowEmailStatus() {
     ui.alert("⚠️ Wrong Sheet", "Please select a row in Registration or Finance sheet.", ui.ButtonSet.OK);
     return;
   }
-  
+
   if (!genId) {
     ui.alert("⚠️ No Gen ID", "Selected row has no Generated ID.", ui.ButtonSet.OK);
     return;
   }
-  
-  var lines = [];
-  lines.push("═══════════════════════════════════════════");
-  lines.push("📧 EMAIL STATUS CHECK");
-  lines.push("═══════════════════════════════════════════");
-  lines.push("");
-  lines.push("👤 Name: " + name);
-  lines.push("📬 Email: " + email);
-  lines.push("🆔 Gen ID: " + genId);
-  lines.push("");
-  lines.push("───────────────────────────────────────────");
-  
-  // Check each email type
+
+  var esc = Utils.escapeHtml;
   var emailTypes = [
-    { key: "REGCONF", name: "📝 Registration Confirmation" },
-    { key: "PAID", name: "🧾 Acknowledgement Receipt (AR)" },
-    { key: "REFNOTIF_SUCCESS", name: "🎉 Referral Success Notification" },
-    { key: "REFNOTIF_REMOVED", name: "📤 Referral Removal Notification" }
+    { key: "REGCONF", icon: "&#x1F4DD;", name: "Registration Received" },
+    { key: "PAID", icon: "&#x1F9FE;", name: "Acknowledgement Receipt" },
+    { key: "REFNOTIF_SUCCESS", icon: "&#x1F389;", name: "Referral credit notification" },
+    { key: "REFNOTIF_REMOVED", icon: "&#x1F4E4;", name: "Referral removal notification" }
   ];
-  
-  for (var i = 0; i < emailTypes.length; i++) {
-    var type = emailTypes[i];
+
+  var items = emailTypes.map(function (type) {
     var status = EmailManager.verifyEmailSent(genId, type.key);
-    
-    lines.push("");
-    lines.push(type.name + ":");
-    if (status.sent) {
-      lines.push("   ✅ SENT");
-      lines.push("   📅 Sent At: " + status.sentAt);
-      lines.push("   📬 To: " + status.recipient);
-    } else {
-      lines.push("   ⚠️ NOT TRACKED");
-      lines.push("   (May not have been sent, or sent before tracking was implemented)");
-    }
-  }
-  
-  lines.push("");
-  lines.push("───────────────────────────────────────────");
-  lines.push("💡 Use 'Clear Email Tracking' to allow resending");
-  
-  var htmlContent = '<div style="font-family: Consolas, monospace; font-size: 11px; white-space: pre-wrap; padding: 15px; background: #f5f5f5; border-radius: 8px;">' +
-    lines.join("\n").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/✅/g, '<span style="color:green">✅</span>')
-      .replace(/⚠️/g, '<span style="color:orange">⚠️</span>') +
-    '</div>';
-  
-  var html = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(500)
-    .setHeight(450)
+    var sentDate = status.sent ? Utils.parseMaybeDate(status.sentAt) : null;
+    var sentText = sentDate ? Utilities.formatDate(sentDate, SYSTEM_CONFIG.META.TIMEZONE, "MMM d, yyyy h:mm a") : String(status.sentAt || "");
+    var detail = status.sent
+      ? "Sent " + esc(sentText) + (status.recipient ? " · to " + esc(String(status.recipient)) : "")
+      : "No record of this email. It may not have been sent, or it was sent before tracking existed.";
+    return '<li><div style="font-size:16px;line-height:1.3;">' + type.icon + '</div>' +
+      '<div class="grow"><div class="t">' + esc(type.name) + '</div><div class="d">' + detail + '</div></div>' +
+      (status.sent ? uiBadge_("Sent", "ok") : uiBadge_("Not tracked", "warn")) + '</li>';
+  }).join('');
+
+  var body =
+    uiCard_("Participant",
+      '<dl class="ui-kv"><dt>Name</dt><dd>' + esc(String(name || "")) + '</dd><dt>Email</dt><dd>' + esc(String(email || "")) +
+      '</dd><dt>Gen ID</dt><dd><code>' + esc(String(genId)) + '</code></dd></dl>') +
+    uiCard_("Emails", '<ul class="ui-list">' + items + '</ul>') +
+    '<div class="ui-hint">To let an email be sent again, use ' + esc(getMenuPathText_("clearSelectedRowEmailTracking")) + '.</div>';
+
+  var html = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F50D;",
+      title: "Emails sent to this participant",
+      subtitle: String(name || email || ""),
+      actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+      body: body
+    }), "email"))
+    .setWidth(560)
+    .setHeight(520)
     .setTitle("Email Status Check");
-  
+
   ui.showModalDialog(html, "📧 Email Status for " + name);
 }
 
@@ -11170,7 +10532,7 @@ function clearSelectedRowEmailTracking() {
   
   ui.alert("✅ Tracking Cleared",
     "Email tracking cleared for " + name + ".\n\n" +
-    "You can now resend emails using 'Resend Email for Selected Row'.",
+    "You can now resend emails using " + getMenuPathText_("resendSelectedRowEmailMenu") + ".",
     ui.ButtonSet.OK);
 }
 
@@ -11232,7 +10594,7 @@ function resendAllPendingOREmails() {
     }
     
     if (j < pending.length - 1) {
-      Utilities.sleep(1500);
+      pauseBetweenEmails_();
     }
   }
   
@@ -11287,14 +10649,14 @@ function quickVerifyOREmails() {
       "Some PAID participants have email issues:\n\n" +
       "• Errors/Failed: " + report.issues.paidReceiptErrors.length + "\n" +
       "• Pending (not sent): " + report.issues.pendingPaidReceipts.length + "\n\n" +
-      "Use 'Email Status Dashboard' for details, or\n" +
-      "'Resend Failed/Error Emails' to fix.",
+      "Use " + getMenuPathText_("showEmailDashboard") + " for details, or\n" +
+      getMenuPathText_("resendAllFailedEmails") + " to fix.",
       ui.ButtonSet.OK);
   }
 }
 
 /**
- * Resend all pending referral notifications (V19.1)
+ * Resend all pending referral notifications
  * Sends notifications to referrers who have referrals but no tracked notification
  */
 function resendAllPendingReferralNotifications() {
@@ -11365,7 +10727,7 @@ function resendAllPendingReferralNotifications() {
     
     // Rate limiting delay
     if (j < pendingReferrers.length - 1) {
-      Utilities.sleep(1500);
+      pauseBetweenEmails_();
     }
   }
   
@@ -11393,7 +10755,7 @@ function resendAllPendingReferralNotifications() {
 }
 
 /**
- * Resend referral notification for selected row (V19.1)
+ * Resend referral notification for selected row
  */
 function resendSelectedRowReferralNotification() {
   var ui = SpreadsheetApp.getUi();
@@ -11485,24 +10847,24 @@ function resendSelectedRowReferralNotification() {
 }
 
 /**
- * Comprehensive resend menu for selected row - all email types (V19.1)
+ * Comprehensive resend menu for selected row - all email types
  */
 function resendSelectedRowEmailMenu() {
   var ui = SpreadsheetApp.getUi();
   var sheet = SpreadsheetApp.getActiveSheet();
   var row = SpreadsheetApp.getActiveRange().getRow();
-  
+
   if (row < 2) {
     ui.alert("⚠️ Invalid Selection", "Please select a data row (not the header).", ui.ButtonSet.OK);
     return;
   }
-  
+
   var sheetName = sheet.getName();
   var email = "";
   var genId = "";
   var name = "";
   var refCount = 0;
-  
+
   if (sheetName === SYSTEM_CONFIG.SHEETS.REGISTRATION) {
     email = sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.EMAIL).getValue();
     genId = sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.GEN_ID).getValue();
@@ -11515,57 +10877,62 @@ function resendSelectedRowEmailMenu() {
     name = sheet.getRange(row, finCols.Name).getValue();
     refCount = Number(sheet.getRange(row, finCols.RefCount).getValue() || 0);
   } else {
-    ui.alert("⚠️ Wrong Sheet", 
+    ui.alert("⚠️ Wrong Sheet",
       "Please select a row in Registration or Finance sheet.",
       ui.ButtonSet.OK);
     return;
   }
-  
+
   if (!email || !genId) {
     ui.alert("⚠️ Missing Data", "Could not find email or Gen ID in selected row.", ui.ButtonSet.OK);
     return;
   }
-  
-  // Build menu HTML
-  var htmlContent = `
-    <style>
-      body { font-family: Arial, sans-serif; padding: 15px; }
-      .info { background: #f5f5f5; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
-      .btn { 
-        display: block; width: 100%; padding: 12px; margin: 8px 0; 
-        border: none; border-radius: 5px; cursor: pointer; font-size: 14px;
-        text-align: left;
-      }
-      .btn-reg { background: #4CAF50; color: white; }
-      .btn-or { background: #2196F3; color: white; }
-      .btn-ref { background: #FF9800; color: white; }
-      .btn:hover { opacity: 0.9; }
-      .btn:disabled { background: #ccc; cursor: not-allowed; }
-    </style>
-    <div class="info">
-      <strong>👤 ${name}</strong><br>
-      📬 ${email}<br>
-      🆔 ${genId}<br>
-      🔗 Referrals: ${refCount}
-    </div>
-    <p>Select email type to resend:</p>
-    <button class="btn btn-reg" onclick="google.script.run.withSuccessHandler(close).resendRegistrationEmailDirect('${email}')">
-      📝 Registration Confirmation
-    </button>
-    <button class="btn btn-or" onclick="google.script.run.withSuccessHandler(close).resendPaidReceiptDirect('${email}')">
-      🧾 Acknowledgement Receipt (AR)
-    </button>
-    <button class="btn btn-ref" onclick="google.script.run.withSuccessHandler(close).resendReferralNotificationDirect('${genId}')" ${refCount === 0 ? 'disabled title="No referrals"' : ''}>
-      🔗 Referral Notification ${refCount === 0 ? '(No referrals)' : '(' + refCount + ' referral' + (refCount > 1 ? 's' : '') + ')'}
-    </button>
-    <script>function close() { google.script.host.close(); }</script>
-  `;
-  
-  var html = HtmlService.createHtmlOutput(htmlContent)
-    .setWidth(350)
-    .setHeight(300)
+
+  var esc = Utils.escapeHtml;
+  var noReferrals = refCount === 0;
+  var body =
+    uiCard_("Participant",
+      '<dl class="ui-kv"><dt>Name</dt><dd>' + esc(String(name || "")) + '</dd><dt>Email</dt><dd>' + esc(String(email)) +
+      '</dd><dt>Gen ID</dt><dd><code>' + esc(String(genId)) + '</code></dd><dt>Paid referrals</dt><dd>' + refCount + '</dd></dl>') +
+    '<p class="ui-lead">Choose the email to send again. It goes out immediately.</p>' +
+    '<button class="ui-btn block lg" style="margin-bottom:8px;" onclick="send(\'registration\', this)">&#x1F4DD; Registration Received</button>' +
+    '<button class="ui-btn block lg" style="margin-bottom:8px;" onclick="send(\'receipt\', this)">&#x1F9FE; Acknowledgement Receipt</button>' +
+    '<button class="ui-btn block lg"' + (noReferrals ? ' disabled title="This participant has no paid referrals"' : '') + ' onclick="send(\'referral\', this)">&#x1F517; Referral notification' +
+      '<span class="sub">' + (noReferrals ? 'no referrals' : refCount + ' referral' + (refCount > 1 ? 's' : '')) + '</span></button>' +
+    '<div class="ui-hint" id="msg" style="margin-top:12px;"></div>';
+
+  // The values are handed to the page as JSON, so a quote in a name or address cannot break it
+  var script =
+    'var EMAIL = ' + JSON.stringify(String(email)) + ';\n' +
+    'var GEN_ID = ' + JSON.stringify(String(genId)) + ';\n' +
+    'function send(kind, btn) {\n' +
+    '  var buttons = document.querySelectorAll(".ui-btn.block");\n' +
+    '  var wasDisabled = [];\n' +
+    '  for (var i = 0; i < buttons.length; i++) { wasDisabled.push(buttons[i].disabled); buttons[i].disabled = true; }\n' +
+    '  document.getElementById("msg").textContent = "Sending...";\n' +
+    '  var run = google.script.run\n' +
+    '    .withSuccessHandler(function () { google.script.host.close(); })\n' +
+    '    .withFailureHandler(function (err) {\n' +
+    '      for (var j = 0; j < buttons.length; j++) buttons[j].disabled = wasDisabled[j];\n' +
+    '      document.getElementById("msg").textContent = "That did not work: " + (err && err.message ? err.message : err);\n' +
+    '    });\n' +
+    '  if (kind === "registration") run.resendRegistrationEmailDirect(EMAIL);\n' +
+    '  else if (kind === "receipt") run.resendPaidReceiptDirect(EMAIL);\n' +
+    '  else run.resendReferralNotificationDirect(GEN_ID);\n' +
+    '}';
+
+  var html = HtmlService.createHtmlOutput(withGuideLink_(buildAdminDialog_({
+      icon: "&#x1F4E7;",
+      title: "Resend an email",
+      subtitle: String(name || email),
+      actions: '<button class="ui-btn" onclick="google.script.host.close()">Cancel</button>',
+      body: body,
+      script: script
+    }), "email"))
+    .setWidth(460)
+    .setHeight(500)
     .setTitle("Resend Email");
-  
+
   ui.showModalDialog(html, "📧 Resend Email for " + name);
 }
 
@@ -11591,137 +10958,6 @@ function resendReferralNotificationDirect(genId) {
   return result.success;
 }
 
-
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  
-  ui.createMenu("🛠️ Admin Center")
-    // ===== SYSTEM BUILDER =====
-    .addItem("🏗️ BUILD BUILD BUILD", "showSystemBuilder")
-    .addItem("🔄 SYSTEM UPDATER", "runSystemUpdater")
-    .addSeparator()
-    
-    // ===== SYSTEM INTRODUCTION =====
-    .addItem("📚 System Introduction & Guide", "showSystemIntroduction")
-    .addSeparator()
-    
-    // ===== DASHBOARDS & REPORTS =====
-    .addSubMenu(ui.createMenu("📊 Dashboards & Reports")
-      .addItem("📈 Analytics Dashboard", "showAnalyticsDashboard")
-      .addItem("💰 Finance Dashboard", "showFinanceDashboard")
-      .addSeparator()
-      .addItem("📊 Setup Participant Database Query", "setupParticipantDatabaseQuery")
-      .addSeparator()
-      .addItem("📋 Export Cashback Report", "exportCashbackReport"))
-    
-    // ===== FINANCE OPERATIONS =====
-    .addSubMenu(ui.createMenu("💰 Finance Operations")
-      .addItem("🛡️ Payment Verification Center", "openPaymentVerificationCenter")
-      .addSeparator()
-      .addItem("🔄 Sync Dashboard (Light)", "syncDashboard")
-      .addItem("🧱 Rebuild Dashboard (Full + QA)", "rebuildFinanceDashboardFull")
-      .addItem("✅ Validate Dashboard (QA Only)", "validateFinanceDashboard")
-      .addSeparator()
-      .addItem("🧹 Cleanup Orphaned Rows", "cleanupOrphanedFinanceRows"))
-    
-    // ===== EMAIL MANAGEMENT =====
-    .addSubMenu(ui.createMenu("📧 Email Management")
-      .addItem("📊 Email Status Dashboard", "showEmailDashboard")
-      .addItem("✅ Quick Verify AR Emails", "quickVerifyOREmails")
-      .addSeparator()
-      .addSubMenu(ui.createMenu("👁️ Preview Emails")
-        .addItem("📝 Registration Confirmation", "previewConfirmedEmail")
-        .addItem("🧾 Acknowledgement Receipt", "previewReceipt")
-        .addItem("🎉 Referral Credit Notification", "previewReferralCredit")
-        .addItem("📋 Referral Removal Notification", "previewReferralRemoval"))
-      .addSeparator()
-      .addSubMenu(ui.createMenu("📤 Bulk Operations")
-        .addItem("🔄 Resend All Failed/Error Emails", "resendAllFailedEmails")
-        .addItem("📨 Resend All Pending AR Emails", "resendAllPendingOREmails")
-        .addItem("🔗 Resend All Pending Referral Notifs", "resendAllPendingReferralNotifications"))
-      .addSubMenu(ui.createMenu("📌 Selected Row")
-        .addItem("📧 Resend Email", "resendSelectedRowEmailMenu")
-        .addItem("🔗 Resend Referral Notification", "resendSelectedRowReferralNotification")
-        .addSeparator()
-        .addItem("🔍 Check Email Status", "checkSelectedRowEmailStatus")
-        .addItem("🗑️ Clear Email Tracking", "clearSelectedRowEmailTracking"))
-      .addSeparator()
-      .addItem("📊 View Rate Limit Status", "viewRateLimitStatus")
-      .addItem("🔄 Reset Rate Limiter", "resetRateLimiter"))
-    
-    // ===== SYSTEM TOOLS =====
-    .addSubMenu(ui.createMenu("🔧 System Tools")
-      .addItem("🚑 Run Health Check", "runHealthCheck")
-      .addItem("🧪 Run Quick Self-Test", "runQuickSelfTest")
-      .addSeparator()
-      .addItem("🔄 Smart Migration (Fix Old Data)", "runSmartMigration")
-      .addItem("⚡ Force Reprocess Selected Row", "forceReprocess")
-      .addSeparator()
-      .addItem("📧 Test Email Threading (New Email)", "testEmailThreading")
-      .addItem("📧 Test ALL Emails Threading (Selected Row)", "testThreadingExistingRegistration")
-      .addSeparator()
-      .addItem("🔐 Test Logo Permissions", "testLogoPermissions")
-      .addItem("⚙️ Create/Update Triggers", "createTriggers"))
-    
-    // ===== COLUMN TOOLS =====
-    .addSubMenu(ui.createMenu("⚙️ Column Configuration")
-      .addItem("🔍 Check & Fix Columns + Data", "checkAndFixColumns")
-      .addItem("🔎 Auto-Detect Column Mapping", "autoDetectColumnMapping")
-      .addSeparator()
-      .addItem("🧪 Test Column Access", "testColumnAccess")
-      .addItem("📋 Show All Column Headers", "showColumnMapping"))
-    
-    // ===== DATA MANAGEMENT =====
-    .addSubMenu(ui.createMenu("🗑️ Data Management")
-      .addItem("🔍 Diagnose Form Connection", "diagnoseFormConnection")
-      .addItem("📍 Where is Form Writing?", "showFormDestination")
-      .addSeparator()
-      .addItem("❌ Delete Selected Row", "deleteSelectedRow")
-      .addItem("❌ Delete Selected Rows (Range)", "deleteSelectedRows")
-      .addSeparator()
-      .addItem("🧹 Clear ALL Registration Data", "clearAllRegistrationData")
-      .addItem("🧹 Clear ALL Finance Data", "clearAllFinanceData")
-      .addItem("🔄 Clear Form Responses (Auto)", "clearAllFormResponses")
-      .addSeparator()
-      .addItem("🔧 Repair Form Link", "repairFormLink")
-      .addItem("🔗 Force Re-link Form", "forceRelinkForm")
-      .addSeparator()
-      .addItem("💣 FULL SYSTEM RESET", "fullSystemReset")
-      .addSeparator()
-      .addItem("📋 Troubleshooting Guide", "showFormResponseClearingGuide"))
-
-    // ===== V22: MERGE/GROUPING SYSTEM =====
-    .addSubMenu(ui.createMenu("🔗 Merge / Grouping System")
-      .addItem("🔗 Open Merge Interface", "openCombinedRegistrationMerge")
-      .addSeparator()
-      .addItem("🎨 Add Visual Group Indicators", "addMergeGroupIndicators")
-      .addItem("🧹 Remove Visual Indicators", "removeMergeGroupIndicators")
-      .addItem("📐 Rearrange Merged Rows (Contiguous)", "rearrangeMergedRows")
-      .addSeparator()
-      .addItem("🔁 Reapply All Merges (Calc Only)", "reapplyAllMergeGroups")
-      .addItem("📧 Send Group Receipt (Paid)", "promptSendGroupReceipt")
-      .addItem("📧 Send Group Received (Pending)", "promptSendGroupRegReceived")
-      .addSeparator()
-      .addItem("🔓 Unmerge Group (by ID)", "promptUnmergeGroup"))
-
-    // ===== V22: MANUAL EDITOR SYSTEM =====
-    .addSubMenu(ui.createMenu("✏️ Manual Editor System")
-      .addItem("✏️ Open Manual Editor (Live CRUD)", "openManualResponseEditor"))
-
-    .addToUi();
-
-  // ===== COUPONS MENU =====
-  ui.createMenu("🎫 Coupons")
-    .addSubMenu(ui.createMenu("🎟️ Promo Codes")
-      .addItem("➕ Generate New Promo Codes", "openCouponGenerator"))
-    .addSubMenu(ui.createMenu("🎖️ Member Ambassador")
-      .addItem("➕ Generate Member Codes", "openMemberCodeGenerator")
-      .addItem("📊 View Member Stats", "viewMemberCodeStats")
-      .addItem("📋 Export Compensation Report", "exportMemberCompensationReport"))
-    .addSeparator()
-    .addItem("🔄 Migrate Coupon Sheet (Add Type/Owner)", "migrateCouponSheet")
-    .addToUi();
-}
 
 // ============================================================================
 // TEST EMAIL THREADING FUNCTION
@@ -11769,7 +11005,7 @@ function testEmailThreading() {
   );
   
   var testId = "TEST-" + new Date().getTime();
-  var subject = "Husay ng Soksay: Threading Test [" + testId + "]";
+  var subject = SYSTEM_CONFIG.META.NAME + ": Threading Test [" + testId + "]";
   
   // Get inline images if requested
   var inlineImages = null;
@@ -11868,7 +11104,7 @@ function testEmailThreading() {
 
 /**
  * Test threading using existing registration (resend ALL email types)
- * V20.0: Tests RR, AR, Referral Success, and Referral Removal notifications
+ * Tests RR, AR, Referral Success, and Referral Removal notifications
  */
 function testThreadingExistingRegistration() {
   var ui = SpreadsheetApp.getUi();
@@ -11912,8 +11148,8 @@ function testThreadingExistingRegistration() {
   
   // SYS fields from dynamic columns
   var refDiscountApplied = 0;
-  if (headerIndex["SYS_REF_DISCOUNT_APPLIED"] !== undefined) {
-    refDiscountApplied = Number(rowData[headerIndex["SYS_REF_DISCOUNT_APPLIED"]] || 0);
+  if (headerIndex[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_DISCOUNT_APPLIED] !== undefined) {
+    refDiscountApplied = Number(rowData[headerIndex[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_DISCOUNT_APPLIED]] || 0);
   }
   
   if (!email || !genId) {
@@ -11921,24 +11157,8 @@ function testThreadingExistingRegistration() {
     return;
   }
   
-  // Get coupon discount value from Coupons sheet
-  var couponDiscountValue = 0;
-  if (lockedCoupon) {
-    try {
-      var couponSheet = repo.getCouponSheet();
-      if (couponSheet) {
-        var couponData = couponSheet.getDataRange().getValues();
-        for (var ci = 1; ci < couponData.length; ci++) {
-          if (Utils.upper(couponData[ci][0] || "") === Utils.upper(lockedCoupon)) {
-            couponDiscountValue = Number(couponData[ci][1] || 0);
-            break;
-          }
-        }
-      }
-    } catch (e) {
-      Logger.log("Error fetching coupon: " + e);
-    }
-  }
+  // Coupon value from the Coupon Manager sheet (the lookup every feature shares)
+  var couponDiscountValue = lockedCoupon ? getCouponValue_(lockedCoupon, repo.getCouponSheet()) : 0;
   
   // Calculate pricing
   var pricing = PricingEngine.calculate("", competitions);
@@ -12079,9 +11299,10 @@ function testThreadingExistingRegistration() {
     referrerName: name,
     referredName: "Test Referral Person",
     referredGenId: "TEST-REF-" + Date.now(),
-    newRefCount: refCount + 1,
-    newCashback: cashback + SYSTEM_CONFIG.PRICING.REFERRAL_CASHBACK_PER_USE,
-    cashbackPerReferral: SYSTEM_CONFIG.PRICING.REFERRAL_CASHBACK_PER_USE
+    // Same field names and reward rule the live notification uses
+    newCount: refCount + 1,
+    newCashback: cashback + (refCount === 0 ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT),
+    cashbackEarned: (refCount === 0 ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT)
   };
   
   var refSuccessHtml = EmailBuilder.buildReferralSuccessHtml(refSuccessData, { preview: false });
@@ -12111,9 +11332,9 @@ function testThreadingExistingRegistration() {
     referrerName: name,
     referredName: "Test Removed Person",
     referredGenId: "TEST-REM-" + Date.now(),
-    newRefCount: Math.max(0, refCount - 1),
-    newCashback: Math.max(0, cashback - SYSTEM_CONFIG.PRICING.REFERRAL_CASHBACK_PER_USE),
-    cashbackPerReferral: SYSTEM_CONFIG.PRICING.REFERRAL_CASHBACK_PER_USE,
+    newCount: Math.max(0, refCount - 1),
+    newCashback: Math.max(0, cashback - (refCount <= 1 ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT)),
+    cashbackRemoved: (refCount <= 1 ? SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.INITIAL : SYSTEM_CONFIG.PRICING.REFERRAL_REWARD.SUBSEQUENT),
     reason: "Payment was not completed (test scenario)"
   };
   
@@ -12166,1994 +11387,8 @@ function testThreadingExistingRegistration() {
 }
 
 // ============================================================================
-// ============================================================================
-// PART 20: PAYMENT VERIFICATION CENTER (V21.0) - COMPLETE REWRITE
-// ============================================================================
-// THIS VERSION:
-// 1. Shows ALL participants (not just PAID)
-// 2. Integrates Finance sheet data
-// 3. Allows manual editing of applicant amounts
-// 4. Stores applicant's stated amount in a dedicated column
-// 5. Provides automated email for mismatches
-// ============================================================================
-
-/**
- * Column index for Applicant Stated Amount (SYS_APPLICANT_AMOUNT)
- * This stores what the applicant claims they paid
- */
-var PVC_CONFIG = {
-  APPLICANT_AMOUNT_COL: 36,  // Column AJ - stores applicant's stated amount
-  VERIFICATION_STATUS_COL: 37, // Column AK - stores verification status
-  VERIFICATION_NOTES_COL: 38,  // Column AL - stores notes
-  CACHE_DURATION: 5 * 60 * 1000 // 5 minutes
-};
-
-/**
- * Cache manager for Payment Verification Center
- */
-var PVC_Cache = (function() {
-  var cache = {};
-  
-  function get(key) {
-    var item = cache[key];
-    if (item && (Date.now() - item.timestamp) < PVC_CONFIG.CACHE_DURATION) {
-      return item.data;
-    }
-    return null;
-  }
-  
-  function set(key, data) {
-    cache[key] = {
-      data: data,
-      timestamp: Date.now()
-    };
-  }
-  
-  function clear() {
-    cache = {};
-  }
-  
-  return {
-    get: get,
-    set: set,
-    clear: clear
-  };
-})();
-
-/**
- * Open the Payment Verification Center dashboard
- */
-function openPaymentVerificationCenter() {
-  var html = HtmlService.createHtmlOutput(getPaymentVerificationCenterHtml_())
-    .setWidth(1400)
-    .setHeight(800);
-  SpreadsheetApp.getUi().showModalDialog(html, "🛡️ Payment Verification Center");
-}
-
-/**
- * Get ALL payment data from both Registration and Finance sheets
- * This shows ALL participants regardless of payment status
- */
-function getPaymentVerificationData() {
-  var startTime = Date.now();
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
-  
-  if (!regSheet) {
-    return { error: "Registration sheet not found", payments: [], stats: {} };
-  }
-  
-  var lastRow = regSheet.getLastRow();
-  if (lastRow < 2) {
-    return { 
-      payments: [], 
-      stats: { total: 0, withPaymentProof: 0, verified: 0, mismatches: 0, pending: 0 } 
-    };
-  }
-  
-  // Check cache
-  var cacheKey = "pvc_data_" + lastRow + "_" + (finSheet ? finSheet.getLastRow() : 0);
-  var cached = PVC_Cache.get(cacheKey);
-  if (cached) {
-    Logger.log("Using cached payment verification data");
-    return cached;
-  }
-  
-  // Build Finance sheet data map (email -> finance data)
-  var financeMap = {};
-  if (finSheet && finSheet.getLastRow() > 1) {
-    var finData = finSheet.getDataRange().getValues();
-    var finHeaders = finData[0];
-    
-    // Find column indices in Finance sheet
-    var finEmailCol = -1, finStatusCol = -1, finAmountCol = -1, finVerifiedByCol = -1;
-    for (var h = 0; h < finHeaders.length; h++) {
-      var headerName = String(finHeaders[h]).toLowerCase();
-      if (headerName.indexOf("email") >= 0) finEmailCol = h;
-      if (headerName.indexOf("status") >= 0) finStatusCol = h;
-      if (headerName.indexOf("amount") >= 0 || headerName.indexOf("total") >= 0) finAmountCol = h;
-      if (headerName.indexOf("verified") >= 0 || headerName.indexOf("verifier") >= 0) finVerifiedByCol = h;
-    }
-    
-    // Build map
-    for (var f = 1; f < finData.length; f++) {
-      var finRow = finData[f];
-      var finEmail = finEmailCol >= 0 ? String(finRow[finEmailCol] || "").toLowerCase().trim() : "";
-      if (finEmail) {
-        financeMap[finEmail] = {
-          status: finStatusCol >= 0 ? String(finRow[finStatusCol] || "").trim() : "",
-          amount: finAmountCol >= 0 ? Number(finRow[finAmountCol] || 0) : 0,
-          verifiedBy: finVerifiedByCol >= 0 ? String(finRow[finVerifiedByCol] || "").trim() : "",
-          finRowIndex: f + 1
-        };
-      }
-    }
-  }
-  
-  Logger.log("Finance map built with " + Object.keys(financeMap).length + " entries");
-  
-  // Load Registration data - get ALL rows with email
-  var regData = regSheet.getDataRange().getValues();
-  var headers = regData[0];
-  
-  // Find column indices dynamically
-  var colIndices = findColumnIndices_(headers);
-  
-  var payments = [];
-  var stats = {
-    total: 0,
-    withPaymentProof: 0,
-    verified: 0,
-    mismatches: 0,
-    pending: 0,
-    notYet: 0,
-    paid: 0
-  };
-  
-  // Process each row (skip header)
-  for (var i = 1; i < regData.length; i++) {
-    var row = regData[i];
-    var rowIndex = i + 1;
-    
-    var email = colIndices.email >= 0 ? String(row[colIndices.email] || "").trim() : "";
-    
-    // Skip rows without email
-    if (!email) continue;
-    
-    stats.total++;
-    
-    var name = colIndices.name >= 0 ? String(row[colIndices.name] || "").trim() : "";
-    var genId = colIndices.genId >= 0 ? String(row[colIndices.genId] || "").trim() : "";
-    var competitions = colIndices.competition >= 0 ? String(row[colIndices.competition] || "").trim() : "";
-    var systemAmt = colIndices.totalFee >= 0 ? Number(row[colIndices.totalFee] || 0) : 0;
-    var paymentStatus = colIndices.paymentStatus >= 0 ? String(row[colIndices.paymentStatus] || "").trim() : "";
-    var paymentProof = colIndices.payProof >= 0 ? String(row[colIndices.payProof] || "").trim() : "";
-    var paymentMode = colIndices.payMode >= 0 ? String(row[colIndices.payMode] || "").trim() : "";
-    var couponCode = colIndices.lockedCoupon >= 0 ? String(row[colIndices.lockedCoupon] || "").trim() : "";
-    var referralCode = colIndices.lockedRef >= 0 ? String(row[colIndices.lockedRef] || "").trim() : "";
-    var baseFee = colIndices.baseFee >= 0 ? Number(row[colIndices.baseFee] || 0) : 0;
-    var bundleDiscount = colIndices.bundleDiscount >= 0 ? Number(row[colIndices.bundleDiscount] || 0) : 0;
-    var couponDiscount = colIndices.couponDiscount >= 0 ? Number(row[colIndices.couponDiscount] || 0) : 0;
-    var refDiscount = colIndices.refDiscount >= 0 ? Number(row[colIndices.refDiscount] || 0) : 0;
-    
-    // Get applicant stated amount from dedicated column (or default to system amount)
-    var applicantAmt = colIndices.applicantAmount >= 0 ? Number(row[colIndices.applicantAmount] || 0) : 0;
-    if (applicantAmt === 0) {
-      applicantAmt = systemAmt; // Default to system amount if not set
-    }
-    
-    // Get verification status
-    var verificationStatus = colIndices.verificationStatus >= 0 ? String(row[colIndices.verificationStatus] || "").trim() : "";
-    var verificationNotes = colIndices.verificationNotes >= 0 ? String(row[colIndices.verificationNotes] || "").trim() : "";
-    
-    // Get Finance sheet data for this email
-    var finData = financeMap[email.toLowerCase()] || null;
-    var financeStatus = finData ? finData.status : "";
-    var financeAmount = finData ? finData.amount : 0;
-    var verifiedBy = finData ? finData.verifiedBy : "";
-    
-    // Parse competitions
-    var competitionsArray = [];
-    var competitionBreakdown = [];
-    if (competitions) {
-      var rawComps = competitions.split(",");
-      for (var c = 0; c < rawComps.length; c++) {
-        var comp = rawComps[c].trim();
-        if (comp) {
-          competitionsArray.push(comp);
-          var price = getCompetitionPrice_(comp);
-          competitionBreakdown.push({ competition: comp, price: price });
-        }
-      }
-    }
-    
-    // Calculate expected total
-    var expectedTotal = Math.max(0, baseFee - bundleDiscount - couponDiscount - refDiscount);
-    
-    // Determine verification status
-    var status = "pending";
-    var hasPaymentProof = paymentProof && paymentProof.length > 0;
-    
-    if (hasPaymentProof) {
-      stats.withPaymentProof++;
-    }
-    
-    // Normalize payment status
-    var normPaymentStatus = paymentStatus.toUpperCase();
-    if (normPaymentStatus === "PAID") {
-      stats.paid++;
-    } else if (normPaymentStatus === "NOT YET" || normPaymentStatus === "NOTYET") {
-      stats.notYet++;
-    }
-    
-    // Determine mismatch status
-    if (verificationStatus === "VERIFIED") {
-      status = "verified";
-      stats.verified++;
-    } else if (verificationStatus === "MISMATCH") {
-      status = "mismatch";
-      stats.mismatches++;
-      stats.pending++;
-    } else if (verificationStatus === "NO_MISMATCH") {
-      status = "no_mismatch";
-    } else if (hasPaymentProof || normPaymentStatus === "PAID") {
-      // Auto-check for mismatch if payment proof exists or status is PAID
-      if (Math.abs(applicantAmt - expectedTotal) > 1) {
-        status = "mismatch";
-        stats.mismatches++;
-        stats.pending++;
-      } else {
-        status = "no_mismatch";
-      }
-    }
-    
-    payments.push({
-      rowIndex: rowIndex,
-      id: genId || "N/A",
-      name: name || "N/A",
-      email: email,
-      applicantAmt: applicantAmt,
-      systemAmt: expectedTotal,
-      baseFee: baseFee,
-      competitions: competitionsArray,
-      competitionBreakdown: competitionBreakdown,
-      bundleDiscount: bundleDiscount,
-      couponDiscount: couponDiscount,
-      refDiscount: refDiscount,
-      status: status,
-      paymentStatus: paymentStatus || "NOT YET",
-      financeStatus: financeStatus,
-      financeAmount: financeAmount,
-      verifiedBy: verifiedBy,
-      hasPaymentProof: hasPaymentProof,
-      paymentProof: paymentProof,
-      paymentMode: paymentMode,
-      couponCode: couponCode,
-      referralCode: referralCode,
-      verificationStatus: verificationStatus,
-      verificationNotes: verificationNotes,
-      emailSent: false // TODO: Track verification emails sent
-    });
-  }
-  
-  var result = {
-    payments: payments,
-    stats: stats,
-    loadTime: Date.now() - startTime,
-    hasFinanceSheet: !!finSheet
-  };
-  
-  PVC_Cache.set(cacheKey, result);
-  
-  Logger.log("Payment verification data loaded: " + payments.length + " payments in " + result.loadTime + "ms");
-  Logger.log("Stats: " + JSON.stringify(stats));
-  
-  return result;
-}
-
-/**
- * Find column indices dynamically from headers
- */
-function findColumnIndices_(headers) {
-  var indices = {
-    email: -1,
-    name: -1,
-    genId: -1,
-    competition: -1,
-    totalFee: -1,
-    paymentStatus: -1,
-    payProof: -1,
-    payMode: -1,
-    lockedCoupon: -1,
-    lockedRef: -1,
-    baseFee: -1,
-    bundleDiscount: -1,
-    couponDiscount: -1,
-    refDiscount: -1,
-    applicantAmount: -1,
-    verificationStatus: -1,
-    verificationNotes: -1
-  };
-  
-  for (var i = 0; i < headers.length; i++) {
-    var header = String(headers[i]).toLowerCase().trim();
-    
-    if (header.indexOf("email") >= 0 && indices.email < 0) indices.email = i;
-    else if ((header.indexOf("name") >= 0 || header.indexOf("full name") >= 0) && indices.name < 0) indices.name = i;
-    else if ((header.indexOf("gen") >= 0 || header.indexOf("id") >= 0) && header.indexOf("gen") >= 0 && indices.genId < 0) indices.genId = i;
-    else if ((header.indexOf("competition") >= 0 || header.indexOf("category") >= 0) && indices.competition < 0) indices.competition = i;
-    else if ((header.indexOf("total") >= 0 || header.indexOf("fee") >= 0) && header.indexOf("total") >= 0 && indices.totalFee < 0) indices.totalFee = i;
-    else if (header.indexOf("payment status") >= 0 && indices.paymentStatus < 0) indices.paymentStatus = i;
-    else if ((header.indexOf("proof") >= 0 || header.indexOf("screenshot") >= 0) && indices.payProof < 0) indices.payProof = i;
-    else if ((header.indexOf("payment method") >= 0 || header.indexOf("pay mode") >= 0) && indices.payMode < 0) indices.payMode = i;
-    else if (header.indexOf("locked_coupon") >= 0 && indices.lockedCoupon < 0) indices.lockedCoupon = i;
-    else if (header.indexOf("locked_ref") >= 0 && indices.lockedRef < 0) indices.lockedRef = i;
-    else if (header.indexOf("base fee") >= 0 && indices.baseFee < 0) indices.baseFee = i;
-    else if (header.indexOf("bundle discount") >= 0 && indices.bundleDiscount < 0) indices.bundleDiscount = i;
-    else if (header.indexOf("coupon discount") >= 0 && indices.couponDiscount < 0) indices.couponDiscount = i;
-    else if (header.indexOf("referral discount") >= 0 && indices.refDiscount < 0) indices.refDiscount = i;
-    else if (header.indexOf("applicant amount") >= 0 && indices.applicantAmount < 0) indices.applicantAmount = i;
-    else if (header.indexOf("verification status") >= 0 && indices.verificationStatus < 0) indices.verificationStatus = i;
-    else if (header.indexOf("verification notes") >= 0 && indices.verificationNotes < 0) indices.verificationNotes = i;
-  }
-  
-  // Use SYSTEM_CONFIG as fallback
-  if (indices.email < 0 && SYSTEM_CONFIG.COLS.REG.EMAIL) indices.email = SYSTEM_CONFIG.COLS.REG.EMAIL - 1;
-  if (indices.name < 0 && SYSTEM_CONFIG.COLS.REG.NAME) indices.name = SYSTEM_CONFIG.COLS.REG.NAME - 1;
-  if (indices.genId < 0 && SYSTEM_CONFIG.COLS.REG.GEN_ID) indices.genId = SYSTEM_CONFIG.COLS.REG.GEN_ID - 1;
-  if (indices.competition < 0 && SYSTEM_CONFIG.COLS.REG.COMPETITION) indices.competition = SYSTEM_CONFIG.COLS.REG.COMPETITION - 1;
-  if (indices.totalFee < 0 && SYSTEM_CONFIG.COLS.REG.TOTAL_FEE) indices.totalFee = SYSTEM_CONFIG.COLS.REG.TOTAL_FEE - 1;
-  if (indices.paymentStatus < 0 && SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS) indices.paymentStatus = SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS - 1;
-  if (indices.payProof < 0 && SYSTEM_CONFIG.COLS.REG.PAY_PROOF) indices.payProof = SYSTEM_CONFIG.COLS.REG.PAY_PROOF - 1;
-  if (indices.payMode < 0 && SYSTEM_CONFIG.COLS.REG.PAY_MODE) indices.payMode = SYSTEM_CONFIG.COLS.REG.PAY_MODE - 1;
-  if (indices.lockedCoupon < 0 && SYSTEM_CONFIG.COLS.REG.LOCKED_COUPON) indices.lockedCoupon = SYSTEM_CONFIG.COLS.REG.LOCKED_COUPON - 1;
-  if (indices.lockedRef < 0 && SYSTEM_CONFIG.COLS.REG.LOCKED_REF) indices.lockedRef = SYSTEM_CONFIG.COLS.REG.LOCKED_REF - 1;
-  if (indices.bundleDiscount < 0 && SYSTEM_CONFIG.COLS.REG.BUNDLE_DISCOUNT) indices.bundleDiscount = SYSTEM_CONFIG.COLS.REG.BUNDLE_DISCOUNT - 1;
-  if (indices.couponDiscount < 0 && SYSTEM_CONFIG.COLS.REG.COUPON_DISCOUNT) indices.couponDiscount = SYSTEM_CONFIG.COLS.REG.COUPON_DISCOUNT - 1;
-  if (indices.refDiscount < 0 && SYSTEM_CONFIG.COLS.REG.REF_DISCOUNT) indices.refDiscount = SYSTEM_CONFIG.COLS.REG.REF_DISCOUNT - 1;
-  
-  // PVC-specific columns
-  if (indices.applicantAmount < 0) indices.applicantAmount = PVC_CONFIG.APPLICANT_AMOUNT_COL - 1;
-  if (indices.verificationStatus < 0) indices.verificationStatus = PVC_CONFIG.VERIFICATION_STATUS_COL - 1;
-  if (indices.verificationNotes < 0) indices.verificationNotes = PVC_CONFIG.VERIFICATION_NOTES_COL - 1;
-  
-  return indices;
-}
-
-/**
- * Get competition price
- */
-function getCompetitionPrice_(competitionName) {
-  if (!competitionName) return 0;
-  
-  var normalized = competitionName.toUpperCase().trim();
-  
-  // Check SYSTEM_CONFIG pricing
-  if (SYSTEM_CONFIG && SYSTEM_CONFIG.PRICING && SYSTEM_CONFIG.PRICING.SINGLE) {
-    for (var key in SYSTEM_CONFIG.PRICING.SINGLE) {
-      if (normalized.indexOf(key.toUpperCase()) >= 0 || key.toUpperCase().indexOf(normalized) >= 0) {
-        return SYSTEM_CONFIG.PRICING.SINGLE[key];
-      }
-    }
-  }
-  
-  // Default prices based on keywords
-  if (normalized.indexOf("SHORT FILM") >= 0 || normalized.indexOf("FILM") >= 0) return 499;
-  if (normalized.indexOf("PHOTOGRAPHY") >= 0 || normalized.indexOf("PHOTO") >= 0) return 349;
-  if (normalized.indexOf("SPEECH") >= 0) return 349;
-  if (normalized.indexOf("ESSAY") >= 0) return 349;
-  
-  return 349; // Default price
-}
-
-/**
- * Update applicant's stated payment amount
- */
-function updateApplicantAmount(rowIndex, newAmount) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  
-  if (!regSheet) {
-    throw new Error("Registration sheet not found");
-  }
-  
-  // Ensure the column exists
-  ensurePVCColumnsExist_(regSheet);
-  
-  // Update the applicant amount
-  regSheet.getRange(rowIndex, PVC_CONFIG.APPLICANT_AMOUNT_COL).setValue(Number(newAmount));
-  
-  // Clear cache
-  PVC_Cache.clear();
-  
-  // Log the update
-  AuditLogService.info("PVC_AMOUNT_UPDATED", "Row " + rowIndex + " applicant amount updated to ₱" + newAmount);
-  
-  return { 
-    success: true, 
-    message: "Applicant amount updated to ₱" + Number(newAmount).toLocaleString()
-  };
-}
-
-/**
- * Mark payment as verified with status
- */
-function markPaymentVerified(rowIndex, status, notes) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  
-  if (!regSheet) {
-    throw new Error("Registration sheet not found");
-  }
-  
-  // Ensure the column exists
-  ensurePVCColumnsExist_(regSheet);
-  
-  // Update verification status
-  regSheet.getRange(rowIndex, PVC_CONFIG.VERIFICATION_STATUS_COL).setValue(status);
-  
-  // Update notes if provided
-  if (notes !== undefined) {
-    regSheet.getRange(rowIndex, PVC_CONFIG.VERIFICATION_NOTES_COL).setValue(notes);
-  }
-  
-  // Clear cache
-  PVC_Cache.clear();
-  
-  // Log the verification
-  AuditLogService.info("PVC_PAYMENT_VERIFIED", "Row " + rowIndex + " marked as " + status + (notes ? " - " + notes : ""));
-  
-  return { 
-    success: true, 
-    message: "Payment marked as " + status
-  };
-}
-
-/**
- * Ensure PVC-specific columns exist in the sheet
- */
-function ensurePVCColumnsExist_(sheet) {
-  var lastCol = sheet.getLastColumn();
-  
-  // Add headers if columns don't exist
-  if (lastCol < PVC_CONFIG.APPLICANT_AMOUNT_COL) {
-    sheet.getRange(1, PVC_CONFIG.APPLICANT_AMOUNT_COL).setValue("SYS_APPLICANT_AMOUNT");
-  }
-  if (lastCol < PVC_CONFIG.VERIFICATION_STATUS_COL) {
-    sheet.getRange(1, PVC_CONFIG.VERIFICATION_STATUS_COL).setValue("SYS_VERIFICATION_STATUS");
-  }
-  if (lastCol < PVC_CONFIG.VERIFICATION_NOTES_COL) {
-    sheet.getRange(1, PVC_CONFIG.VERIFICATION_NOTES_COL).setValue("SYS_VERIFICATION_NOTES");
-  }
-}
-
-/**
- * Send verification email for payment mismatch
- */
-function sendPaymentVerificationEmail(paymentData, emailContent) {
-  try {
-    var repo = new SheetRepository();
-    var participant = repo.getRegistrationByEmail(paymentData.email);
-    
-    if (!participant) {
-      throw new Error("Participant not found for email: " + paymentData.email);
-    }
-    
-    // Build email HTML
-    var emailHtml = buildPaymentVerificationEmailHtml_(paymentData, emailContent);
-    
-    // Send using EmailService with threading support
-    var threadId = null;
-    var regSheet = repo.getRegistrationSheet();
-    if (regSheet && paymentData.rowIndex) {
-      try {
-        var threadIdCell = regSheet.getRange(paymentData.rowIndex, SYSTEM_CONFIG.SYS_REG_COLS.SYS_EMAIL_THREAD_ID).getValue();
-        if (threadIdCell) threadId = String(threadIdCell);
-      } catch (e) {
-        Logger.log("Could not get thread ID: " + e);
-      }
-    }
-    
-    // Send email
-    var options = {
-      to: paymentData.email,
-      name: SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME,
-      subject: emailContent.subject,
-      htmlBody: emailHtml,
-      inlineImages: LogoService.getInlineImages()
-    };
-    
-    var result;
-    if (threadId) {
-      result = EmailService.sendThreadedEmail(options, threadId);
-    } else {
-      result = EmailService.sendThreadedEmail(options, null);
-      // Save thread ID
-      if (result.threadId && regSheet && paymentData.rowIndex) {
-        regSheet.getRange(paymentData.rowIndex, SYSTEM_CONFIG.SYS_REG_COLS.SYS_EMAIL_THREAD_ID).setValue(result.threadId);
-      }
-    }
-    
-    // Log the verification email
-    AuditLogService.info("PVC_VERIFY_EMAIL_SENT", "Sent to " + paymentData.email + " - " + paymentData.name);
-    
-    return { 
-      success: true, 
-      message: "Verification email sent successfully to " + paymentData.email
-    };
-    
-  } catch (e) {
-    AuditLogService.error("PVC_VERIFY_EMAIL_FAILED", "Error: " + e.toString() + " | Email: " + paymentData.email);
-    throw e;
-  }
-}
-
-/**
- * Build payment verification email HTML
- */
-function buildPaymentVerificationEmailHtml_(paymentData, emailContent) {
-  var htmlParts = [];
-  
-  htmlParts.push('<!DOCTYPE html>');
-  htmlParts.push('<html><head><meta charset="UTF-8"></head>');
-  htmlParts.push('<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: 0 auto; padding: 20px;">');
-  
-  // Header with logos
-  htmlParts.push('<div style="text-align: center; margin-bottom: 30px;">');
-  htmlParts.push('<img src="cid:uplb_logo" style="height: 60px; margin: 0 15px;" alt="UPLB Logo" />');
-  htmlParts.push('<img src="cid:husay_logo" style="height: 60px; margin: 0 15px;" alt="Husay ng Soksay Logo" />');
-  htmlParts.push('</div>');
-  
-  // Title
-  htmlParts.push('<div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 25px;">');
-  htmlParts.push('<h1 style="margin: 0; font-size: 24px;">⚠️ Payment Verification Required</h1>');
-  htmlParts.push('</div>');
-  
-  // Greeting
-  htmlParts.push('<p style="font-size: 16px;">Dear <strong>' + escapeHtml_(paymentData.name) + '</strong>,</p>');
-  htmlParts.push('<p>We noticed a discrepancy in your registration payment for <strong>HUSAY NG SOKSAY</strong>. Please review the details below:</p>');
-  
-  // Registration Details Box
-  htmlParts.push('<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">');
-  htmlParts.push('<h3 style="margin-top: 0; color: #1f2937;">📋 Registration Details</h3>');
-  htmlParts.push('<table style="width: 100%; border-collapse: collapse;">');
-  htmlParts.push('<tr><td style="padding: 5px 0;"><strong>Registration ID:</strong></td><td>' + escapeHtml_(paymentData.id) + '</td></tr>');
-  htmlParts.push('<tr><td style="padding: 5px 0;"><strong>Email:</strong></td><td>' + escapeHtml_(paymentData.email) + '</td></tr>');
-  htmlParts.push('</table>');
-  htmlParts.push('</div>');
-  
-  // Competition Breakdown
-  if (paymentData.competitionBreakdown.length > 0) {
-    htmlParts.push('<div style="background: #dbeafe; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">');
-    htmlParts.push('<h3 style="margin-top: 0; color: #1e40af;">🏆 Competitions Registered</h3>');
-    
-    for (var i = 0; i < paymentData.competitionBreakdown.length; i++) {
-      var comp = paymentData.competitionBreakdown[i];
-      htmlParts.push('<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #bfdbfe;">');
-      htmlParts.push('<span>• ' + escapeHtml_(comp.competition) + '</span>');
-      htmlParts.push('<span style="font-weight: bold; color: #059669;">₱' + comp.price.toLocaleString() + '</span>');
-      htmlParts.push('</div>');
-    }
-    htmlParts.push('</div>');
-  }
-  
-  // Payment Summary
-  htmlParts.push('<div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">');
-  htmlParts.push('<h3 style="margin-top: 0; color: #991b1b;">💰 Payment Summary</h3>');
-  htmlParts.push('<table style="width: 100%; border-collapse: collapse;">');
-  htmlParts.push('<tr><td style="padding: 8px 0;"><strong>Your Submitted Amount:</strong></td><td style="text-align: right; font-size: 18px; color: #dc2626;">₱' + paymentData.applicantAmt.toLocaleString() + '</td></tr>');
-  htmlParts.push('<tr><td style="padding: 8px 0;"><strong>System Calculated Amount:</strong></td><td style="text-align: right; font-size: 18px; color: #059669;">₱' + paymentData.systemAmt.toLocaleString() + '</td></tr>');
-  
-  var diff = Math.abs(paymentData.systemAmt - paymentData.applicantAmt);
-  var diffType = paymentData.applicantAmt < paymentData.systemAmt ? "(Underpayment)" : "(Overpayment)";
-  
-  htmlParts.push('<tr style="border-top: 2px solid #dc2626;"><td style="padding: 8px 0;"><strong>Difference:</strong></td><td style="text-align: right; font-size: 20px; font-weight: bold; color: #dc2626;">₱' + diff.toLocaleString() + ' ' + diffType + '</td></tr>');
-  htmlParts.push('</table>');
-  htmlParts.push('</div>');
-  
-  // Verification Checklist
-  htmlParts.push('<div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">');
-  htmlParts.push('<h3 style="margin-top: 0; color: #92400e;">✅ Please Verify</h3>');
-  
-  if (emailContent.items) {
-    if (emailContent.items.paymentAmount) htmlParts.push('<p>✅ Payment amount</p>');
-    if (emailContent.items.competitions) htmlParts.push('<p>✅ Competition selections</p>');
-    if (emailContent.items.couponCode) htmlParts.push('<p>✅ Coupon code (if any)</p>');
-    if (emailContent.items.referralCode) htmlParts.push('<p>✅ Referral code (if any)</p>');
-    if (emailContent.items.paymentMethod) htmlParts.push('<p>✅ Payment method</p>');
-    if (emailContent.items.proofOfPayment) htmlParts.push('<p>✅ Proof of payment</p>');
-  }
-  
-  htmlParts.push('</div>');
-  
-  // Instructions
-  htmlParts.push('<p>Please <strong>reply to this email</strong> with the correct information or contact us if you have any questions.</p>');
-  
-  // Footer
-  htmlParts.push('<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280;">');
-  htmlParts.push('<p style="margin: 5px 0;">For inquiries, contact us at:</p>');
-  
-  var contactEmail = SYSTEM_CONFIG && SYSTEM_CONFIG.ADMIN && SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL && SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT ? SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT.EMAIL : "";
-  var contactFB = SYSTEM_CONFIG && SYSTEM_CONFIG.ADMIN && SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL && SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT ? SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT.FACEBOOK : "";
-  var contactIG = SYSTEM_CONFIG && SYSTEM_CONFIG.ADMIN && SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL && SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT ? SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT.INSTAGRAM : "";
-  
-  if (contactEmail) htmlParts.push('<p style="margin: 5px 0;"><strong>Email:</strong> ' + contactEmail + '</p>');
-  if (contactFB) htmlParts.push('<p style="margin: 5px 0;"><strong>Facebook:</strong> ' + contactFB + '</p>');
-  if (contactIG) htmlParts.push('<p style="margin: 5px 0;"><strong>Instagram:</strong> ' + contactIG + '</p>');
-  
-  htmlParts.push('<p style="margin-top: 20px; font-style: italic;">Para sa malayang mga kwento,<br><strong>The Husay Ng Soksay Team</strong></p>');
-  htmlParts.push('</div>');
-  
-  htmlParts.push('</body></html>');
-  
-  return htmlParts.join('');
-}
-
-/**
- * Escape HTML special characters
- */
-function escapeHtml_(text) {
-  if (!text) return "";
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-/**
- * Send bulk verification emails to all mismatched payments
- */
-function sendBulkVerificationEmails() {
-  var data = getPaymentVerificationData();
-  
-  if (data.error) {
-    return { success: false, error: data.error };
-  }
-  
-  var mismatches = [];
-  
-  for (var i = 0; i < data.payments.length; i++) {
-    if (data.payments[i].status === "mismatch") {
-      mismatches.push(data.payments[i]);
-    }
-  }
-  
-  if (mismatches.length === 0) {
-    return { success: true, message: "No mismatches to send emails to", count: 0 };
-  }
-  
-  var sent = 0;
-  var failed = 0;
-  var errors = [];
-  
-  // Process in batches
-  var BATCH_SIZE = 5;
-  
-  for (var batchStart = 0; batchStart < mismatches.length; batchStart += BATCH_SIZE) {
-    var batchEnd = Math.min(batchStart + BATCH_SIZE, mismatches.length);
-    var currentBatch = mismatches.slice(batchStart, batchEnd);
-    
-    SpreadsheetApp.getActiveSpreadsheet().toast(
-      "Sending batch " + (Math.floor(batchStart / BATCH_SIZE) + 1) + " of " + Math.ceil(mismatches.length / BATCH_SIZE), 
-      "📧 Bulk Email", 3
-    );
-    
-    for (var j = 0; j < currentBatch.length; j++) {
-      try {
-        var emailContent = {
-          subject: "[HUSAY NG SOKSAY] Payment Verification Required - " + currentBatch[j].id,
-          items: {
-            paymentAmount: true,
-            competitions: true,
-            couponCode: false,
-            referralCode: false,
-            paymentMethod: true,
-            proofOfPayment: true
-          }
-        };
-        
-        sendPaymentVerificationEmail(currentBatch[j], emailContent);
-        sent++;
-        
-      } catch (e) {
-        failed++;
-        errors.push({ email: currentBatch[j].email, error: e.toString() });
-        Logger.log("Failed to send to " + currentBatch[j].email + ": " + e);
-      }
-      
-      // Rate limiting
-      if (j < currentBatch.length - 1) {
-        Utilities.sleep(1500);
-      }
-    }
-    
-    // Wait between batches
-    if (batchEnd < mismatches.length) {
-      Utilities.sleep(3000);
-    }
-  }
-  
-  PVC_Cache.clear();
-  
-  AuditLogService.info("PVC_BULK_EMAIL", "Sent " + sent + " verification emails, " + failed + " failed");
-  
-  return { 
-    success: true, 
-    message: "Sent " + sent + " emails" + (failed > 0 ? ", " + failed + " failed" : ""),
-    count: sent,
-    failed: failed,
-    errors: errors.slice(0, 5)
-  };
-}
-
-/**
- * Get the HTML for Payment Verification Center UI
- */
-function getPaymentVerificationCenterHtml_() {
-  return '<!DOCTYPE html>\n' +
-  '<html>\n' +
-  '<head>\n' +
-  '  <meta charset="UTF-8">\n' +
-  '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\n' +
-  '  <style>\n' +
-  '    * { margin: 0; padding: 0; box-sizing: border-box; }\n' +
-  '    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; min-height: 100vh; }\n' +
-  '    .container { max-width: 100%; margin: 0 auto; }\n' +
-  '    .header { margin-bottom: 20px; }\n' +
-  '    .header h1 { font-size: 26px; color: #fbbf24; display: flex; align-items: center; gap: 12px; }\n' +
-  '    .header p { color: #94a3b8; margin-top: 8px; font-size: 14px; }\n' +
-  '    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }\n' +
-  '    .stat-card { background: #1e293b; border-radius: 10px; padding: 15px; border: 1px solid #334155; text-align: center; }\n' +
-  '    .stat-card.border-blue { border-color: rgba(59, 130, 246, 0.4); }\n' +
-  '    .stat-card.border-green { border-color: rgba(34, 197, 94, 0.4); }\n' +
-  '    .stat-card.border-yellow { border-color: rgba(251, 191, 36, 0.4); }\n' +
-  '    .stat-card.border-red { border-color: rgba(239, 68, 68, 0.4); }\n' +
-  '    .stat-card.border-purple { border-color: rgba(168, 85, 247, 0.4); }\n' +
-  '    .stat-value { font-size: 28px; font-weight: bold; margin-bottom: 5px; }\n' +
-  '    .stat-value.text-blue { color: #60a5fa; }\n' +
-  '    .stat-value.text-green { color: #4ade80; }\n' +
-  '    .stat-value.text-yellow { color: #fbbf24; }\n' +
-  '    .stat-value.text-red { color: #f87171; }\n' +
-  '    .stat-value.text-purple { color: #c084fc; }\n' +
-  '    .stat-label { color: #94a3b8; font-size: 12px; }\n' +
-  '    .controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }\n' +
-  '    .search-box { flex: 1; min-width: 200px; position: relative; }\n' +
-  '    .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; }\n' +
-  '    .search-box input { width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 10px 10px 40px; color: #e2e8f0; font-size: 14px; }\n' +
-  '    .search-box input:focus { outline: none; border-color: #fbbf24; }\n' +
-  '    select { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 15px; color: #e2e8f0; font-size: 14px; cursor: pointer; min-width: 150px; }\n' +
-  '    select:focus { outline: none; border-color: #fbbf24; }\n' +
-  '    .btn { padding: 10px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }\n' +
-  '    .btn-primary { background: #3b82f6; color: white; }\n' +
-  '    .btn-primary:hover { background: #2563eb; }\n' +
-  '    .btn-success { background: #22c55e; color: white; }\n' +
-  '    .btn-success:hover { background: #16a34a; }\n' +
-  '    .btn-danger { background: #ef4444; color: white; }\n' +
-  '    .btn-danger:hover { background: #dc2626; }\n' +
-  '    .btn-warning { background: #f59e0b; color: white; }\n' +
-  '    .btn-warning:hover { background: #d97706; }\n' +
-  '    .btn-secondary { background: #475569; color: white; }\n' +
-  '    .btn-secondary:hover { background: #334155; }\n' +
-  '    .btn:disabled { opacity: 0.5; cursor: not-allowed; }\n' +
-  '    .btn-sm { padding: 6px 12px; font-size: 12px; }\n' +
-  '    .table-container { background: #1e293b; border-radius: 10px; border: 1px solid #334155; overflow: hidden; max-height: 500px; overflow-y: auto; }\n' +
-  '    table { width: 100%; border-collapse: collapse; font-size: 12px; }\n' +
-  '    thead { background: #334155; position: sticky; top: 0; z-index: 10; }\n' +
-  '    th { padding: 12px 8px; text-align: left; font-size: 11px; font-weight: 600; white-space: nowrap; color: #cbd5e1; }\n' +
-  '    th.text-right { text-align: right; }\n' +
-  '    th.text-center { text-align: center; }\n' +
-  '    td { padding: 10px 8px; border-top: 1px solid #334155; }\n' +
-  '    td.text-right { text-align: right; }\n' +
-  '    td.text-center { text-align: center; }\n' +
-  '    tbody tr:hover { background: rgba(51, 65, 85, 0.5); }\n' +
-  '    .id-cell { font-family: monospace; font-size: 11px; color: #94a3b8; }\n' +
-  '    .name-cell { font-weight: 500; color: #f1f5f9; }\n' +
-  '    .email-cell { color: #94a3b8; font-size: 11px; }\n' +
-  '    .comp-badge { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin: 1px; }\n' +
-  '    .amount-red { color: #f87171; font-weight: 600; }\n' +
-  '    .amount-green { color: #4ade80; font-weight: 600; }\n' +
-  '    .amount-yellow { color: #fbbf24; font-weight: 600; }\n' +
-  '    .diff-red { color: #f87171; font-weight: bold; }\n' +
-  '    .diff-green { color: #4ade80; font-weight: bold; }\n' +
-  '    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }\n' +
-  '    .status-pending { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }\n' +
-  '    .status-verified { background: rgba(34, 197, 94, 0.2); color: #4ade80; }\n' +
-  '    .status-mismatch { background: rgba(239, 68, 68, 0.2); color: #f87171; }\n' +
-  '    .status-no-mismatch { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }\n' +
-  '    .payment-status-paid { background: rgba(34, 197, 94, 0.2); color: #4ade80; }\n' +
-  '    .payment-status-not-yet { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }\n' +
-  '    .actions { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }\n' +
-  '    .loading { text-align: center; padding: 50px; color: #94a3b8; }\n' +
-  '    .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #334155; border-top-color: #fbbf24; border-radius: 50%; animation: spin 1s linear infinite; }\n' +
-  '    @keyframes spin { to { transform: rotate(360deg); } }\n' +
-  '    .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }\n' +
-  '    .empty-state i { font-size: 64px; color: #334155; margin-bottom: 20px; }\n' +
-  '    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; align-items: center; justify-content: center; }\n' +
-  '    .modal.show { display: flex; }\n' +
-  '    .modal-content { background: #1e293b; border-radius: 12px; border: 1px solid #334155; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }\n' +
-  '    .modal-header { padding: 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }\n' +
-  '    .modal-header h3 { color: #fbbf24; font-size: 18px; }\n' +
-  '    .modal-close { background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }\n' +
-  '    .modal-close:hover { color: white; }\n' +
-  '    .modal-body { padding: 20px; }\n' +
-  '    .modal-footer { padding: 15px 20px; border-top: 1px solid #334155; display: flex; justify-content: flex-end; gap: 10px; }\n' +
-  '    .form-group { margin-bottom: 15px; }\n' +
-  '    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #cbd5e1; }\n' +
-  '    .form-group input, .form-group select, .form-group textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px; color: #e2e8f0; font-size: 13px; }\n' +
-  '    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #fbbf24; }\n' +
-  '    .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 15px 20px; z-index: 2000; display: none; max-width: 400px; }\n' +
-  '    .toast.show { display: block; animation: slideIn 0.3s ease; }\n' +
-  '    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }\n' +
-  '    .toast.success { border-color: #22c55e; }\n' +
-  '    .toast.error { border-color: #ef4444; }\n' +
-  '    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 15px; padding: 10px; }\n' +
-  '    .pagination button { background: #334155; border: none; color: #e2e8f0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }\n' +
-  '    .pagination button:hover { background: #475569; }\n' +
-  '    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }\n' +
-  '    .pagination span { color: #94a3b8; padding: 8px; font-size: 13px; }\n' +
-  '    .info-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; }\n' +
-  '    .checklist { margin: 15px 0; }\n' +
-  '    .checklist label { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; font-size: 13px; }\n' +
-  '    .checklist label:hover { background: rgba(51, 65, 85, 0.5); border-radius: 4px; }\n' +
-  '    .checklist input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }\n' +
-  '  </style>\n' +
-  '</head>\n' +
-  '<body>\n' +
-  '  <div class="container">\n' +
-  '    <!-- Header -->\n' +
-  '    <div class="header">\n' +
-  '      <h1><i class="fas fa-shield-alt"></i> Payment Verification Center</h1>\n' +
-  '      <p>View all participants, verify payments, and detect mismatches. Edit amounts manually if needed.</p>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Stats Dashboard -->\n' +
-  '    <div class="stats-grid" id="statsGrid">\n' +
-  '      <div class="stat-card border-blue">\n' +
-  '        <div class="stat-value text-blue">-</div>\n' +
-  '        <div class="stat-label">Total Participants</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-green">\n' +
-  '        <div class="stat-value text-green">-</div>\n' +
-  '        <div class="stat-label">Verified</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-red">\n' +
-  '        <div class="stat-value text-red">-</div>\n' +
-  '        <div class="stat-label">Mismatches</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-yellow">\n' +
-  '        <div class="stat-value text-yellow">-</div>\n' +
-  '        <div class="stat-label">Pending Review</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-purple">\n' +
-  '        <div class="stat-value text-purple">-</div>\n' +
-  '        <div class="stat-label">With Payment Proof</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card">\n' +
-  '        <div class="stat-value">-</div>\n' +
-  '        <div class="stat-label">Paid Status</div>\n' +
-  '      </div>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Controls -->\n' +
-  '    <div class="controls">\n' +
-  '      <div class="search-box">\n' +
-  '        <i class="fas fa-search"></i>\n' +
-  '        <input type="text" id="searchInput" placeholder="Search by name, email, or ID...">\n' +
-  '      </div>\n' +
-  '      <select id="filterStatus">\n' +
-  '        <option value="all">All Status</option>\n' +
-  '        <option value="mismatch">Mismatches Only</option>\n' +
-  '        <option value="verified">Verified Only</option>\n' +
-  '        <option value="pending">Pending Review</option>\n' +
-  '        <option value="no_mismatch">No Mismatch</option>\n' +
-  '      </select>\n' +
-  '      <select id="filterPaymentStatus">\n' +
-  '        <option value="all">All Payment Status</option>\n' +
-  '        <option value="PAID">PAID</option>\n' +
-  '        <option value="NOT YET">NOT YET</option>\n' +
-  '      </select>\n' +
-  '      <button class="btn btn-danger" id="bulkEmailBtn" onclick="sendBulkEmails()">\n' +
-  '        <i class="fas fa-envelope"></i> Email All Mismatches\n' +
-  '      </button>\n' +
-  '      <button class="btn btn-secondary" onclick="refreshData()">\n' +
-  '        <i class="fas fa-sync-alt"></i> Refresh\n' +
-  '      </button>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Loading State -->\n' +
-  '    <div id="loading" class="loading">\n' +
-  '      <div class="spinner"></div>\n' +
-  '      <p style="margin-top: 15px;">Loading payment data...</p>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Table -->\n' +
-  '    <div class="table-container" id="tableContainer" style="display: none;">\n' +
-  '      <table>\n' +
-  '        <thead>\n' +
-  '          <tr>\n' +
-  '            <th>Reg ID</th>\n' +
-  '            <th>Name</th>\n' +
-  '            <th>Competitions</th>\n' +
-  '            <th class="text-center">Payment Status</th>\n' +
-  '            <th class="text-right">Applicant Amt</th>\n' +
-  '            <th class="text-right">System Amt</th>\n' +
-  '            <th class="text-center">Diff</th>\n' +
-  '            <th class="text-center">Verification</th>\n' +
-  '            <th class="text-center">Actions</th>\n' +
-  '          </tr>\n' +
-  '        </thead>\n' +
-  '        <tbody id="tableBody">\n' +
-  '        </tbody>\n' +
-  '      </table>\n' +
-  '      <div class="pagination" id="pagination"></div>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Empty State -->\n' +
-  '    <div id="emptyState" class="empty-state" style="display: none;">\n' +
-  '      <i class="fas fa-inbox"></i>\n' +
-  '      <h3>No Data Found</h3>\n' +
-  '      <p>No participants found in the Registration sheet.</p>\n' +
-  '    </div>\n' +
-  '  </div>\n' +
-  '\n' +
-  '  <!-- Toast Notification -->\n' +
-  '  <div id="toast" class="toast"></div>\n' +
-  '\n' +
-  '  <!-- Edit Amount Modal -->\n' +
-  '  <div id="editAmountModal" class="modal">\n' +
-  '    <div class="modal-content">\n' +
-  '      <div class="modal-header">\n' +
-  '        <h3><i class="fas fa-edit"></i> Edit Applicant Amount</h3>\n' +
-  '        <button class="modal-close" onclick="closeEditAmountModal()">&times;</button>\n' +
-  '      </div>\n' +
-  '      <div class="modal-body">\n' +
-  '        <div class="info-box">\n' +
-  '          <strong>Participant:</strong> <span id="editParticipantName"></span><br>\n' +
-  '          <strong>System Amount:</strong> <span id="editSystemAmount"></span>\n' +
-  '        </div>\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Applicant Stated Amount (₱):</label>\n' +
-  '          <input type="number" id="editApplicantAmount" min="0" step="1">\n' +
-  '        </div>\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Verification Status:</label>\n' +
-  '          <select id="editVerificationStatus">\n' +
-  '            <option value="">-- Select --</option>\n' +
-  '            <option value="VERIFIED">Verified - No Issues</option>\n' +
-  '            <option value="MISMATCH">Mismatch Detected</option>\n' +
-  '            <option value="NO_MISMATCH">No Mismatch</option>\n' +
-  '            <option value="PENDING">Pending Review</option>\n' +
-  '          </select>\n' +
-  '        </div>\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Notes:</label>\n' +
-  '          <textarea id="editNotes" rows="3" placeholder="Add any notes about this payment..."></textarea>\n' +
-  '        </div>\n' +
-  '      </div>\n' +
-  '      <div class="modal-footer">\n' +
-  '        <button class="btn btn-secondary" onclick="closeEditAmountModal()">Cancel</button>\n' +
-  '        <button class="btn btn-success" onclick="saveApplicantAmount()">\n' +
-  '          <i class="fas fa-save"></i> Save Changes\n' +
-  '        </button>\n' +
-  '      </div>\n' +
-  '    </div>\n' +
-  '  </div>\n' +
-  '\n' +
-  '  <!-- Email Modal -->\n' +
-  '  <div id="emailModal" class="modal">\n' +
-  '    <div class="modal-content">\n' +
-  '      <div class="modal-header">\n' +
-  '        <h3><i class="fas fa-envelope"></i> Send Verification Email</h3>\n' +
-  '        <button class="modal-close" onclick="closeEmailModal()">&times;</button>\n' +
-  '      </div>\n' +
-  '      <div class="modal-body">\n' +
-  '        <div class="info-box">\n' +
-  '          <strong>Sending to:</strong> <span id="emailRecipient"></span>\n' +
-  '        </div>\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Subject:</label>\n' +
-  '          <input type="text" id="emailSubject" value="[HUSAY NG SOKSAY] Payment Verification Required">\n' +
-  '        </div>\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Request Reconfirmation For:</label>\n' +
-  '          <div class="checklist">\n' +
-  '            <label><input type="checkbox" id="checkPaymentAmount" checked> Payment Amount</label>\n' +
-  '            <label><input type="checkbox" id="checkCompetitions" checked> Competition Selections</label>\n' +
-  '            <label><input type="checkbox" id="checkCouponCode"> Coupon Code</label>\n' +
-  '            <label><input type="checkbox" id="checkReferralCode"> Referral Code</label>\n' +
-  '            <label><input type="checkbox" id="checkPaymentMethod" checked> Payment Method</label>\n' +
-  '            <label><input type="checkbox" id="checkProofOfPayment" checked> Proof of Payment</label>\n' +
-  '          </div>\n' +
-  '        </div>\n' +
-  '      </div>\n' +
-  '      <div class="modal-footer">\n' +
-  '        <button class="btn btn-secondary" onclick="closeEmailModal()">Cancel</button>\n' +
-  '        <button class="btn btn-primary" onclick="sendVerificationEmail()">\n' +
-  '          <i class="fas fa-paper-plane"></i> Send Email\n' +
-  '        </button>\n' +
-  '      </div>\n' +
-  '    </div>\n' +
-  '  </div>\n' +
-  '\n' +
-  '  <script>\n' +
-  '    var allPayments = [];\n' +
-  '    var filteredPayments = [];\n' +
-  '    var currentPayment = null;\n' +
-  '    var currentPage = 1;\n' +
-  '    var itemsPerPage = 25;\n' +
-  '\n' +
-  '    // Initialize\n' +
-  '    window.onload = function() {\n' +
-  '      loadData();\n' +
-  '      \n' +
-  '      // Setup search with debounce\n' +
-  '      var searchTimeout;\n' +
-  '      document.getElementById("searchInput").addEventListener("input", function() {\n' +
-  '        clearTimeout(searchTimeout);\n' +
-  '        searchTimeout = setTimeout(filterPayments, 300);\n' +
-  '      });\n' +
-  '      \n' +
-  '      document.getElementById("filterStatus").addEventListener("change", filterPayments);\n' +
-  '      document.getElementById("filterPaymentStatus").addEventListener("change", filterPayments);\n' +
-  '    };\n' +
-
-
-
-  '    function showToast(message, type, duration) {\n' +
-  '      var toast = document.getElementById("toast");\n' +
-  '      toast.textContent = message;\n' +
-  '      toast.className = "toast " + (type || "");\n' +
-  '      toast.classList.add("show");\n' +
-  '      setTimeout(function() {\n' +
-  '        toast.classList.remove("show");\n' +
-  '      }, duration || 3000);\n' +
-  '    }\n' +
-  '\n' +
-  '    function loadData() {\n' +
-  '      document.getElementById("loading").style.display = "block";\n' +
-  '      document.getElementById("tableContainer").style.display = "none";\n' +
-  '      document.getElementById("emptyState").style.display = "none";\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(data) {\n' +
-  '          if (data.error) {\n' +
-  '            document.getElementById("loading").innerHTML = "<p style=\\"color:#f87171;\\">Error: " + data.error + "</p>";\n' +
-  '            return;\n' +
-  '          }\n' +
-  '          allPayments = data.payments || [];\n' +
-  '          updateStats(data.stats || {});\n' +
-  '          filterPayments();\n' +
-  '          document.getElementById("loading").style.display = "none";\n' +
-  '          if (allPayments.length === 0) {\n' +
-  '            document.getElementById("emptyState").style.display = "block";\n' +
-  '          } else {\n' +
-  '            document.getElementById("tableContainer").style.display = "block";\n' +
-  '          }\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          document.getElementById("loading").innerHTML = "<p style=\\"color:#f87171;\\">Error loading data: " + (error.message || error) + "</p>";\n' +
-  '        })\n' +
-  '        .getPaymentVerificationData();\n' +
-  '    }\n' +
-  '\n' +
-  '    function updateStats(stats) {\n' +
-  '      var cards = document.getElementById("statsGrid").children;\n' +
-  '      cards[0].querySelector(".stat-value").textContent = stats.total || 0;\n' +
-  '      cards[1].querySelector(".stat-value").textContent = stats.verified || 0;\n' +
-  '      cards[2].querySelector(".stat-value").textContent = stats.mismatches || 0;\n' +
-  '      cards[3].querySelector(".stat-value").textContent = stats.pending || 0;\n' +
-  '      cards[4].querySelector(".stat-value").textContent = stats.withPaymentProof || 0;\n' +
-  '      cards[5].querySelector(".stat-value").textContent = (stats.paid || 0) + "/" + (stats.notYet || 0);\n' +
-  '    }\n' +
-  '\n' +
-  '    function filterPayments() {\n' +
-  '      var searchTerm = document.getElementById("searchInput").value.toLowerCase();\n' +
-  '      var statusFilter = document.getElementById("filterStatus").value;\n' +
-  '      var paymentStatusFilter = document.getElementById("filterPaymentStatus").value;\n' +
-  '      \n' +
-  '      filteredPayments = allPayments.filter(function(p) {\n' +
-  '        var matchesSearch = !searchTerm || \n' +
-  '                            p.name.toLowerCase().indexOf(searchTerm) >= 0 || \n' +
-  '                            p.email.toLowerCase().indexOf(searchTerm) >= 0 ||\n' +
-  '                            p.id.toLowerCase().indexOf(searchTerm) >= 0;\n' +
-  '        var matchesStatus = statusFilter === "all" || p.status === statusFilter;\n' +
-  '        var matchesPaymentStatus = paymentStatusFilter === "all" || p.paymentStatus.toUpperCase() === paymentStatusFilter.toUpperCase();\n' +
-  '        return matchesSearch && matchesStatus && matchesPaymentStatus;\n' +
-  '      });\n' +
-  '      \n' +
-  '      currentPage = 1;\n' +
-  '      renderTable();\n' +
-  '      renderPagination();\n' +
-  '    }\n' +
-  '\n' +
-  '    function renderTable() {\n' +
-  '      var tbody = document.getElementById("tableBody");\n' +
-  '      tbody.innerHTML = "";\n' +
-  '      \n' +
-  '      if (filteredPayments.length === 0) {\n' +
-  '        tbody.innerHTML = "<tr><td colspan=\\"9\\" style=\\"text-align:center; padding:40px; color:#94a3b8;\\">No payments match your filters</td></tr>";\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      var start = (currentPage - 1) * itemsPerPage;\n' +
-  '      var end = Math.min(start + itemsPerPage, filteredPayments.length);\n' +
-  '      var pageData = filteredPayments.slice(start, end);\n' +
-  '      \n' +
-  '      var fragment = document.createDocumentFragment();\n' +
-  '      \n' +
-  '      pageData.forEach(function(payment) {\n' +
-  '        var tr = document.createElement("tr");\n' +
-  '        \n' +
-  '        // ID\n' +
-  '        var tdId = document.createElement("td");\n' +
-  '        tdId.className = "id-cell";\n' +
-  '        tdId.textContent = payment.id;\n' +
-  '        tr.appendChild(tdId);\n' +
-  '        \n' +
-  '        // Name\n' +
-  '        var tdName = document.createElement("td");\n' +
-  '        tdName.innerHTML = "<div class=\\"name-cell\\">" + escapeHtml(payment.name) + "</div><div class=\\"email-cell\\">" + escapeHtml(payment.email) + "</div>";\n' +
-  '        tr.appendChild(tdName);\n' +
-  '        \n' +
-  '        // Competitions\n' +
-  '        var tdComp = document.createElement("td");\n' +
-  '        var compHtml = "";\n' +
-  '        for (var i = 0; i < Math.min(payment.competitions.length, 3); i++) {\n' +
-  '          compHtml += "<span class=\\"comp-badge\\">" + escapeHtml(payment.competitions[i]) + "</span> ";\n' +
-  '        }\n' +
-  '        if (payment.competitions.length > 3) {\n' +
-  '          compHtml += "<span class=\\"comp-badge\\">+" + (payment.competitions.length - 3) + "</span>";\n' +
-  '        }\n' +
-  '        tdComp.innerHTML = compHtml;\n' +
-  '        tr.appendChild(tdComp);\n' +
-  '        \n' +
-  '        // Payment Status\n' +
-  '        var tdPayStatus = document.createElement("td");\n' +
-  '        tdPayStatus.className = "text-center";\n' +
-  '        var payStatusClass = payment.paymentStatus.toUpperCase() === "PAID" ? "payment-status-paid" : "payment-status-not-yet";\n' +
-  '        var payStatusText = payment.paymentStatus.toUpperCase() === "PAID" ? "PAID" : (payment.paymentStatus || "NOT YET");\n' +
-  '        tdPayStatus.innerHTML = "<span class=\\"status-badge " + payStatusClass + "\\">" + payStatusText + "</span>";\n' +
-  '        tr.appendChild(tdPayStatus);\n' +
-  '        \n' +
-  '        // Applicant Amount\n' +
-  '        var tdApplicant = document.createElement("td");\n' +
-  '        tdApplicant.className = "text-right";\n' +
-  '        var appAmtClass = payment.applicantAmt !== payment.systemAmt ? "amount-yellow" : "amount-green";\n' +
-  '        tdApplicant.innerHTML = "<span class=\\"" + appAmtClass + "\\">₱" + payment.applicantAmt.toLocaleString() + "</span>";\n' +
-  '        tr.appendChild(tdApplicant);\n' +
-  '        \n' +
-  '        // System Amount\n' +
-  '        var tdSystem = document.createElement("td");\n' +
-  '        tdSystem.className = "text-right amount-green";\n' +
-  '        tdSystem.textContent = "₱" + payment.systemAmt.toLocaleString();\n' +
-  '        tr.appendChild(tdSystem);\n' +
-  '        \n' +
-  '        // Difference\n' +
-  '        var tdDiff = document.createElement("td");\n' +
-  '        tdDiff.className = "text-center";\n' +
-  '        var diff = Math.abs(payment.systemAmt - payment.applicantAmt);\n' +
-  '        if (diff > 1) {\n' +
-  '          var sign = payment.applicantAmt < payment.systemAmt ? "-" : "+";\n' +
-  '          var cssClass = payment.applicantAmt < payment.systemAmt ? "diff-red" : "diff-green";\n' +
-  '          tdDiff.innerHTML = "<span class=\\"" + cssClass + "\\">" + sign + "₱" + diff.toLocaleString() + "</span>";\n' +
-  '        } else {\n' +
-  '          tdDiff.innerHTML = "<span class=\\"diff-green\\">✓</span>";\n' +
-  '        }\n' +
-  '        tr.appendChild(tdDiff);\n' +
-  '        \n' +
-  '        // Verification Status\n' +
-  '        var tdVerify = document.createElement("td");\n' +
-  '        tdVerify.className = "text-center";\n' +
-  '        var statusClass = "status-pending";\n' +
-  '        var statusText = "Pending";\n' +
-  '        if (payment.status === "verified") { statusClass = "status-verified"; statusText = "Verified"; }\n' +
-  '        else if (payment.status === "mismatch") { statusClass = "status-mismatch"; statusText = "Mismatch"; }\n' +
-  '        else if (payment.status === "no_mismatch") { statusClass = "status-no-mismatch"; statusText = "OK"; }\n' +
-  '        tdVerify.innerHTML = "<span class=\\"status-badge " + statusClass + "\\">" + statusText + "</span>";\n' +
-  '        tr.appendChild(tdVerify);\n' +
-  '        \n' +
-  '        // Actions\n' +
-  '        var tdActions = document.createElement("td");\n' +
-  '        tdActions.className = "text-center";\n' +
-  '        var actions = "<div class=\\"actions\\">";\n' +
-  '        actions += "<button class=\\"btn btn-primary btn-sm\\" onclick=\\"openEditAmountModal(&quot;" + payment.rowIndex + "&quot;)\\" title=\\"Edit Amount\\"><i class=\\"fas fa-edit\\"></i></button>";\n' +
-  '        if (payment.status === "mismatch") {\n' +
-  '          actions += "<button class=\\"btn btn-danger btn-sm\\" onclick=\\"openEmailModal(&quot;" + payment.rowIndex + "&quot;)\\" title=\\"Send Email\\"><i class=\\"fas fa-envelope\\"></i></button>";\n' +
-  '        }\n' +
-  '        actions += "</div>";\n' +
-  '        tdActions.innerHTML = actions;\n' +
-  '        tr.appendChild(tdActions);\n' +
-  '        \n' +
-  '        fragment.appendChild(tr);\n' +
-  '      });\n' +
-  '      \n' +
-  '      tbody.appendChild(fragment);\n' +
-  '    }\n' +
-  '\n' +
-  '    function renderPagination() {\n' +
-  '      var totalPages = Math.ceil(filteredPayments.length / itemsPerPage);\n' +
-  '      var pagination = document.getElementById("pagination");\n' +
-  '      \n' +
-  '      if (totalPages <= 1) {\n' +
-  '        pagination.innerHTML = "";\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      var html = "";\n' +
-  '      html += "<button " + (currentPage === 1 ? "disabled" : "") + " onclick=\\"changePage(" + (currentPage - 1) + ")\\">Previous</button>";\n' +
-  '      html += "<span>Page " + currentPage + " of " + totalPages + "</span>";\n' +
-  '      html += "<button " + (currentPage === totalPages ? "disabled" : "") + " onclick=\\"changePage(" + (currentPage + 1) + ")\\">Next</button>";\n' +
-  '      pagination.innerHTML = html;\n' +
-  '    }\n' +
-  '\n' +
-  '    function changePage(page) {\n' +
-  '      currentPage = page;\n' +
-  '      renderTable();\n' +
-  '      renderPagination();\n' +
-  '    }\n' +
-  '\n' +
-  '    function escapeHtml(text) {\n' +
-  '      if (!text) return "";\n' +
-  '      return String(text)\n' +
-  '        .replace(/&/g, "&amp;")\n' +
-  '        .replace(/</g, "&lt;")\n' +
-  '        .replace(/>/g, "&gt;")\n' +
-  '        .replace(/"/g, "&quot;")\n' +
-  '        .replace(/\'/g, "&#039;");\n' +
-  '    }\n' +
-  '\n' +
-  '    // Edit Amount Modal\n' +
-  '    function openEditAmountModal(rowIndex) {\n' +
-  '      currentPayment = allPayments.find(function(p) { return p.rowIndex === parseInt(rowIndex); });\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      document.getElementById("editParticipantName").textContent = currentPayment.name + " (" + currentPayment.email + ")";\n' +
-  '      document.getElementById("editSystemAmount").textContent = "₱" + currentPayment.systemAmt.toLocaleString();\n' +
-  '      document.getElementById("editApplicantAmount").value = currentPayment.applicantAmt;\n' +
-  '      document.getElementById("editVerificationStatus").value = currentPayment.verificationStatus || "";\n' +
-  '      document.getElementById("editNotes").value = currentPayment.verificationNotes || "";\n' +
-  '      \n' +
-  '      document.getElementById("editAmountModal").classList.add("show");\n' +
-  '    }\n' +
-  '\n' +
-  '    function closeEditAmountModal() {\n' +
-  '      document.getElementById("editAmountModal").classList.remove("show");\n' +
-  '      currentPayment = null;\n' +
-  '    }\n' +
-  '\n' +
-  '    function saveApplicantAmount() {\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      var newAmount = parseFloat(document.getElementById("editApplicantAmount").value) || 0;\n' +
-  '      var newStatus = document.getElementById("editVerificationStatus").value;\n' +
-  '      var newNotes = document.getElementById("editNotes").value;\n' +
-  '      \n' +
-  '      closeEditAmountModal();\n' +
-  '      showToast("Saving changes...", "", 2000);\n' +
-  '      \n' +
-  '      // Update amount\n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(result) {\n' +
-  '          // Then update verification status if provided\n' +
-  '          if (newStatus) {\n' +
-  '            google.script.run\n' +
-  '              .withSuccessHandler(function() {\n' +
-  '                showToast("✅ Changes saved successfully!", "success", 3000);\n' +
-  '                refreshData();\n' +
-  '              })\n' +
-  '              .withFailureHandler(function(error) {\n' +
-  '                showToast("❌ Error: " + (error.message || error), "error", 5000);\n' +
-  '              })\n' +
-  '              .markPaymentVerified(currentPayment.rowIndex, newStatus, newNotes);\n' +
-  '          } else {\n' +
-  '            showToast("✅ Amount updated successfully!", "success", 3000);\n' +
-  '            refreshData();\n' +
-  '          }\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          showToast("❌ Error: " + (error.message || error), "error", 5000);\n' +
-  '        })\n' +
-  '        .updateApplicantAmount(currentPayment.rowIndex, newAmount);\n' +
-  '    }\n' +
-  '\n' +
-  '    // Email Modal\n' +
-  '    function openEmailModal(rowIndex) {\n' +
-  '      currentPayment = allPayments.find(function(p) { return p.rowIndex === parseInt(rowIndex); });\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      document.getElementById("emailRecipient").textContent = currentPayment.name + " (" + currentPayment.email + ")";\n' +
-  '      document.getElementById("emailSubject").value = "[HUSAY NG SOKSAY] Payment Verification Required - " + currentPayment.id;\n' +
-  '      document.getElementById("emailModal").classList.add("show");\n' +
-  '    }\n' +
-  '\n' +
-  '    function closeEmailModal() {\n' +
-  '      document.getElementById("emailModal").classList.remove("show");\n' +
-  '      currentPayment = null;\n' +
-  '    }\n' +
-  '\n' +
-  '    function sendVerificationEmail() {\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      var emailContent = {\n' +
-  '        subject: document.getElementById("emailSubject").value,\n' +
-  '        items: {\n' +
-  '          paymentAmount: document.getElementById("checkPaymentAmount").checked,\n' +
-  '          competitions: document.getElementById("checkCompetitions").checked,\n' +
-  '          couponCode: document.getElementById("checkCouponCode").checked,\n' +
-  '          referralCode: document.getElementById("checkReferralCode").checked,\n' +
-  '          paymentMethod: document.getElementById("checkPaymentMethod").checked,\n' +
-  '          proofOfPayment: document.getElementById("checkProofOfPayment").checked\n' +
-  '        }\n' +
-  '      };\n' +
-  '      \n' +
-  '      closeEmailModal();\n' +
-  '      showToast("Sending email...", "", 3000);\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(result) {\n' +
-  '          showToast("✅ " + result.message, "success", 5000);\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          showToast("❌ Error sending email: " + (error.message || error), "error", 5000);\n' +
-  '        })\n' +
-  '        .sendPaymentVerificationEmail(currentPayment, emailContent);\n' +
-  '    }\n' +
-  '\n' +
-  '    // Bulk Email\n' +
-  '    function sendBulkEmails() {\n' +
-  '      var mismatches = allPayments.filter(function(p) { return p.status === "mismatch"; });\n' +
-  '      \n' +
-  '      if (mismatches.length === 0) {\n' +
-  '        showToast("No mismatches found to send emails to.", "", 3000);\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      if (!confirm("Send verification emails to " + mismatches.length + " participants with payment mismatches?")) {\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      var btn = document.getElementById("bulkEmailBtn");\n' +
-  '      btn.disabled = true;\n' +
-  '      btn.innerHTML = "<i class=\\"fas fa-spinner fa-spin\\"></i> Sending...";\n' +
-  '      \n' +
-  '      showToast("Sending " + mismatches.length + " emails... This may take a few minutes.", "", 5000);\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(result) {\n' +
-  '          btn.disabled = false;\n' +
-  '          btn.innerHTML = "<i class=\\"fas fa-envelope\\"></i> Email All Mismatches";\n' +
-  '          showToast("✅ " + result.message, "success", 5000);\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          btn.disabled = false;\n' +
-  '          btn.innerHTML = "<i class=\\"fas fa-envelope\\"></i> Email All Mismatches";\n' +
-  '          showToast("❌ Error: " + (error.message || error), "error", 5000);\n' +
-  '        })\n' +
-  '        .sendBulkVerificationEmails();\n' +
-  '    }\n' +
-  '\n' +
-  '    function refreshData() {\n' +
-  '      loadData();\n' +
-  '    }\n' +
-  '  </script>\n' +
-  '</body>\n' +
-  '</html>';
-}
-
-// ============================================================================
 // PART 14: SYSTEM INTRODUCTION & HELP CENTER
 // ============================================================================
-
-/**
- * Show interactive system introduction
- */
-function showSystemIntroduction() {
-  var html = HtmlService.createHtmlOutput(buildSystemIntroductionHtml_())
-    .setWidth(900)
-    .setHeight(700);
-  SpreadsheetApp.getUi().showModalDialog(html, "📚 Husay ng Soksay - System Guide");
-}
-
-/**
- * Build the interactive system introduction HTML
- */
-function buildSystemIntroductionHtml_() {
-  return '<!DOCTYPE html>' +
-  '<html><head>' +
-  '<meta charset="UTF-8">' +
-  '<style>' +
-  '* { box-sizing: border-box; margin: 0; padding: 0; }' +
-  'body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f7fa; color: #333; }' +
-  '.container { max-width: 100%; }' +
-  
-  /* Navigation */
-  '.nav { background: linear-gradient(135deg, #1E4FB8 0%, #3B82F6 100%); padding: 15px 20px; position: sticky; top: 0; z-index: 100; }' +
-  '.nav-title { color: white; font-size: 18px; font-weight: bold; margin-bottom: 10px; }' +
-  '.nav-tabs { display: flex; gap: 5px; flex-wrap: wrap; }' +
-  '.nav-tab { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; }' +
-  '.nav-tab:hover { background: rgba(255,255,255,0.3); }' +
-  '.nav-tab.active { background: white; color: #1E4FB8; font-weight: bold; }' +
-  
-  /* Content */
-  '.content { padding: 20px; max-height: 550px; overflow-y: auto; }' +
-  '.section { display: none; animation: fadeIn 0.3s ease; }' +
-  '.section.active { display: block; }' +
-  '@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }' +
-  
-  /* Cards */
-  '.card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
-  '.card-title { font-size: 16px; font-weight: bold; color: #1E4FB8; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }' +
-  '.card-title .icon { font-size: 20px; }' +
-  
-  /* Flow diagram */
-  '.flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 15px; background: #f8fafc; border-radius: 10px; margin: 15px 0; }' +
-  '.flow-step { background: linear-gradient(135deg, #1E4FB8, #3B82F6); color: white; padding: 12px 20px; border-radius: 10px; text-align: center; min-width: 100px; }' +
-  '.flow-step .num { font-size: 20px; font-weight: bold; }' +
-  '.flow-step .label { font-size: 11px; margin-top: 3px; }' +
-  '.flow-arrow { color: #94a3b8; font-size: 24px; }' +
-  
-  /* Accordion */
-  '.accordion { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin: 10px 0; }' +
-  '.accordion-header { background: #f8fafc; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: background 0.2s; }' +
-  '.accordion-header:hover { background: #f1f5f9; }' +
-  '.accordion-content { padding: 0 15px; max-height: 0; overflow: hidden; transition: all 0.3s ease; }' +
-  '.accordion.open .accordion-content { padding: 15px; max-height: 1000px; }' +
-  '.accordion-icon { transition: transform 0.3s; }' +
-  '.accordion.open .accordion-icon { transform: rotate(180deg); }' +
-  
-  /* Tables */
-  'table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }' +
-  'th { background: #1E4FB8; color: white; padding: 10px; text-align: left; }' +
-  'td { padding: 10px; border-bottom: 1px solid #e2e8f0; }' +
-  'tr:hover { background: #f8fafc; }' +
-  
-  /* Tips */
-  '.tip { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: 13px; }' +
-  '.tip-title { font-weight: bold; color: #92400e; margin-bottom: 5px; }' +
-  '.warning { background: #fee2e2; border-left-color: #ef4444; }' +
-  '.warning .tip-title { color: #991b1b; }' +
-  '.success { background: #d1fae5; border-left-color: #10b981; }' +
-  '.success .tip-title { color: #065f46; }' +
-  '.info { background: #dbeafe; border-left-color: #3b82f6; }' +
-  '.info .tip-title { color: #1e40af; }' +
-  
-  /* Badges */
-  '.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-left: 8px; }' +
-  '.badge-blue { background: #dbeafe; color: #1e40af; }' +
-  '.badge-green { background: #d1fae5; color: #065f46; }' +
-  '.badge-yellow { background: #fef3c7; color: #92400e; }' +
-  '.badge-red { background: #fee2e2; color: #991b1b; }' +
-  
-  /* Lists */
-  'ul, ol { margin: 10px 0 10px 20px; }' +
-  'li { margin: 8px 0; line-height: 1.5; }' +
-  
-  /* Code */
-  'code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }' +
-  
-  /* Quick Actions */
-  '.quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 15px 0; }' +
-  '.quick-action { background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s; }' +
-  '.quick-action:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.2); }' +
-  '.quick-action .icon { font-size: 30px; margin-bottom: 8px; }' +
-  '.quick-action .label { font-weight: 600; color: #1e40af; }' +
-  '.quick-action .desc { font-size: 11px; color: #64748b; margin-top: 5px; }' +
-  
-  '</style>' +
-  '</head><body>' +
-  '<div class="container">' +
-  
-  /* Navigation */
-  '<div class="nav">' +
-  '<div class="nav-title">📚 Husay ng Soksay Registration System - Complete Guide</div>' +
-  '<div class="nav-tabs">' +
-  '<button class="nav-tab active" onclick="showSection(\'overview\')">🏠 Overview</button>' +
-  '<button class="nav-tab" onclick="showSection(\'registration\')">📝 Registration</button>' +
-  '<button class="nav-tab" onclick="showSection(\'finance\')">💰 Finance</button>' +
-  '<button class="nav-tab" onclick="showSection(\'emails\')">📧 Emails</button>' +
-  '<button class="nav-tab" onclick="showSection(\'pricing\')">🏷️ Pricing</button>' +
-  '<button class="nav-tab" onclick="showSection(\'coupons\')">🎟️ Coupons</button>' +
-  '<button class="nav-tab" onclick="showSection(\'referrals\')">🔗 Referrals</button>' +
-  '<button class="nav-tab" onclick="showSection(\'tools\')">🔧 Admin Tools</button>' +
-  '<button class="nav-tab" onclick="showSection(\'faq\')">❓ FAQ</button>' +
-  '</div>' +
-  '</div>' +
-  
-  '<div class="content">' +
-  
-  /* OVERVIEW SECTION */
-  '<div id="overview" class="section active">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">👋</span> Welcome!</div>' +
-  '<p>This system automates registration for Husay ng Soksay. Here\'s the complete flow:</p>' +
-  '<div class="flow">' +
-  '<div class="flow-step"><div class="num">1</div><div class="label">Google Form</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step"><div class="num">2</div><div class="label">Registration</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step"><div class="num">3</div><div class="label">Finance</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step"><div class="num">4</div><div class="label">PAID ✓</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step"><div class="num">5</div><div class="label">Receipt Sent</div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">📊</span> The Four Sheets</div>' +
-  '<table>' +
-  '<tr><th>Sheet</th><th>Purpose</th><th>Who Updates</th></tr>' +
-  '<tr><td><strong>Registration</strong></td><td>All participant data from form</td><td>🤖 Automatic</td></tr>' +
-  '<tr><td><strong>Finance</strong></td><td>Payment tracking & verification</td><td>👤 You (set PAID)</td></tr>' +
-  '<tr><td><strong>Participant Database</strong></td><td>Clean view of participant info (QUERY)</td><td>🤖 Auto-synced</td></tr>' +
-  '<tr><td><strong>Coupons</strong></td><td>Discount codes</td><td>👤 You (add codes)</td></tr>' +
-  '</table>' +
-  '</div>' +
-  
-  '<div class="card" style="background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); color: white;">' +
-  '<div class="card-title" style="color: white;"><span class="icon">🏗️</span> First Time Setup?</div>' +
-  '<p style="margin-bottom:15px;">Use <strong>BUILD BUILD BUILD</strong> to automatically create all sheets, columns, and formatting!</p>' +
-  '<button onclick="google.script.host.close(); google.script.run.showSystemBuilder();" style="background:white; color:#1e40af; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">🚀 Open System Builder</button>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">⚡</span> Quick Start</div>' +
-  '<div class="quick-actions">' +
-  '<div class="quick-action" onclick="showSection(\'registration\')">' +
-  '<div class="icon">📝</div><div class="label">Registration</div>' +
-  '<div class="desc">How it works</div></div>' +
-  '<div class="quick-action" onclick="showSection(\'finance\')">' +
-  '<div class="icon">✅</div><div class="label">Verify Payments</div>' +
-  '<div class="desc">Mark as PAID</div></div>' +
-  '<div class="quick-action" onclick="showSection(\'pricing\')">' +
-  '<div class="icon">🏷️</div><div class="label">Pricing</div>' +
-  '<div class="desc">Fees & bundles</div></div>' +
-  '<div class="quick-action" onclick="showSection(\'coupons\')">' +
-  '<div class="icon">🎟️</div><div class="label">Coupons</div>' +
-  '<div class="desc">Create & manage</div></div>' +
-  '<div class="quick-action" onclick="showSection(\'referrals\')">' +
-  '<div class="icon">🔗</div><div class="label">Referrals</div>' +
-  '<div class="desc">Tiered cashback</div></div>' +
-  '<div class="quick-action" onclick="showSection(\'emails\')">' +
-  '<div class="icon">📧</div><div class="label">Emails</div>' +
-  '<div class="desc">4 email types</div></div>' +
-  '</div>' +
-  '</div>' +
-  '</div>' +
-  
-  /* REGISTRATION SECTION */
-  '<div id="registration" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">📝</span> Registration Process</div>' +
-  '<p>When someone submits the form:</p>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">1️⃣ Generate Unique ID <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Creates <code>REF-XXXXXXXX</code> ID</li>' +
-  '<li>This becomes their referral code</li>' +
-  '<li>Stored in Gen ID column (26)</li></ul>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">2️⃣ Calculate Pricing <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Base price × competitions</li>' +
-  '<li>Bundle discount (3+ competitions)</li>' +
-  '<li>Coupon discount (if valid code)</li>' +
-  '<li>Referral discount (₱50 off)</li>' +
-  '<li>Final amount → FINAL_AMOUNT (29)</li></ul>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">3️⃣ Lock Codes <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Valid coupon → LOCKED_COUPON (30)</li>' +
-  '<li>Valid referral → LOCKED_REF (31)</li>' +
-  '<li>Cannot change after payment verified</li></ul>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">4️⃣ Send Email & Sync Finance <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Sends "Registration Received" email</li>' +
-  '<li>Creates row in Finance sheet</li>' +
-  '<li>Status set to NOT YET</li></ul>' +
-  '</div></div>' +
-  '</div>' +
-  
-  '<div class="tip info"><div class="tip-title">💡 Key Columns</div>' +
-  '<code>Gen ID</code> (26) | <code>FINAL_AMOUNT</code> (29) | <code>LOCKED_COUPON</code> (30) | <code>LOCKED_REF</code> (31)</div>' +
-  '</div>' +
-  
-  /* FINANCE SECTION */
-  '<div id="finance" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">💰</span> Payment Verification</div>' +
-  '<p><strong>Your main task:</strong> Verify payments and set Status to PAID</p>' +
-  '<div class="flow">' +
-  '<div class="flow-step" style="background:#f59e0b;"><div class="num">1</div><div class="label">NOT YET</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#10b981;"><div class="num">2</div><div class="label">PAID</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#3b82f6;"><div class="num">3</div><div class="label">Receipt Sent</div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">✅</span> How to Verify</div>' +
-  '<ol>' +
-  '<li><strong>Find participant</strong> in Finance sheet</li>' +
-  '<li><strong>Check payment proof</strong> (screenshot link)</li>' +
-  '<li><strong>Verify amount</strong> matches Total Amount</li>' +
-  '<li><strong>Set Status</strong> to <code>PAID</code></li>' +
-  '<li><strong>Add your name</strong> in Verifier column</li>' +
-  '</ol>' +
-  '<div class="tip success"><div class="tip-title">✅ What Happens Automatically</div>' +
-  'Receipt email sent • Referrer gets cashback • Tracking updated</div>' +
-  '<div class="tip warning"><div class="tip-title">⚠️ Important</div>' +
-  'Only set PAID after verifying payment! This triggers emails & referral credits.</div>' +
-  '</div>' +
-  '</div>' +
-  
-  /* EMAILS SECTION */
-  '<div id="emails" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">📧</span> Email Types</div>' +
-  '<table>' +
-  '<tr><th>Email</th><th>Trigger</th><th>Recipient</th></tr>' +
-  '<tr><td><span class="badge badge-blue">Registration Received</span></td><td>Form submit</td><td>Participant</td></tr>' +
-  '<tr><td><span class="badge badge-green">Acknowledgement Receipt</span></td><td>Status → PAID</td><td>Participant</td></tr>' +
-  '<tr><td><span class="badge badge-yellow">Referral Success</span></td><td>Referral pays</td><td>Referrer</td></tr>' +
-  '<tr><td><span class="badge badge-red">Referral Removed</span></td><td>Referral cancelled</td><td>Referrer</td></tr>' +
-  '</table>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🧵</span> Email Threading</div>' +
-  '<p>All 4 emails appear in <strong>ONE thread</strong> in the recipient\'s inbox!</p>' +
-  '<div class="tip info"><div class="tip-title">💡 How It Works</div>' +
-  'Registration email creates the thread. All subsequent emails reply to it. Makes it easy for participants to follow their journey.</div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🔄</span> Resending Emails</div>' +
-  '<p>Admin Center → Email Management → Resend Email Menu</p>' +
-  '<ul><li>Select row in Registration sheet first</li>' +
-  '<li>Choose which email to resend</li>' +
-  '<li>Use "Force Resend" if duplicate protection blocks</li></ul>' +
-  '</div>' +
-  '</div>' +
-  
-  /* PRICING SECTION */
-  '<div id="pricing" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🏷️</span> Pricing</div>' +
-  '<table>' +
-  '<tr><th>Competition</th><th>Price</th></tr>' +
-  '<tr><td>Essay Writing</td><td>₱349</td></tr>' +
-  '<tr><td>Speech</td><td>₱349</td></tr>' +
-  '<tr><td>Photography</td><td>₱349</td></tr>' +
-  '<tr><td>Short Film Making</td><td>₱499</td></tr>' +
-  '</table>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🎁</span> Discounts</div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Bundle Discount <span class="badge badge-green">Auto</span> <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>Bundles are based on competition type:</p>' +
-  '<ul><li><strong>Standard (STD)</strong>: Essay, Speech, Photography = ₱349 each</li>' +
-  '<li><strong>Special (SPC)</strong>: Short Film = ₱499</li></ul>' +
-  '<table><tr><th>Combination</th><th>Bundle Price</th></tr>' +
-  '<tr><td>1 Standard only</td><td>₱349</td></tr>' +
-  '<tr><td>2 Standard only</td><td>₱499</td></tr>' +
-  '<tr><td>3 Standard only</td><td>₱749</td></tr>' +
-  '<tr><td>1 Standard + Short Film</td><td>₱649</td></tr>' +
-  '<tr><td>2 Standard + Short Film</td><td>₱899</td></tr>' +
-  '<tr><td>3 Standard + Short Film</td><td>₱999</td></tr>' +
-  '<tr><td>Short Film only</td><td>₱499</td></tr></table>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Coupon Discount <span class="badge badge-blue">Code</span> <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>Participants can enter coupon codes for additional discounts.</p>' +
-  '<p style="margin-top:10px;"><strong>👉 See the <span style="color:#3b82f6;cursor:pointer;" onclick="showSection(\'coupons\')">🎟️ Coupons tab</span> for full details on:</strong></p>' +
-  '<ul><li>How to create coupons</li>' +
-  '<li>Coupon sheet columns</li>' +
-  '<li>Validation rules</li>' +
-  '<li>Managing existing coupons</li></ul>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Referral Discount <span class="badge badge-yellow">₱50 off</span> <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>When someone uses another person\'s referral code:</p>' +
-  '<ul><li><strong>User gets ₱50 off</strong> their registration (immediate)</li>' +
-  '<li><strong>Referrer gets tiered cashback</strong> when user\'s payment is verified</li></ul>' +
-  '<p style="margin-top:10px;"><strong>👉 See the <span style="color:#3b82f6;cursor:pointer;" onclick="showSection(\'referrals\')">🔗 Referrals tab</span> for tiered cashback details.</strong></p>' +
-  '</div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  /* COUPONS SECTION */
-  '<div id="coupons" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🎟️</span> Coupon System Overview</div>' +
-  '<p>Coupons provide discount codes that participants can use during registration. They are managed in the <strong>Coupons</strong> sheet.</p>' +
-  '<div class="flow">' +
-  '<div class="flow-step" style="background:#8b5cf6;"><div class="num">1</div><div class="label">Create Coupon</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#3b82f6;"><div class="num">2</div><div class="label">User Enters Code</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#10b981;"><div class="num">3</div><div class="label">System Validates</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#f59e0b;"><div class="num">4</div><div class="label">Discount Applied</div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">📋</span> Coupons Sheet Columns</div>' +
-  '<table>' +
-  '<tr><th>Column</th><th>Purpose</th><th>Example</th></tr>' +
-  '<tr><td><strong>Code</strong></td><td>The coupon code participants enter</td><td>EARLYBIRD</td></tr>' +
-  '<tr><td><strong>Value</strong></td><td>Discount amount in pesos</td><td>100</td></tr>' +
-  '<tr><td><strong>Start Date</strong></td><td>When coupon becomes active</td><td>1/15/2026</td></tr>' +
-  '<tr><td><strong>End Date</strong></td><td>When coupon expires</td><td>2/15/2026</td></tr>' +
-  '<tr><td><strong>Max Uses</strong></td><td>Maximum number of redemptions (0 = unlimited)</td><td>50</td></tr>' +
-  '<tr><td><strong>Used</strong></td><td>Current usage count (auto-updated)</td><td>23</td></tr>' +
-  '</table>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">➕</span> How to Create a New Coupon</div>' +
-  '<ol>' +
-  '<li><strong>Go to the Coupons sheet</strong> (tab at bottom of spreadsheet)</li>' +
-  '<li><strong>Add a new row</strong> at the bottom of existing data</li>' +
-  '<li><strong>Fill in the columns:</strong>' +
-  '<ul style="margin-top:8px;">' +
-  '<li><strong>Code:</strong> Choose a memorable code (e.g., SAVE100, EARLYBIRD, VIP50)</li>' +
-  '<li><strong>Value:</strong> Enter the discount amount (e.g., 100 for ₱100 off)</li>' +
-  '<li><strong>Start Date:</strong> When the code should start working</li>' +
-  '<li><strong>End Date:</strong> When the code should stop working</li>' +
-  '<li><strong>Max Uses:</strong> How many times it can be used (0 = unlimited)</li>' +
-  '</ul></li>' +
-  '<li><strong>Leave "Used" empty</strong> - system updates this automatically</li>' +
-  '</ol>' +
-  '<div class="tip success"><div class="tip-title">✅ Example</div>' +
-  'To create a ₱100 discount code valid for January with max 50 uses:<br>' +
-  '<code>SAVE100 | 100 | 1/1/2026 | 1/31/2026 | 50</code></div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">✅</span> Coupon Validation Rules</div>' +
-  '<p>When a participant enters a coupon code, the system checks:</p>' +
-  '<table>' +
-  '<tr><th>Check</th><th>What Happens If Failed</th></tr>' +
-  '<tr><td>Code exists in Coupons sheet</td><td>Code is ignored, no discount</td></tr>' +
-  '<tr><td>Current date is within Start/End dates</td><td>Code rejected as expired or not yet active</td></tr>' +
-  '<tr><td>Usage count < Max Uses</td><td>Code rejected as fully redeemed</td></tr>' +
-  '</table>' +
-  '<div class="tip info"><div class="tip-title">💡 Code Locking</div>' +
-  'Once a valid coupon is applied, it is "locked" to that registration in the <code>LOCKED_COUPON</code> column. The usage count increments immediately. If the registration is not completed, the usage count is NOT decremented.</div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🔧</span> Managing Existing Coupons</div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Deactivate a coupon early <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>To stop a coupon before its end date:</p>' +
-  '<ul><li>Change the <strong>End Date</strong> to today\'s date or earlier</li>' +
-  '<li>Or change <strong>Max Uses</strong> to match the current <strong>Used</strong> count</li></ul>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Extend a coupon <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>To extend an expiring coupon:</p>' +
-  '<ul><li>Change the <strong>End Date</strong> to a later date</li>' +
-  '<li>Optionally increase <strong>Max Uses</strong> if needed</li></ul>' +
-  '</div></div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Check coupon performance <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>To see how a coupon is performing:</p>' +
-  '<ul><li>Check the <strong>Used</strong> column for redemption count</li>' +
-  '<li>Compare <strong>Used</strong> vs <strong>Max Uses</strong> to see remaining</li>' +
-  '<li>In Registration sheet, filter by <strong>LOCKED_COUPON</strong> column to see who used it</li></ul>' +
-  '</div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  /* REFERRALS SECTION */
-  '<div id="referrals" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🔗</span> Referral System</div>' +
-  '<div class="flow">' +
-  '<div class="flow-step" style="background:#f59e0b;"><div class="num">A</div><div class="label">Registers</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#3b82f6;"><div class="num">B</div><div class="label">Uses A\'s code</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#10b981;"><div class="num">💳</div><div class="label">B pays</div></div>' +
-  '<div class="flow-arrow">→</div>' +
-  '<div class="flow-step" style="background:#8b5cf6;"><div class="num">🎉</div><div class="label">A gets cashback!</div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">💵</span> Benefits</div>' +
-  '<table>' +
-  '<tr><th>Person</th><th>Benefit</th><th>When</th></tr>' +
-  '<tr><td>User (B)</td><td>₱50 discount</td><td>On registration</td></tr>' +
-  '<tr><td>Referrer (A)</td><td>Tiered cashback (see below)</td><td>When B pays</td></tr>' +
-  '</table>' +
-  
-  '<div class="card" style="background:#f0fdf4;margin-top:15px;border:1px solid #86efac;">' +
-  '<div class="card-title" style="color:#166534;"><span class="icon">💰</span> Tiered Cashback System</div>' +
-  '<table>' +
-  '<tr><th>Referral #</th><th>Cashback Amount</th></tr>' +
-  '<tr><td><strong>1st referral</strong></td><td style="color:#166534;font-weight:bold;">₱50</td></tr>' +
-  '<tr><td>2nd referral onwards</td><td>₱10 each</td></tr>' +
-  '</table>' +
-  '<p style="margin-top:10px;font-size:12px;color:#166534;"><strong>Example:</strong> If A gets 5 referrals, they earn: ₱50 + ₱10 + ₱10 + ₱10 + ₱10 = <strong>₱90 total</strong></p>' +
-  '</div>' +
-  
-  '<div class="tip info"><div class="tip-title">💡 Key Points</div>' +
-  '<ul><li>Referral code = Gen ID (e.g., REF-ABC123)</li>' +
-  '<li>Cashback stored in CASHBACK column</li>' +
-  '<li>Referral count tracked in REF_COUNT column</li>' +
-  '<li>Credit only given when referral\'s payment is verified PAID</li>' +
-  '<li>If referral is cancelled, cashback is reversed</li></ul></div>' +
-  '</div>' +
-  '</div>' +
-  
-  /* TOOLS SECTION */
-  '<div id="tools" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">🔧</span> Admin Center Menu</div>' +
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">📊 Dashboards & Reports <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content"><ul>' +
-  '<li><strong>Registration Dashboard</strong> - All registrations overview</li>' +
-  '<li><strong>Finance Dashboard</strong> - Payment stats & pending</li>' +
-  '<li><strong>Referral Leaderboard</strong> - Top referrers</li></ul></div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">💰 Finance Operations <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content"><ul>' +
-  '<li><strong>Verify Selected Payment</strong> - Quick verify</li>' +
-  '<li><strong>Generate Report</strong> - Export summary</li></ul></div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">📧 Email Management <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content"><ul>' +
-  '<li><strong>Email Status Dashboard</strong> - All email statuses</li>' +
-  '<li><strong>Resend Email Menu</strong> - Resend specific emails</li>' +
-  '<li><strong>Resend All Failed</strong> - Bulk retry</li>' +
-  '<li><strong>Preview Emails</strong> - See templates</li></ul></div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header" style="background:linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); color:white;">🏗️ BUILD BUILD BUILD <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p><strong>One-Click System Setup!</strong> Creates everything you need:</p>' +
-  '<ul>' +
-  '<li><strong>Registration sheet</strong> - 35 columns with proper headers</li>' +
-  '<li><strong>Finance sheet</strong> - 7 columns for payment tracking</li>' +
-  '<li><strong>Coupons sheet</strong> - 6 columns with sample coupon</li>' +
-  '<li><strong>Formatting</strong> - Colors, widths, frozen headers</li>' +
-  '<li><strong>Data validation</strong> - Dropdown menus for status fields</li></ul>' +
-  '<p style="margin-top:10px;"><strong>Use this when:</strong> Starting fresh, setting up a new spreadsheet</p>' +
-  '</div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">🔧 System Tools <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content"><ul>' +
-  '<li><strong>Test Email Threading</strong> - Test all 4 emails</li>' +
-  '<li><strong>View Audit Logs</strong> - System activity</li>' +
-  '<li><strong>Sync Finance</strong> - Sync sheets</li></ul></div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">⚙️ Column Configuration <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content"><ul>' +
-  '<li><strong>Check & Fix Columns + Data</strong> - Comprehensive check that validates column structure AND data integrity (Gen IDs, emails, pricing, referrals, Finance sync)</li>' +
-  '<li><strong>Auto-Detect Mapping</strong> - Find columns by header names</li></ul></div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">🗑️ Data Management <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content"><ul>' +
-  '<li><strong>Delete Selected Row</strong> - Delete single registration + finance + form response</li>' +
-  '<li><strong>Delete Selected Rows</strong> - Bulk delete multiple rows</li>' +
-  '<li><strong>Clear ALL Registration Data</strong> - Wipe registration sheet</li>' +
-  '<li><strong>Clear ALL Finance Data</strong> - Wipe finance sheet</li>' +
-  '<li><strong>Clear Form Responses (Auto)</strong> - Clears Google Form responses automatically!</li>' +
-  '<li><strong>FULL SYSTEM RESET</strong> - Clear everything (sheets + form) for fresh start</li></ul>' +
-  '<p style="margin-top:10px;font-size:12px;color:#10b981;"><strong>✅ Tip:</strong> Use "FULL SYSTEM RESET" for testing - it clears both sheets AND form responses in one click!</p></div></div>' +
-  '</div>' +
-  '</div>' +
-  
-  /* FAQ SECTION */
-  '<div id="faq" class="section">' +
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">❓</span> FAQ</div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Email not sent after PAID? <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Already sent (check Email Sent column)</li>' +
-  '<li>Rate limited (wait, retry)</li>' +
-  '<li><strong>Fix:</strong> Email Management → Resend Email Menu</li></ul>' +
-  '</div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Coupon not working? <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Check validity dates in Coupons sheet</li>' +
-  '<li>Check if max uses reached</li>' +
-  '<li>Check spelling (case-insensitive)</li></ul>' +
-  '</div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Referral credit not given? <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ul><li>Payment not verified yet - credit only given when PAID</li>' +
-  '<li>Already credited (check SYS_REF_CREDIT_GIVEN column)</li>' +
-  '<li>Invalid code / self-referral not allowed</li>' +
-  '<li><strong>Note:</strong> 1st referral = ₱50, subsequent = ₱10 each</li></ul>' +
-  '</div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">How to create a coupon? <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ol><li>Go to Coupons sheet</li>' +
-  '<li>Add row with: Code, Value, Start, End, Max Uses</li>' +
-  '<li>Example: SAVE100, 100, 1/1/2026, 1/31/2026, 50</li></ol>' +
-  '</div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">Need to resend an email? <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<ol><li>Select row in Registration sheet</li>' +
-  '<li>Admin Center → Email Management → Resend Email Menu</li>' +
-  '<li>Choose email type to resend</li></ol>' +
-  '</div></div>' +
-  
-  '<div class="accordion" onclick="toggleAccordion(this)">' +
-  '<div class="accordion-header">How to test with the same email again? <span class="accordion-icon">▼</span></div>' +
-  '<div class="accordion-content">' +
-  '<p>If the form says "You have already responded":</p>' +
-  '<p style="margin-top:10px;"><strong>✅ EASIEST WAY:</strong></p>' +
-  '<ol><li>Admin Center → Data Management → <strong>💣 FULL SYSTEM RESET</strong></li>' +
-  '<li>This clears sheets AND form responses automatically!</li></ol>' +
-  '<p style="margin-top:10px;"><strong>Or for single email:</strong></p>' +
-  '<ol><li>Select the row → Data Management → <strong>Delete Selected Row</strong></li>' +
-  '<li>This also clears the form response for that email</li></ol>' +
-  '</div></div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<div class="card-title"><span class="icon">📞</span> Need Help?</div>' +
-  '<ul><li>Check Audit Logs for errors</li>' +
-  '<li>Use Column Tools to fix structure issues</li>' +
-  '<li>Contact system administrator</li></ul>' +
-  '</div>' +
-  '</div>' +
-  
-  '</div>' + /* end content */
-  '</div>' + /* end container */
-  
-  '<script>' +
-  'function showSection(id) {' +
-  '  document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });' +
-  '  document.querySelectorAll(".nav-tab").forEach(function(t) { t.classList.remove("active"); });' +
-  '  document.getElementById(id).classList.add("active");' +
-  '  event.target.classList.add("active");' +
-  '}' +
-  'function toggleAccordion(el) {' +
-  '  el.classList.toggle("open");' +
-  '  event.stopPropagation();' +
-  '}' +
-  '<\/script>' +
-  '</body></html>';
-}
 
 // ============================================================================
 // PART 15: DATA MANAGEMENT & CLEANUP TOOLS
@@ -14186,45 +11421,56 @@ function diagnoseFormConnection() {
     report.push("❌ Error: " + e.message);
   }
   
-  // Check all sheets
+  // Check all sheets. This spreadsheet has TWO forms attached (Registration and Submission),
+  // so each one is checked against its own sheet.
+  var REG_SHEET = SYSTEM_CONFIG.SHEETS.REGISTRATION;
+  var SUB_SHEET = SYSTEM_CONFIG.SHEETS.SUBMISSIONS;
   report.push("\n📋 CHECKING SHEETS:");
   var sheets = ss.getSheets();
-  var formDestSheet = null;
-  
+  var linkedSheets = [];
+
   for (var i = 0; i < sheets.length; i++) {
     var sheet = sheets[i];
     var name = sheet.getName();
-    var lastRow = sheet.getLastRow();
-    
-    // Check if this sheet receives form responses
+    var dataRows = Math.max(0, sheet.getLastRow() - 1);
+    var expectsForm = (name === REG_SHEET || name === SUB_SHEET);
+
     try {
-      var sheetFormUrl = sheet.getFormUrl();
-      if (sheetFormUrl) {
-        formDestSheet = name;
-        report.push("  ✅ " + name + " ← FORM WRITES HERE (" + (lastRow-1) + " rows)");
-      } else if (name.indexOf("Form Responses") !== -1 || name === SYSTEM_CONFIG.SHEETS.REGISTRATION) {
-        report.push("  ⚠️ " + name + " - NOT receiving form data (" + (lastRow-1) + " rows)");
+      if (sheet.getFormUrl()) {
+        linkedSheets.push(name);
+        report.push("  ✅ " + name + " ← A FORM WRITES HERE (" + dataRows + " rows)");
+      } else if (expectsForm || name.indexOf("Form Responses") !== -1) {
+        report.push("  ⚠️ " + name + " - NOT receiving form data (" + dataRows + " rows)");
       }
     } catch (e) {
-      if (name.indexOf("Form Responses") !== -1) {
-        report.push("  📋 " + name + " (" + (lastRow-1) + " rows)");
+      if (expectsForm || name.indexOf("Form Responses") !== -1) {
+        report.push("  📋 " + name + " (" + dataRows + " rows)");
       }
     }
   }
-  
+
   // Diagnosis
+  var regLinked = linkedSheets.indexOf(REG_SHEET) >= 0;
+  var subLinked = linkedSheets.indexOf(SUB_SHEET) >= 0;
+  var strayLinked = linkedSheets.filter(function (n) { return n !== REG_SHEET && n !== SUB_SHEET; });
+
   report.push("\n💡 DIAGNOSIS:");
-  if (formDestSheet === SYSTEM_CONFIG.SHEETS.REGISTRATION) {
-    report.push("✅ Form is correctly writing to Registration sheet");
-  } else if (formDestSheet) {
-    report.push("⚠️ Form is writing to '" + formDestSheet + "' NOT Registration!");
-    report.push("   → New submissions go to wrong sheet");
-    report.push("   → Use 'Repair Form Link' to fix");
-  } else {
-    report.push("❌ No sheet is receiving form responses!");
-    report.push("   → Use 'Force Re-link Form' to fix");
+  report.push(regLinked
+    ? "✅ Registration form is writing to '" + REG_SHEET + "'"
+    : "❌ No form is writing to '" + REG_SHEET + "'");
+  report.push(subLinked
+    ? "✅ Submission form is writing to '" + SUB_SHEET + "'"
+    : "⚠️ No form is writing to '" + SUB_SHEET + "' (link the Submission form to it)");
+  if (strayLinked.length) {
+    report.push("⚠️ A form is writing to: " + strayLinked.join(", "));
+    report.push("   → Responses there are NOT processed");
+    report.push("   → Use " + getMenuPathText_("repairFormLink") + " to move them into '" + REG_SHEET + "'");
   }
-  
+  if (!regLinked && !strayLinked.length) {
+    report.push("   → Link the Registration form: Form → Responses → Link to Sheets,");
+    report.push("     then rename the new tab to '" + REG_SHEET + "' (or use " + getMenuPathText_("forceRelinkForm") + ")");
+  }
+
   SpreadsheetApp.getActiveSpreadsheet().toast("Done!", "✅", 2);
   ui.alert("🔍 Form Diagnostic", report.join("\n"), ui.ButtonSet.OK);
 }
@@ -14281,7 +11527,7 @@ function repairFormLink() {
   if (orphanedSheets.length === 0) {
     ui.alert("ℹ️ No Orphaned Sheets", 
       "No extra Form Responses sheets found with data.\n\n" +
-      "If form still isn't working, try 'Force Re-link Form'.",
+      "If form still isn't working, try " + getMenuPathText_("forceRelinkForm") + ".",
       ui.ButtonSet.OK);
     return;
   }
@@ -14581,6 +11827,19 @@ function deleteSelectedRows() {
 }
 
 /**
+ * Delete every data row (row 2 down) of a sheet.
+ * Sheets refuses to delete ALL non-frozen rows, so one blank row is added first when the
+ * data reaches the very last row of the sheet.
+ */
+function deleteAllDataRows_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  if (sheet.getMaxRows() <= lastRow) sheet.insertRowAfter(sheet.getMaxRows());
+  sheet.deleteRows(2, lastRow - 1);
+  return lastRow - 1;
+}
+
+/**
  * Clear ALL registration data (keeps headers)
  */
 function clearAllRegistrationData() {
@@ -14625,7 +11884,7 @@ function clearAllRegistrationData() {
     var rowCount = lastRow - 1;
     
     if (lastRow > 1) {
-      regSheet.deleteRows(2, lastRow - 1);
+      deleteAllDataRows_(regSheet);
     }
     
     // Clear all email tracking from properties
@@ -14636,7 +11895,7 @@ function clearAllRegistrationData() {
       "Cleared " + rowCount + " registration rows.\n\n" +
       "⚠️ NEXT STEP:\n" +
       "You must also clear Google Form responses!\n\n" +
-      "Use: Admin Center → Data Management → 🔄 Clear Form Responses (Auto)",
+      "Use: " + getMenuPathText_("clearAllFormResponses"),
       ui.ButtonSet.OK
     );
     
@@ -14688,7 +11947,7 @@ function clearAllFinanceData() {
     var rowCount = lastRow - 1;
     
     if (lastRow > 1) {
-      finSheet.deleteRows(2, lastRow - 1);
+      deleteAllDataRows_(finSheet);
     }
     
     ui.alert(
@@ -14830,14 +12089,14 @@ function fullSystemReset() {
     var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
     if (regSheet && regSheet.getLastRow() > 1) {
       regCount = regSheet.getLastRow() - 1;
-      regSheet.deleteRows(2, regSheet.getLastRow() - 1);
+      deleteAllDataRows_(regSheet);
     }
     
     // 2. Clear Finance sheet data (keep sheet)
     var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
     if (finSheet && finSheet.getLastRow() > 1) {
       finCount = finSheet.getLastRow() - 1;
-      finSheet.deleteRows(2, finSheet.getLastRow() - 1);
+      deleteAllDataRows_(finSheet);
     }
     
     // 3. DELETE any orphaned Form Responses sheets entirely
@@ -14893,78 +12152,53 @@ function fullSystemReset() {
  * Show guide on how to clear form responses (manual method)
  */
 function showFormResponseClearingGuide() {
-  var html = HtmlService.createHtmlOutput(getFormResponseGuideHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getFormResponseGuideHtml_(), "help"))
     .setWidth(650)
     .setHeight(580);
   SpreadsheetApp.getUi().showModalDialog(html, "📋 How to Clear Google Form Responses");
 }
 
 function getFormResponseGuideHtml_() {
-  return '<!DOCTYPE html>' +
-  '<html><head><style>' +
-  'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: #f8fafc; color: #1e293b; }' +
-  '.card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
-  'h2 { color: #1e40af; margin-bottom: 15px; font-size: 18px; }' +
-  'h3 { color: #334155; margin: 15px 0 10px 0; font-size: 15px; }' +
-  '.step { display: flex; gap: 12px; margin: 12px 0; }' +
-  '.step-num { background: #1e40af; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; flex-shrink: 0; }' +
-  '.step-content { flex: 1; line-height: 1.6; }' +
-  '.warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }' +
-  '.success { background: #d1fae5; border-left: 4px solid #10b981; padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }' +
-  '.info { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }' +
-  'code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; }' +
-  '.btn { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 5px; }' +
-  '.btn:hover { background: #1e3a8a; }' +
-  '.btn-success { background: #10b981; }' +
-  '.btn-success:hover { background: #059669; }' +
-  '</style></head><body>' +
-  
-  '<div class="success">' +
-  '<strong>✅ RECOMMENDED: Use Automatic Clearing</strong><br>' +
-  'Admin Center → Data Management → 🔄 Clear Form Responses (Auto)<br>' +
-  'This is the easiest and most reliable method!' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<h2>🔑 Why Clearing is Needed</h2>' +
-  '<p>Google Forms with "Limit to 1 response" tracks submissions by email. Even if you delete data from sheets, ' +
-  'the form still remembers who submitted. You need to clear BOTH:</p>' +
-  '<ul>' +
-  '<li><strong>Sheet data</strong> - Use Admin Center → Data Management</li>' +
-  '<li><strong>Form responses</strong> - Use Auto Clear or manual steps below</li>' +
-  '</ul>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<h2>📋 Manual Method: Clear Individual Response</h2>' +
-  '<p>To allow a specific email to re-submit:</p>' +
-  '<div class="step"><div class="step-num">1</div><div class="step-content">Open your <strong>Google Form</strong> (edit mode)</div></div>' +
-  '<div class="step"><div class="step-num">2</div><div class="step-content">Click the <strong>"Responses"</strong> tab at the top</div></div>' +
-  '<div class="step"><div class="step-num">3</div><div class="step-content">Click <strong>"Individual"</strong> view (person icon)</div></div>' +
-  '<div class="step"><div class="step-num">4</div><div class="step-content">Use arrows to find the response you want to delete</div></div>' +
-  '<div class="step"><div class="step-num">5</div><div class="step-content">Click the <strong>trash icon</strong> 🗑️ to delete that response</div></div>' +
-  '</div>' +
-  
-  '<div class="card">' +
-  '<h2>🧹 Manual Method: Clear ALL Responses</h2>' +
-  '<p>To allow everyone to re-submit:</p>' +
-  '<div class="step"><div class="step-num">1</div><div class="step-content">Open your <strong>Google Form</strong> (edit mode)</div></div>' +
-  '<div class="step"><div class="step-num">2</div><div class="step-content">Click the <strong>"Responses"</strong> tab</div></div>' +
-  '<div class="step"><div class="step-num">3</div><div class="step-content">Click the <strong>three dots menu</strong> (⋮) at the top right</div></div>' +
-  '<div class="step"><div class="step-num">4</div><div class="step-content">Select <strong>"Delete all responses"</strong></div></div>' +
-  '<div class="step"><div class="step-num">5</div><div class="step-content">Confirm deletion</div></div>' +
-  '</div>' +
-  
-  '<div class="info">' +
-  '<strong>💡 Pro Tip:</strong> For complete reset, use "FULL SYSTEM RESET" which clears both sheets AND form responses automatically!' +
-  '</div>' +
-  
-  '<div style="text-align: center; margin-top: 20px;">' +
-  '<button class="btn btn-success" onclick="google.script.run.clearAllFormResponses(); google.script.host.close();">🔄 Clear Form Responses Now</button>' +
-  '<button class="btn" onclick="google.script.host.close()">Close</button>' +
-  '</div>' +
-  
-  '</body></html>';
+  var esc = Utils.escapeHtml;
+  function steps(list) {
+    return list.map(function (text, i) { return '<div class="ui-step"><div class="n">' + (i + 1) + '</div><div>' + text + '</div></div>'; }).join('');
+  }
+  var body =
+    uiCallout_("ok", "&#x2705;", "<b>Recommended: let the system do it.</b><br>" + esc(getMenuPathText_("clearAllFormResponses")) +
+      " clears the responses stored inside the form in one step.") +
+    uiCard_("Why clearing is needed",
+      '<p class="ui-lead">A form limited to one response per person remembers who answered, even after you delete their row from the sheet. ' +
+      'To let someone answer again you have to clear both:</p>' +
+      '<ul class="ui-list">' +
+      '<li><div class="grow"><div class="t">The sheet rows</div><div class="d">' + esc(getMenuPathText_("deleteSelectedRow")) + ' for one participant, or ' +
+        esc(getMenuPathText_("clearAllRegistrationData")) + ' for everyone.</div></div></li>' +
+      '<li><div class="grow"><div class="t">The responses kept by the form</div><div class="d">The automatic tool above, or the manual steps below.</div></div></li>' +
+      '</ul>') +
+    uiCard_("By hand: one person", steps([
+      'Open the <b>Google Form</b> in edit mode.',
+      'Open the <b>Responses</b> tab.',
+      'Choose the <b>Individual</b> view.',
+      'Use the arrows to find the response.',
+      'Click the <b>trash</b> icon to delete it.'
+    ])) +
+    uiCard_("By hand: everyone", steps([
+      'Open the <b>Google Form</b> in edit mode.',
+      'Open the <b>Responses</b> tab.',
+      'Open the <b>three-dot menu</b> at the top right.',
+      'Choose <b>Delete all responses</b>.',
+      'Confirm.'
+    ])) +
+    uiCallout_("", "&#x1F4A1;", "For a complete fresh start, " + esc(getMenuPathText_("fullSystemReset")) +
+      " clears the Registration and Finance sheets and the form responses together.");
+
+  return buildAdminDialog_({
+    icon: "&#x1F4CB;",
+    title: "Letting people answer the form again",
+    subtitle: "Why a deleted registration still cannot re-submit, and how to fix it",
+    actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>' +
+      '<button class="ui-btn success" onclick="google.script.run.clearAllFormResponses(); google.script.host.close();">Clear form responses now</button>',
+    body: body
+  });
 }
 
 /**
@@ -14974,10 +12208,37 @@ function getLinkedForm_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var ssId = ss.getId();
   
+  // Returns the form ID inside a form URL, or "" if there is none
+  function formIdOf(url) {
+    var m = String(url || "").match(/\/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : "";
+  }
+  
+  // This spreadsheet has more than one form attached (Registration and Submission).
+  // The spreadsheet-level lookup returns either of them, so tools such as
+  // "Clear Form Responses" or "Force Re-link" could act on the Submission form.
+  // Always prefer the form attached to the Registration sheet, and never return the
+  // Submission sheet's form.
+  var submissionFormUrl = "";
+  try {
+    var subSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.SUBMISSIONS);
+    submissionFormUrl = subSheet ? (subSheet.getFormUrl() || "") : "";
+  } catch (e0) {}
+  var submissionFormId = formIdOf(submissionFormUrl);
+  
+  // Method 0: the form attached to the Registration sheet itself
+  try {
+    var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
+    var regFormUrl = regSheet ? regSheet.getFormUrl() : null;
+    if (regFormUrl) return FormApp.openByUrl(regFormUrl);
+  } catch (e) {
+    Logger.log("Method 0 failed: " + e);
+  }
+  
   // Method 1: Check if there's a form URL in the spreadsheet
   try {
     var formUrl = ss.getFormUrl();
-    if (formUrl) {
+    if (formUrl && !(submissionFormUrl && (formUrl === submissionFormUrl || (submissionFormId && formIdOf(formUrl) === submissionFormId)))) {
       return FormApp.openByUrl(formUrl);
     }
   } catch (e) {
@@ -14990,6 +12251,7 @@ function getLinkedForm_() {
     while (forms.hasNext()) {
       var formFile = forms.next();
       try {
+        if (submissionFormId && formFile.getId() === submissionFormId) continue;
         var form = FormApp.openById(formFile.getId());
         var destId = form.getDestinationId();
         if (destId === ssId) {
@@ -15107,8 +12369,12 @@ function clearAllEmailTracking_() {
       }
     }
     
+    // Delete ONLY the tracking keys. (deleteAllProperties() also wiped unrelated settings
+    // stored in script properties, such as the anonymized-folder IDs and merge thread info.)
+    for (var k = 0; k < keysToDelete.length; k++) {
+      props.deleteProperty(keysToDelete[k]);
+    }
     if (keysToDelete.length > 0) {
-      props.deleteAllProperties();
       Logger.log("Cleared " + keysToDelete.length + " tracking properties");
     }
   } catch (e) {
@@ -15146,7 +12412,7 @@ function runSystemUpdater() {
   var selectionType = getSelectionType_(selection, sheet);
   
   // Show dialog
-  var html = HtmlService.createHtmlOutput(getSystemUpdaterHtml_(sheetName, selectionType))
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getSystemUpdaterHtml_(sheetName, selectionType), "register"))
     .setWidth(700)
     .setHeight(600);
   ui.showModalDialog(html, "🔄 System Updater");
@@ -15197,32 +12463,32 @@ function getSystemUpdaterHtml_(sheetName, selectionType) {
   var actionsHtml = getActionsForSheetType_(sheetType);
   
   return '<!DOCTYPE html><html><head><style>' +
-    'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: white; margin: 0; min-height: 100vh; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #0d1117 0%, #1f6feb 100%); color: white; margin: 0; min-height: 100vh; }' +
     'h1 { margin: 0 0 5px 0; font-size: 28px; }' +
     '.subtitle { opacity: 0.8; margin-bottom: 25px; }' +
-    '.card { background: white; color: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }' +
-    '.card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #1e40af; display: flex; align-items: center; gap: 10px; }' +
+    '.card { background: #161b22; color: #e6edf3; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }' +
+    '.card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #58a6ff; display: flex; align-items: center; gap: 10px; }' +
     '.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }' +
-    '.info-item { background: #f1f5f9; padding: 12px; border-radius: 8px; }' +
-    '.info-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }' +
-    '.info-value { font-size: 14px; font-weight: bold; color: #1e293b; }' +
+    '.info-item { background: #0d1117; padding: 12px; border-radius: 8px; }' +
+    '.info-label { font-size: 11px; color: #8b949e; text-transform: uppercase; margin-bottom: 4px; }' +
+    '.info-value { font-size: 14px; font-weight: bold; color: #e6edf3; }' +
     '.actions-list { list-style: none; padding: 0; margin: 0; }' +
-    '.action-item { display: flex; align-items: center; gap: 12px; padding: 12px; margin: 8px 0; background: #f8fafc; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }' +
-    '.action-item:hover { background: #e0f2fe; border-color: #0ea5e9; }' +
-    '.action-item.selected { background: #dbeafe; border-color: #3b82f6; }' +
+    '.action-item { display: flex; align-items: center; gap: 12px; padding: 12px; margin: 8px 0; background: #161b22; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }' +
+    '.action-item:hover { background: rgba(56,139,253,0.15); border-color: #388bfd; }' +
+    '.action-item.selected { background: rgba(56,139,253,0.15); border-color: #388bfd; }' +
     '.action-item input { margin: 0; }' +
     '.action-icon { font-size: 24px; }' +
     '.action-text { flex: 1; }' +
     '.action-name { font-weight: bold; font-size: 14px; }' +
-    '.action-desc { font-size: 12px; color: #64748b; }' +
+    '.action-desc { font-size: 12px; color: #8b949e; }' +
     '.btn { padding: 14px 28px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 5px; transition: all 0.2s; }' +
-    '.btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; }' +
-    '.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(59,130,246,0.4); }' +
-    '.btn-secondary { background: #e2e8f0; color: #64748b; }' +
+    '.btn-primary { background: linear-gradient(135deg, #1f6feb 0%, #1f6feb 100%); color: white; }' +
+    '.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(56,139,253,0.4); }' +
+    '.btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }' +
     '.btn-container { text-align: center; margin-top: 20px; }' +
-    '.warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 0 8px 8px 0; color: #92400e; font-size: 13px; margin: 15px 0; }' +
+    '.warning { background: rgba(210,153,34,0.15); border-left: 4px solid #bb8009; padding: 12px; border-radius: 0 8px 8px 0; color: #e3b341; font-size: 13px; margin: 15px 0; }' +
     '.progress { display: none; text-align: center; padding: 30px; }' +
-    '.spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }' +
+    '.spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: #30363d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }' +
     '@keyframes spin { to { transform: rotate(360deg); } }' +
     '.result { display: none; }' +
     '</style></head><body>' +
@@ -15234,9 +12500,9 @@ function getSystemUpdaterHtml_(sheetName, selectionType) {
     '<div class="card">' +
     '<div class="card-title">📋 Current Selection</div>' +
     '<div class="info-grid">' +
-    '<div class="info-item"><div class="info-label">Sheet</div><div class="info-value">' + sheetName + '</div></div>' +
+    '<div class="info-item"><div class="info-label">Sheet</div><div class="info-value">' + Utils.escapeHtml(sheetName) + '</div></div>' +
     '<div class="info-item"><div class="info-label">Selection</div><div class="info-value">' + selectionDesc + '</div></div>' +
-    '<div class="info-item"><div class="info-label">Sheet Type</div><div class="info-value">' + sheetType.name + '</div></div>' +
+    '<div class="info-item"><div class="info-label">Sheet Type</div><div class="info-value">' + Utils.escapeHtml(sheetType.name) + '</div></div>' +
     '<div class="info-item"><div class="info-label">Available Actions</div><div class="info-value">' + sheetType.actions.length + '</div></div>' +
     '</div>' +
     '</div>' +
@@ -15301,7 +12567,7 @@ function getSystemUpdaterHtml_(sheetName, selectionType) {
     '  document.getElementById("progress").style.display = "none";' +
     '  var resultDiv = document.getElementById("result");' +
     '  resultDiv.style.display = "block";' +
-    '  resultDiv.innerHTML = "<h3 style=\\"color:#dc2626;\\">❌ Error</h3><p>" + error.message + "</p>";' +
+    '  resultDiv.innerHTML = "<h3 style=\\"color:#ff7b72;\\">❌ Error</h3><p>" + error.message + "</p>";' +
     '}' +
     '<\/script>' +
     '</body></html>';
@@ -15358,25 +12624,25 @@ function getActionsForSheetType_(sheetType) {
     "PRICING": { icon: "💰", name: "Recalculate Pricing", desc: "Update Base Fee, Bundle Discount, Total Fee based on competitions" },
     "DISCOUNTS": { icon: "🏷️", name: "Apply Discounts", desc: "Calculate coupon and referral discounts" },
     "PAYMENT_STATUS": { icon: "✅", name: "Set Payment Status", desc: "Set 'NOT YET' for rows with empty payment status" },
-    "REFERRALS": { icon: "🔗", name: "Update Referral Data", desc: "Calculate referral count and earnings" },
+    "REFERRALS": { icon: "🔗", name: "Update Referral Data", desc: "Recount each participant's PAID referrals and the cashback they earned" },
     "SYNC_FINANCE": { icon: "🔄", name: "Sync to Finance Sheet", desc: "Add missing entries to Finance sheet" },
     
     // Finance actions
-    "SYNC_FROM_REG": { icon: "📥", name: "Sync from Registration", desc: "Pull missing data from Registration sheet" },
-    "UPDATE_STATUS": { icon: "📊", name: "Update Statuses", desc: "Sync payment status with Registration" },
-    "CALC_TOTALS": { icon: "🧮", name: "Calculate Totals", desc: "Recalculate amount totals" },
+    "SYNC_FROM_REG": { icon: "📥", name: "Sync from Registration", desc: "Fill in an empty Name, Gen ID or Total Amount from the Registration sheet" },
+    "UPDATE_STATUS": { icon: "📊", name: "Update Statuses", desc: "Set '" + SYSTEM_CONFIG.ADMIN.NOT_YET_WORD + "' where the Status is empty (members of a payment group stay empty)" },
+    "CALC_TOTALS": { icon: "🧮", name: "Calculate Totals", desc: "Recalculate Ref Count, Cashback and Total Amount from Registration (payment group totals are left alone)" },
     
     // Coupon actions
     "UPDATE_USAGE": { icon: "📈", name: "Update Usage Counts", desc: "Recalculate how many times each coupon was used" },
-    "VALIDATE_CODES": { icon: "✔️", name: "Validate Codes", desc: "Check for duplicate or invalid codes" },
-    "CHECK_EXPIRY": { icon: "📅", name: "Check Expiry", desc: "Mark expired coupons" },
+    "VALIDATE_CODES": { icon: "✔️", name: "Validate Codes", desc: "Report duplicate codes, missing dates and bad values. Changes nothing" },
+    "CHECK_EXPIRY": { icon: "📅", name: "Check Expiry", desc: "Mark codes whose end date has passed as EXPIRED" },
     
     // Participant DB actions
     "REFRESH_QUERY": { icon: "🔄", name: "Refresh Query", desc: "Re-run the QUERY formula to update data" },
-    "VALIDATE_DATA": { icon: "🔍", name: "Validate Data", desc: "Check for data integrity issues" },
+    "VALIDATE_DATA": { icon: "🔍", name: "Validate Data", desc: "Check the QUERY formula and compare the row count with Registration. Changes nothing" },
     
     // Generic actions
-    "SCAN_EMPTY": { icon: "🔍", name: "Scan Empty Cells", desc: "Find and report all empty cells" },
+    "SCAN_EMPTY": { icon: "🔍", name: "Scan Empty Cells", desc: "List the empty cells in the selected rows. Changes nothing" },
     "TRIM_SPACES": { icon: "✂️", name: "Trim Whitespace", desc: "Remove leading/trailing spaces from all cells" }
   };
   
@@ -15466,9 +12732,9 @@ function executeRegistrationUpdate_(sheet, startRow, endRow, actions, results) {
   if (couponSheet && couponSheet.getLastRow() > 1) {
     var couponData = couponSheet.getDataRange().getValues();
     for (var c = 1; c < couponData.length; c++) {
-      var code = String(couponData[c][0] || "").trim().toUpperCase();
+      var code = String(couponData[c][SYSTEM_CONFIG.COLS.COUPON.CODE - 1] || "").trim().toUpperCase();
       if (code) {
-        couponMap[code] = Number(couponData[c][1] || 0);
+        couponMap[code] = Number(couponData[c][SYSTEM_CONFIG.COLS.COUPON.VALUE - 1] || 0);
       }
     }
   }
@@ -15484,6 +12750,41 @@ function executeRegistrationUpdate_(sheet, startRow, endRow, actions, results) {
     }
   }
   
+  // PAID referral counts per referrer (built once): a referral counts only when the referred
+  // row carries the SYS_REF_CREDIT_GIVEN marker, i.e. its payment was verified.
+  var paidReferralCounts = null;
+  if (actions.indexOf("REFERRALS") >= 0 && sheet.getLastRow() > 1) {
+    var creditCol = ColumnManager.headerMap(sheet)[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_CREDIT_GIVEN];
+    if (creditCol) {
+      paidReferralCounts = {};
+      var refRows = sheet.getLastRow() - 1;
+      var lockedRefVals = sheet.getRange(2, SYSTEM_CONFIG.COLS.REG.LOCKED_REF, refRows, 1).getValues();
+      var creditVals = sheet.getRange(2, creditCol, refRows, 1).getValues();
+      for (var pr = 0; pr < refRows; pr++) {
+        var usedCode = String(lockedRefVals[pr][0] || "").trim().toUpperCase();
+        if (usedCode && String(creditVals[pr][0] || "").trim()) {
+          paidReferralCounts[usedCode] = (paidReferralCounts[usedCode] || 0) + 1;
+        }
+      }
+    } else {
+      results.details.push("Referral update skipped: column " + SYSTEM_CONFIG.SYS_REG_HEADERS.REF_CREDIT_GIVEN + " not found");
+    }
+  }
+
+  // Finance lookup for the Sync action (columns resolved by header name)
+  var finColsForSync = null;
+  var finEmailsForSync = {};
+  if (actions.indexOf("SYNC_FINANCE") >= 0 && finSheet) {
+    finColsForSync = ColumnManager.getFinanceCols(finSheet);
+    if (finColsForSync.Email && finSheet.getLastRow() > 1) {
+      var finEmailVals = finSheet.getRange(2, finColsForSync.Email, finSheet.getLastRow() - 1, 1).getValues();
+      for (var fe = 0; fe < finEmailVals.length; fe++) {
+        var finEmailKey = String(finEmailVals[fe][0] || "").toLowerCase().trim();
+        if (finEmailKey) finEmailsForSync[finEmailKey] = true;
+      }
+    }
+  }
+
   // Process each row
   for (var row = startRow; row <= endRow; row++) {
     try {
@@ -15498,12 +12799,17 @@ function executeRegistrationUpdate_(sheet, startRow, endRow, actions, results) {
       // ===== GEN_ID =====
       if (actions.indexOf("GEN_ID") >= 0) {
         var currentGenId = String(rowData[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "").trim();
-        if (!currentGenId || !/^REF-[A-Z0-9]{8}$/i.test(currentGenId)) {
-          var newGenId = IdGenerator.generate();
+        if (!currentGenId) {
+          var newGenId = Utils.generateId("REF");
+          while (existingGenIds[newGenId.toUpperCase()]) newGenId = Utils.generateId("REF");
           sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.GEN_ID).setValue(newGenId);
           results.details.push("Row " + row + ": Generated Gen ID " + newGenId);
           rowUpdated = true;
           existingGenIds[newGenId.toUpperCase()] = row;
+        } else if (!/^REF-[A-Z0-9]{8}$/i.test(currentGenId)) {
+          // Never replace an existing ID: it is the participant's referral code and email
+          // thread key, and other rows may already reference it.
+          results.details.push("Row " + row + ": Gen ID '" + currentGenId + "' has an unusual format (left unchanged)");
         }
       }
       
@@ -15584,67 +12890,59 @@ function executeRegistrationUpdate_(sheet, startRow, endRow, actions, results) {
       }
       
       // ===== REFERRALS =====
+      // Only PAID referrals count (same rule as the live PAID flow, which marks each credited
+      // referral in SYS_REF_CREDIT_GIVEN). Counting every locked code would pay cashback for
+      // people who never paid.
       if (actions.indexOf("REFERRALS") >= 0) {
         var myGenId = String(sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.GEN_ID).getValue() || "").trim().toUpperCase();
-        if (myGenId) {
-          // Count how many people used this Gen ID as referral
-          var refCount = 0;
-          var lockedRefCol = SYSTEM_CONFIG.COLS.REG.LOCKED_REF;
-          var allLockedRefs = sheet.getRange(2, lockedRefCol, sheet.getLastRow() - 1, 1).getValues();
-          
-          for (var r = 0; r < allLockedRefs.length; r++) {
-            if (String(allLockedRefs[r][0] || "").trim().toUpperCase() === myGenId) {
-              refCount++;
-            }
-          }
-          
+        if (myGenId && paidReferralCounts) {
+          var refCount = paidReferralCounts[myGenId] || 0;
           var currentRefCount = Number(rowData[SYSTEM_CONFIG.COLS.REG.REF_COUNT - 1] || 0);
           if (refCount !== currentRefCount) {
+            var rewardCfg = SYSTEM_CONFIG.PRICING.REFERRAL_REWARD;
+            var earnings = refCount > 0 ? rewardCfg.INITIAL + Math.max(0, refCount - 1) * rewardCfg.SUBSEQUENT : 0;
             sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.REF_COUNT).setValue(refCount);
-            
-            // Calculate earnings: ₱50 first + ₱10 each additional
-            var earnings = refCount > 0 ? 50 + Math.max(0, refCount - 1) * 10 : 0;
             sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.CASHBACK).setValue(earnings);
-            
+
             results.details.push("Row " + row + ": Updated Referral Count to " + refCount + ", Earnings ₱" + earnings);
             rowUpdated = true;
           }
         }
       }
-      
+
       // ===== SYNC_FINANCE =====
-      if (actions.indexOf("SYNC_FINANCE") >= 0 && finSheet) {
+      // Adds a Finance row (by header name, same payload as Sync Dashboard) when missing
+      if (actions.indexOf("SYNC_FINANCE") >= 0 && finSheet && finColsForSync) {
         var genId = String(sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.GEN_ID).getValue() || "").trim();
         var name = String(rowData[SYSTEM_CONFIG.COLS.REG.NAME - 1] || "").trim();
-        var totalFee = Number(sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.TOTAL_FEE).getValue() || 0);
-        
-        if (genId && email) {
-          // Check if exists in Finance
-          var finData = finSheet.getDataRange().getValues();
-          var existsInFin = false;
-          for (var f = 1; f < finData.length; f++) {
-            if (String(finData[f][1] || "").toLowerCase().trim() === email.toLowerCase()) {
-              existsInFin = true;
-              break;
-            }
-          }
-          
-          if (!existsInFin) {
-            finSheet.appendRow([
-              name,
-              email,
-              genId,
-              new Date(),
-              totalFee,
-              "NOT YET",
-              ""
-            ]);
-            results.details.push("Row " + row + ": Added to Finance sheet");
-            rowUpdated = true;
-          }
+
+        if (genId && email && !finEmailsForSync[email.toLowerCase()]) {
+          var syncFinalAmt = Number(sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.FINAL_AMOUNT).getValue() || 0);
+          var syncCashback = Number(sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.CASHBACK).getValue() || 0);
+          FinanceWriter.upsertByEmail(finSheet, finColsForSync, email, {
+            Timestamp: rowData[SYSTEM_CONFIG.COLS.REG.TIMESTAMP - 1] || new Date(),
+            Email: email,
+            Name: name,
+            PaymentMode: rowData[SYSTEM_CONFIG.COLS.REG.PAY_MODE - 1] || "",
+            ProofLink: rowData[SYSTEM_CONFIG.COLS.REG.PAY_PROOF - 1] || "",
+            RefCode: rowData[SYSTEM_CONFIG.COLS.REG.LOCKED_REF - 1] || "",
+            CouponCode: rowData[SYSTEM_CONFIG.COLS.REG.LOCKED_COUPON - 1] || "",
+            GenId: genId,
+            RefCount: Number(sheet.getRange(row, SYSTEM_CONFIG.COLS.REG.REF_COUNT).getValue() || 0),
+            Cashback: syncCashback,
+            TotalAmount: Math.max(0, syncFinalAmt - syncCashback),
+            Status: SYSTEM_CONFIG.ADMIN.NOT_YET_WORD,
+            Verifier: "",
+            PayRef: "",
+            EmailSent: "",
+            SysPaidAt: ""
+          });
+          finEmailsForSync[email.toLowerCase()] = true;
+          results.details.push("Row " + row + ": Added to Finance sheet");
+          rowUpdated = true;
         }
       }
-      
+
       if (rowUpdated) results.updated++;
       
     } catch (e) {
@@ -15662,77 +12960,134 @@ function executeRegistrationUpdate_(sheet, startRow, endRow, actions, results) {
 function executeFinanceUpdate_(sheet, startRow, endRow, actions, results) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  
+  var R = SYSTEM_CONFIG.COLS.REG;
+
   // Build registration data map by email
   var regMap = {};
   if (regSheet && regSheet.getLastRow() > 1) {
     var regData = regSheet.getDataRange().getValues();
+    var regHeaderMap = ColumnManager.headerMap(regSheet);
+    var groupCol = regHeaderMap[V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID] || 0;
+    var payerCol = regHeaderMap[V22_CONFIG.MERGE.REG_HEADERS.PRIMARY_EMAIL] || 0;
     for (var r = 1; r < regData.length; r++) {
-      var email = String(regData[r][SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "").toLowerCase().trim();
+      var email = String(regData[r][R.EMAIL - 1] || "").toLowerCase().trim();
       if (email) {
+        var groupId = groupCol ? String(regData[r][groupCol - 1] || "").trim() : "";
+        var payerEmail = (groupId && payerCol) ? String(regData[r][payerCol - 1] || "").toLowerCase().trim() : "";
         regMap[email] = {
-          name: regData[r][SYSTEM_CONFIG.COLS.REG.NAME - 1],
-          genId: regData[r][SYSTEM_CONFIG.COLS.REG.GEN_ID - 1],
-          totalFee: regData[r][SYSTEM_CONFIG.COLS.REG.TOTAL_FEE - 1],
-          status: regData[r][SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS - 1]
+          name: regData[r][R.NAME - 1],
+          genId: regData[r][R.GEN_ID - 1],
+          totalFee: regData[r][R.TOTAL_FEE - 1],
+          cashback: regData[r][R.CASHBACK - 1],
+          refCount: regData[r][R.REF_COUNT - 1],
+          status: regData[r][R.PAYMENT_STATUS - 1],
+          // Payment groups: the payer's row carries the group total, members show 0 and an
+          // empty Status. Both are set by the merge and must not be "repaired" here.
+          inGroup: !!groupId,
+          isGroupMember: !!(payerEmail && payerEmail !== email)
         };
       }
     }
   }
-  
+
+  // Finance columns are located by header name
+  var finCols = ColumnManager.getFinanceCols(sheet);
+  if (!finCols.Email) {
+    results.details.push("Finance sheet has no Email column - nothing updated");
+    return results;
+  }
+
   for (var row = startRow; row <= endRow; row++) {
     try {
       var rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
-      var email = String(rowData[1] || "").toLowerCase().trim(); // Email is typically column B
+      var email = String(rowData[finCols.Email - 1] || "").toLowerCase().trim();
       var rowUpdated = false;
-      
+
       if (!email) continue;
-      
+      var reg = regMap[email] || null;
+
       // ===== SYNC_FROM_REG =====
-      if (actions.indexOf("SYNC_FROM_REG") >= 0 && regMap[email]) {
-        var reg = regMap[email];
-        
+      if (actions.indexOf("SYNC_FROM_REG") >= 0 && reg) {
+        var syncedSomething = false;
+
         // Update name if empty
-        if (!rowData[0] && reg.name) {
-          sheet.getRange(row, 1).setValue(reg.name);
-          rowUpdated = true;
+        if (finCols.Name && !rowData[finCols.Name - 1] && reg.name) {
+          sheet.getRange(row, finCols.Name).setValue(reg.name);
+          syncedSomething = true;
         }
-        
+
         // Update Gen ID if empty
-        if (!rowData[2] && reg.genId) {
-          sheet.getRange(row, 3).setValue(reg.genId);
-          rowUpdated = true;
+        if (finCols.GenId && !rowData[finCols.GenId - 1] && reg.genId) {
+          sheet.getRange(row, finCols.GenId).setValue(reg.genId);
+          syncedSomething = true;
         }
-        
-        // Update Amount if empty
-        if (!rowData[4] && reg.totalFee) {
-          sheet.getRange(row, 5).setValue(reg.totalFee);
-          rowUpdated = true;
+
+        // Update Total Amount if empty (net of referral cashback, as everywhere else)
+        if (finCols.TotalAmount && rowData[finCols.TotalAmount - 1] === "" && reg.totalFee && !reg.inGroup) {
+          var filledTotal = Math.max(0, Number(reg.totalFee) - Number(reg.cashback || 0));
+          sheet.getRange(row, finCols.TotalAmount).setValue(filledTotal);
+          rowData[finCols.TotalAmount - 1] = filledTotal;
+          syncedSomething = true;
         }
-        
-        if (rowUpdated) {
+
+        if (syncedSomething) {
+          rowUpdated = true;
           results.details.push("Row " + row + ": Synced data from Registration");
         }
       }
-      
+
       // ===== UPDATE_STATUS =====
-      if (actions.indexOf("UPDATE_STATUS") >= 0) {
-        var currentStatus = String(rowData[5] || "").trim();
+      if (actions.indexOf("UPDATE_STATUS") >= 0 && finCols.Status && !(reg && reg.isGroupMember)) {
+        var currentStatus = String(rowData[finCols.Status - 1] || "").trim();
         if (!currentStatus) {
-          sheet.getRange(row, 6).setValue("NOT YET");
-          results.details.push("Row " + row + ": Set status to NOT YET");
+          sheet.getRange(row, finCols.Status).setValue(SYSTEM_CONFIG.ADMIN.NOT_YET_WORD);
+          results.details.push("Row " + row + ": Set status to " + SYSTEM_CONFIG.ADMIN.NOT_YET_WORD);
           rowUpdated = true;
         }
       }
-      
+
+      // ===== CALC_TOTALS =====
+      // Ref Count and Cashback are copied from Registration; Total Amount is the registration's
+      // Total Fee minus that cashback (the same rule Sync Dashboard uses).
+      if (actions.indexOf("CALC_TOTALS") >= 0 && reg) {
+        var changes = [];
+
+        var regRefCount = Number(reg.refCount || 0);
+        if (finCols.RefCount && Number(rowData[finCols.RefCount - 1] || 0) !== regRefCount) {
+          sheet.getRange(row, finCols.RefCount).setValue(regRefCount);
+          changes.push("Ref Count " + (rowData[finCols.RefCount - 1] === "" ? "(empty)" : rowData[finCols.RefCount - 1]) + " -> " + regRefCount);
+        }
+
+        var regCashback = Number(reg.cashback || 0);
+        if (finCols.Cashback && Number(rowData[finCols.Cashback - 1] || 0) !== regCashback) {
+          sheet.getRange(row, finCols.Cashback).setValue(regCashback);
+          changes.push("Cashback " + (rowData[finCols.Cashback - 1] === "" ? "(empty)" : rowData[finCols.Cashback - 1]) + " -> " + regCashback);
+        }
+
+        var hasFee = reg.totalFee !== "" && reg.totalFee !== null && !isNaN(Number(reg.totalFee));
+        if (finCols.TotalAmount && hasFee && !reg.inGroup) {
+          var expectedTotal = Math.max(0, Number(reg.totalFee) - regCashback);
+          var currentTotal = rowData[finCols.TotalAmount - 1];
+          if (currentTotal === "" || Number(currentTotal) !== expectedTotal) {
+            sheet.getRange(row, finCols.TotalAmount).setValue(expectedTotal);
+            changes.push("Total Amount " + (currentTotal === "" ? "(empty)" : currentTotal) + " -> " + expectedTotal);
+          }
+        }
+
+        if (changes.length) {
+          rowUpdated = true;
+          results.details.push("Row " + row + ": " + changes.join(", "));
+        }
+      }
+
       if (rowUpdated) results.updated++;
-      
+
     } catch (e) {
       results.errors++;
       results.details.push("Row " + row + ": ERROR - " + e.message);
     }
   }
-  
+
   return results;
 }
 
@@ -15742,61 +13097,116 @@ function executeFinanceUpdate_(sheet, startRow, endRow, actions, results) {
 function executeCouponsUpdate_(sheet, startRow, endRow, actions, results) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-  
+  var CC = SYSTEM_CONFIG.COLS.COUPON;
+
   // Count coupon usage from Registration
   var couponUsage = {};
   if (regSheet && regSheet.getLastRow() > 1) {
     var lockedCouponCol = SYSTEM_CONFIG.COLS.REG.LOCKED_COUPON;
     var couponData = regSheet.getRange(2, lockedCouponCol, regSheet.getLastRow() - 1, 1).getValues();
     for (var c = 0; c < couponData.length; c++) {
-      var code = String(couponData[c][0] || "").trim().toUpperCase();
-      if (code) {
-        couponUsage[code] = (couponUsage[code] || 0) + 1;
+      var usedCode = String(couponData[c][0] || "").trim().toUpperCase();
+      if (usedCode) {
+        couponUsage[usedCode] = (couponUsage[usedCode] || 0) + 1;
       }
     }
   }
-  
+
+  // For VALIDATE_CODES: how often each code appears in the whole sheet
+  var validating = actions.indexOf("VALIDATE_CODES") >= 0;
+  var codeCounts = {};
+  if (validating && sheet.getLastRow() > 1) {
+    var allCodes = sheet.getRange(2, CC.CODE, sheet.getLastRow() - 1, 1).getValues();
+    for (var a = 0; a < allCodes.length; a++) {
+      var listed = String(allCodes[a][0] || "").trim().toUpperCase();
+      if (listed) codeCounts[listed] = (codeCounts[listed] || 0) + 1;
+    }
+  }
+  var codesChecked = 0, codesWithProblems = 0;
+  var today = Utils.midnightToday();
+
   for (var row = startRow; row <= endRow; row++) {
     try {
       var rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
-      var code = String(rowData[0] || "").trim().toUpperCase();
+      var code = String(rowData[CC.CODE - 1] || "").trim().toUpperCase();
       var rowUpdated = false;
-      
+
       if (!code) continue;
-      
+
       // ===== UPDATE_USAGE =====
       if (actions.indexOf("UPDATE_USAGE") >= 0) {
         var actualUsage = couponUsage[code] || 0;
-        var currentUsage = Number(rowData[5] || 0);
-        
+        var currentUsage = Number(rowData[CC.CURRENT_USE - 1] || 0);
+
         if (actualUsage !== currentUsage) {
-          sheet.getRange(row, 6).setValue(actualUsage);
+          sheet.getRange(row, CC.CURRENT_USE).setValue(actualUsage);
+          rowData[CC.CURRENT_USE - 1] = actualUsage;
           results.details.push("Row " + row + " (" + code + "): Updated usage from " + currentUsage + " to " + actualUsage);
           rowUpdated = true;
         }
       }
-      
+
       // ===== CHECK_EXPIRY =====
+      // Same rule as registration: a code still works on its end date and expires the day after.
       if (actions.indexOf("CHECK_EXPIRY") >= 0) {
-        var endDate = rowData[3];
-        if (endDate instanceof Date && endDate < new Date()) {
-          var currentStatus = String(rowData[6] || "").toUpperCase();
-          if (currentStatus !== "EXPIRED") {
-            sheet.getRange(row, 7).setValue("EXPIRED");
+        var endParsed = Utils.parseMaybeDate(rowData[CC.END - 1]);
+        if (endParsed) {
+          var endDay = new Date(endParsed.getTime());
+          endDay.setHours(0, 0, 0, 0);
+          var statusNow = String(rowData[CC.STATUS - 1] || "").toUpperCase().trim();
+          if (today > endDay && statusNow !== "EXPIRED") {
+            sheet.getRange(row, CC.STATUS).setValue("EXPIRED");
+            rowData[CC.STATUS - 1] = "EXPIRED";
             results.details.push("Row " + row + " (" + code + "): Marked as EXPIRED");
             rowUpdated = true;
           }
         }
       }
-      
+
+      // ===== VALIDATE_CODES (report only - changes nothing) =====
+      if (validating) {
+        codesChecked++;
+        var problems = [];
+        if (codeCounts[code] > 1) problems.push("appears " + codeCounts[code] + " times (only the last row is used)");
+        if (/\s/.test(String(rowData[CC.CODE - 1]).trim())) problems.push("contains a space");
+        if (!(Number(rowData[CC.VALUE - 1]) > 0)) problems.push("value is not a positive number");
+
+        var startDay = Utils.parseMaybeDate(rowData[CC.START - 1]);
+        var lastDay = Utils.parseMaybeDate(rowData[CC.END - 1]);
+        if (!startDay || !lastDay) problems.push("start or end date is missing, so the code is always rejected");
+        else if (startDay.getTime() > lastDay.getTime()) problems.push("end date is before the start date");
+
+        var maxUse = Number(rowData[CC.MAX_USE - 1] || 0);
+        var usedNow = Number(rowData[CC.CURRENT_USE - 1] || 0);
+        if (maxUse > 0 && usedNow > maxUse) problems.push("used " + usedNow + " times but the limit is " + maxUse);
+
+        var statusText = String(rowData[CC.STATUS - 1] || "").trim().toUpperCase();
+        if (statusText && statusText !== "ACTIVE" && statusText !== "EXPIRED" && statusText !== "INACTIVE") {
+          problems.push("status \"" + statusText + "\" is not ACTIVE, so the code is switched off");
+        }
+
+        var typeText = String(rowData[CC.TYPE - 1] || "").trim().toUpperCase();
+        if (typeText === "MEMBER" && !String(rowData[CC.OWNER - 1] || "").trim()) problems.push("member code without an owner name");
+
+        if (problems.length) {
+          codesWithProblems++;
+          results.details.push("Row " + row + " (" + code + "): " + problems.join("; "));
+        }
+      }
+
       if (rowUpdated) results.updated++;
-      
+
     } catch (e) {
       results.errors++;
       results.details.push("Row " + row + ": ERROR - " + e.message);
     }
   }
-  
+
+  if (validating) {
+    results.details.push("Validation: " + codesChecked + " code(s) checked, " +
+      (codesWithProblems ? codesWithProblems + " with something to fix (listed above)" : "no problems found"));
+  }
+
   return results;
 }
 
@@ -15804,19 +13214,51 @@ function executeCouponsUpdate_(sheet, startRow, endRow, actions, results) {
  * Execute Participant Database updates
  */
 function executeParticipantDbUpdate_(sheet, actions, results) {
+  var formula = sheet.getRange("A1").getFormula();
+  var hasQuery = !!(formula && formula.toUpperCase().indexOf("QUERY") >= 0);
+
   // ===== REFRESH_QUERY =====
   if (actions.indexOf("REFRESH_QUERY") >= 0) {
-    var a1Value = sheet.getRange("A1").getFormula();
-    if (a1Value && a1Value.indexOf("QUERY") >= 0) {
+    if (hasQuery) {
       // Re-set the formula to force refresh
-      sheet.getRange("A1").setFormula(a1Value);
+      sheet.getRange("A1").setFormula(formula);
+      SpreadsheetApp.flush();
       results.details.push("Refreshed QUERY formula");
       results.updated++;
     } else {
       results.details.push("No QUERY formula found in A1");
     }
   }
-  
+
+  // ===== VALIDATE_DATA (report only - changes nothing) =====
+  if (actions.indexOf("VALIDATE_DATA") >= 0) {
+    var setupPath = getMenuPathText_("setupParticipantDatabaseQuery");
+    if (!hasQuery) {
+      results.details.push("Validation: A1 has no QUERY formula. Set it up with " + setupPath);
+    } else {
+      var shown = String(sheet.getRange("A1").getDisplayValue() || "");
+      if (shown.charAt(0) === "#") {
+        results.details.push("Validation: the QUERY formula shows an error (" + shown + "). Set it up again with " + setupPath);
+      } else {
+        var regSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
+        var regCount = 0;
+        if (regSheet && regSheet.getLastRow() > 1) {
+          var emails = regSheet.getRange(2, SYSTEM_CONFIG.COLS.REG.EMAIL, regSheet.getLastRow() - 1, 1).getValues();
+          for (var i = 0; i < emails.length; i++) {
+            if (String(emails[i][0] || "").trim()) regCount++;
+          }
+        }
+        var shownRows = Math.max(0, sheet.getLastRow() - 1);
+        if (shownRows === regCount) {
+          results.details.push("Validation: OK - shows all " + regCount + " registration(s)");
+        } else {
+          results.details.push("Validation: shows " + shownRows + " row(s) but " + SYSTEM_CONFIG.SHEETS.REGISTRATION + " has " + regCount +
+            ". The formula's range may be too short; set it up again with " + setupPath);
+        }
+      }
+    }
+  }
+
   return results;
 }
 
@@ -15870,24 +13312,24 @@ function executeGenericUpdate_(sheet, startRow, endRow, actions, results) {
  * Build result HTML
  */
 function buildUpdateResultHtml_(results, sheetType) {
-  var html = '<h2 style="color:#10b981; margin-bottom:15px;">✅ Update Complete!</h2>';
+  var html = '<h2 style="color:#3fb950; margin-bottom:15px;">✅ Update Complete!</h2>';
   
   html += '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;">';
-  html += '<div style="background:#f0fdf4; padding:15px; border-radius:10px; text-align:center;">' +
-    '<div style="font-size:24px; font-weight:bold; color:#166534;">' + results.scanned + '</div>' +
-    '<div style="font-size:12px; color:#166534;">Rows Scanned</div></div>';
-  html += '<div style="background:#dbeafe; padding:15px; border-radius:10px; text-align:center;">' +
-    '<div style="font-size:24px; font-weight:bold; color:#1e40af;">' + results.updated + '</div>' +
-    '<div style="font-size:12px; color:#1e40af;">Rows Updated</div></div>';
+  html += '<div style="background:#0d1117; padding:15px; border-radius:10px; text-align:center;">' +
+    '<div style="font-size:24px; font-weight:bold; color:#3fb950;">' + results.scanned + '</div>' +
+    '<div style="font-size:12px; color:#3fb950;">Rows Scanned</div></div>';
+  html += '<div style="background:rgba(56,139,253,0.15); padding:15px; border-radius:10px; text-align:center;">' +
+    '<div style="font-size:24px; font-weight:bold; color:#58a6ff;">' + results.updated + '</div>' +
+    '<div style="font-size:12px; color:#58a6ff;">Rows Updated</div></div>';
   html += '<div style="background:' + (results.errors > 0 ? '#fee2e2' : '#f0fdf4') + '; padding:15px; border-radius:10px; text-align:center;">' +
     '<div style="font-size:24px; font-weight:bold; color:' + (results.errors > 0 ? '#dc2626' : '#166534') + ';">' + results.errors + '</div>' +
     '<div style="font-size:12px; color:' + (results.errors > 0 ? '#dc2626' : '#166534') + ';">Errors</div></div>';
   html += '</div>';
   
   if (results.details.length > 0) {
-    html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; max-height:200px; overflow-y:auto;">';
+    html += '<div style="background:#161b22; padding:15px; border-radius:10px; max-height:200px; overflow-y:auto;">';
     html += '<h4 style="margin:0 0 10px 0; font-size:14px;">📋 Details:</h4>';
-    html += '<ul style="margin:0; padding-left:20px; font-size:12px; color:#475569;">';
+    html += '<ul style="margin:0; padding-left:20px; font-size:12px; color:#8b949e;">';
     for (var i = 0; i < Math.min(results.details.length, 50); i++) {
       html += '<li>' + results.details[i] + '</li>';
     }
@@ -15898,7 +13340,7 @@ function buildUpdateResultHtml_(results, sheetType) {
   }
   
   html += '<div style="text-align:center; margin-top:20px;">' +
-    '<button onclick="google.script.host.close()" style="background:#10b981; color:white; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer;">Done</button>' +
+    '<button onclick="google.script.host.close()" style="background:#238636; color:white; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer;">Done</button>' +
     '</div>';
   
   return html;
@@ -15912,7 +13354,7 @@ function buildUpdateResultHtml_(results, sheetType) {
  * Setup/Customize Participant Database Query
  */
 function setupParticipantDatabaseQuery() {
-  var html = HtmlService.createHtmlOutput(getParticipantDatabaseSetupHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getParticipantDatabaseSetupHtml_(), "sheets"))
     .setWidth(750)
     .setHeight(650);
   SpreadsheetApp.getUi().showModalDialog(html, "📊 Setup Participant Database Query");
@@ -15931,43 +13373,50 @@ function getParticipantDatabaseSetupHtml_() {
       if (headerRow[i]) {
         var colLetter = columnToLetter_(i + 1);
         headers.push({ letter: colLetter, name: headerRow[i], index: i + 1 });
-        headerOptions += '<label class="col-option"><input type="checkbox" value="' + colLetter + '" data-name="' + headerRow[i] + '"> <span class="col-letter">' + colLetter + '</span> ' + headerRow[i] + '</label>';
+        var safeHeader = Utils.escapeHtml(String(headerRow[i]));
+        headerOptions += '<label class="col-option"><input type="checkbox" value="' + colLetter + '" data-name="' + safeHeader + '"> <span class="col-letter">' + colLetter + '</span> ' + safeHeader + '</label>';
       }
     }
   }
   
+  // Values the dialog needs to show the same formula the server will write
+  var regSheetName = SYSTEM_CONFIG.SHEETS.REGISTRATION;
+  var lastColLetter = (regSheet && regSheet.getLastColumn() > 0) ? columnToLetter_(regSheet.getLastColumn()) : "A";
+  var payStatusLetter = columnToLetter_(SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS);
+  
   return '<!DOCTYPE html>' +
   '<html><head><style>' +
-  'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: #f8fafc; color: #1e293b; margin: 0; }' +
-  'h2 { color: #0891b2; margin-bottom: 10px; }' +
-  '.card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
-  '.info { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }' +
-  '.columns-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 300px; overflow-y: auto; padding: 10px; background: #f1f5f9; border-radius: 8px; }' +
-  '.col-option { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; }' +
-  '.col-option:hover { background: #e0f2fe; }' +
+  'body { font-family: "Segoe UI", Arial, sans-serif; padding: 22px 20px 44px; background: #0d1117; color: #e6edf3; margin: 0; }' +
+  'h2 { color: #e6edf3; margin: 0 0 14px; font-size: 17px; }' +
+  '.card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 18px; margin-bottom: 14px; }' +
+  '.card h3 { font-size: 13px; }' +
+  '.info { background: rgba(56,139,253,0.15); border-left: 4px solid #388bfd; padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 15px 0; }' +
+  '.columns-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 300px; overflow-y: auto; padding: 10px; background: #0d1117; border-radius: 8px; }' +
+  '.col-option { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #161b22; border: 1px solid #21262d; border-radius: 6px; cursor: pointer; font-size: 12.5px; }' +
+  '.col-option:hover { background: rgba(56,139,253,0.15); }' +
   '.col-option input { margin: 0; }' +
-  '.col-letter { background: #0891b2; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }' +
+  '.col-letter { background: #1f6feb; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }' +
   '.btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin: 5px; }' +
-  '.btn-primary { background: #0891b2; color: white; }' +
-  '.btn-primary:hover { background: #0e7490; }' +
-  '.btn-secondary { background: #e2e8f0; color: #64748b; }' +
-  '.preview { background: #1e293b; color: #10b981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; margin-top: 15px; }' +
-  '.selected-cols { margin-top: 10px; padding: 10px; background: #f0fdf4; border-radius: 8px; min-height: 30px; }' +
-  '.selected-tag { display: inline-block; background: #0891b2; color: white; padding: 4px 10px; border-radius: 20px; margin: 3px; font-size: 12px; }' +
+  '.btn-primary { background: #1f6feb; color: white; }' +
+  '.btn-primary:hover { background: #388bfd; }' +
+  '.btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }' +
+  '.preview { background: #010409; border: 1px solid #21262d; color: #7ee787; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; margin-top: 15px; }' +
+  '.selected-cols { margin-top: 10px; padding: 10px; background: #0d1117; border-radius: 8px; min-height: 30px; }' +
+  '.selected-tag { display: inline-block; background: #1f6feb; color: white; padding: 4px 10px; border-radius: 20px; margin: 3px; font-size: 12px; }' +
   '</style></head><body>' +
   
   '<h2>📊 Setup Participant Database Query</h2>' +
   
   '<div class="card">' +
   '<h3 style="margin-top:0;">Select Columns to Include</h3>' +
-  '<p style="color:#64748b; font-size:13px;">Check the columns you want in your Participant Database view:</p>' +
+  '<p style="color:#8b949e; font-size:13px;">Check the columns you want in your ' + Utils.escapeHtml(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB) + ' view:</p>' +
   '<div class="columns-grid">' + headerOptions + '</div>' +
-  '<div class="selected-cols" id="selectedCols"><em style="color:#94a3b8;">No columns selected</em></div>' +
+  '<div class="selected-cols" id="selectedCols"><em style="color:#8b949e;">No columns selected</em></div>' +
   '</div>' +
   
   '<div class="card">' +
   '<h3 style="margin-top:0;">Query Preview</h3>' +
-  '<div class="preview" id="queryPreview">=QUERY(\'Registration\'!A:AI, "SELECT A WHERE A IS NOT NULL", 1)</div>' +
+  '<div class="preview" id="queryPreview">Select columns above...</div>' +
   '</div>' +
   
   '<div class="info">' +
@@ -15975,7 +13424,7 @@ function getParticipantDatabaseSetupHtml_() {
   '• Select columns in the order you want them to appear<br>' +
   '• Timestamp (A) is usually a good first column<br>' +
   '• Full Name, Email, Contact are commonly needed<br>' +
-  '• Payment Status (X) shows who has paid' +
+  '• Payment Status (' + payStatusLetter + ') shows who has paid' +
   '</div>' +
   
   '<div style="text-align:center; margin-top:20px;">' +
@@ -16004,7 +13453,7 @@ function getParticipantDatabaseSetupHtml_() {
   '  var previewDiv = document.getElementById("queryPreview");' +
   '  ' +
   '  if (selectedColumns.length === 0) {' +
-  '    selectedDiv.innerHTML = "<em style=\\"color:#94a3b8;\\">No columns selected</em>";' +
+  '    selectedDiv.innerHTML = "<em style=\\"color:#8b949e;\\">No columns selected</em>";' +
   '    previewDiv.textContent = "Select columns above...";' +
   '    return;' +
   '  }' +
@@ -16016,7 +13465,7 @@ function getParticipantDatabaseSetupHtml_() {
   '  ' +
   '  var cols = selectedColumns.map(function(c) { return c.letter; }).join(", ");' +
   '  var sq = String.fromCharCode(39);' +
-  '  var query = "=QUERY(" + sq + "Registration" + sq + "!A:AI, \\"SELECT " + cols + " WHERE A IS NOT NULL\\", 1)";' +
+  '  var query = "=QUERY(" + sq + ' + JSON.stringify(regSheetName) + ' + sq + "!A:' + lastColLetter + ', \\"SELECT " + cols + " WHERE A IS NOT NULL\\", 1)";' +
   '  previewDiv.textContent = query;' +
   '}' +
   '' +
@@ -16028,7 +13477,7 @@ function getParticipantDatabaseSetupHtml_() {
   '  var cols = selectedColumns.map(function(c) { return c.letter; }).join(", ");' +
   '  google.script.run' +
   '    .withSuccessHandler(function() {' +
-  '      alert("Participant Database updated successfully!");' +
+  '      alert(' + JSON.stringify(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB + " updated successfully!") + ');' +
   '      google.script.host.close();' +
   '    })' +
   '    .withFailureHandler(function(err) {' +
@@ -16052,13 +13501,20 @@ function applyParticipantDatabaseQuery(columns) {
     dbSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB);
   }
   
-  // Clear and set up the sheet
-  dbSheet.clear();
-  
-  // Build the QUERY formula
+  // Build the QUERY formula. The range must reach the sheet's real last column: it used to
+  // stop at AI, so selecting any later column (Total Fee, Payment Status ...) gave an error.
   var sheetName = SYSTEM_CONFIG.SHEETS.REGISTRATION;
-  var queryFormula = "=QUERY('" + sheetName + "'!A:AI, \"SELECT " + columns + " WHERE A IS NOT NULL\", 1)";
+  var regSheetForQuery = ss.getSheetByName(sheetName);
+  if (!regSheetForQuery) throw new Error("Registration sheet not found.");
+  columns = String(columns || "").toUpperCase().trim();
+  if (!/^[A-Z]{1,3}(\s*,\s*[A-Z]{1,3})*$/.test(columns)) {
+    throw new Error("Invalid column selection: " + columns);
+  }
+  var lastColLetter = columnToLetter_(Math.max(1, regSheetForQuery.getLastColumn()));
+  var queryFormula = "=QUERY('" + sheetName + "'!A:" + lastColLetter + ", \"SELECT " + columns + " WHERE A IS NOT NULL\", 1)";
   
+  // Clear and set up the sheet (only after the selection has been validated)
+  dbSheet.clear();
   dbSheet.getRange("A1").setFormula(queryFormula);
   
   // Format
@@ -16077,9 +13533,9 @@ function applyParticipantDatabaseQuery(columns) {
   
   // Add note
   dbSheet.getRange("A1").setNote(
-    "📋 QUERY FORMULA\\n" +
-    "Columns: " + columns + "\\n\\n" +
-    "To change: Admin Center → Dashboards → Setup Participant Database Query"
+    "📋 QUERY FORMULA\n" +
+    "Columns: " + columns + "\n\n" +
+    "To change: " + getMenuPathText_("setupParticipantDatabaseQuery")
   );
   
   SpreadsheetApp.flush();
@@ -16103,358 +13559,377 @@ function columnToLetter_(column) {
  * Show the System Builder dialog
  */
 function showSystemBuilder() {
-  var html = HtmlService.createHtmlOutput(getSystemBuilderHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getSystemBuilderHtml_(), "start"))
     .setWidth(750)
     .setHeight(650);
   SpreadsheetApp.getUi().showModalDialog(html, "🏗️ BUILD BUILD BUILD - System Builder");
 }
 
 function getSystemBuilderHtml_() {
-  return '<!DOCTYPE html>' +
-  '<html><head><style>' +
-  'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); color: white; min-height: 100vh; margin: 0; }' +
-  '.container { max-width: 700px; margin: 0 auto; }' +
-  'h1 { text-align: center; font-size: 32px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }' +
-  '.subtitle { text-align: center; opacity: 0.9; margin-bottom: 30px; font-size: 16px; }' +
-  '.card { background: white; color: #1e293b; border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }' +
-  '.card-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; color: #1e40af; }' +
-  '.checklist { list-style: none; padding: 0; margin: 0; }' +
-  '.checklist li { padding: 12px 15px; margin: 8px 0; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; gap: 12px; }' +
-  '.checklist li .icon { font-size: 20px; }' +
-  '.checklist li .text { flex: 1; }' +
-  '.checklist li .status { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #e2e8f0; color: #64748b; }' +
-  '.warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 0 12px 12px 0; margin: 20px 0; color: #92400e; }' +
-  '.info { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 0 12px 12px 0; margin: 20px 0; color: #1e40af; }' +
-  '.btn { padding: 15px 30px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin: 10px; }' +
-  '.btn-build { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 15px rgba(16,185,129,0.4); }' +
-  '.btn-build:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.5); }' +
-  '.btn-cancel { background: #e2e8f0; color: #64748b; }' +
-  '.btn-cancel:hover { background: #cbd5e1; }' +
-  '.btn-container { text-align: center; margin-top: 25px; }' +
-  '.progress { display: none; text-align: center; padding: 30px; }' +
-  '.progress .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }' +
-  '@keyframes spin { to { transform: rotate(360deg); } }' +
-  '.result { display: none; }' +
-  '.result.success { color: #10b981; }' +
-  '.result.error { color: #ef4444; }' +
-  '</style></head><body>' +
-  
-  '<div class="container">' +
-  '<h1>🏗️ BUILD BUILD BUILD</h1>' +
-  '<p class="subtitle">One-Click System Setup for Husay ng Soksay Registration</p>' +
-  
-  '<div class="card" id="mainContent">' +
-  '<div class="card-title">📋 What Will Be Created</div>' +
-  '<ul class="checklist">' +
-  '<li><span class="icon">📝</span><span class="text"><strong>Registration Sheet</strong> - 35+ columns for form responses & system data</span></li>' +
-  '<li><span class="icon">💰</span><span class="text"><strong>Finance Sheet</strong> - Payment tracking with 7 columns</span></li>' +
-  '<li><span class="icon">📊</span><span class="text"><strong>Participant Database</strong> - Auto-updated view with QUERY formula</span></li>' +
-  '<li><span class="icon">🎟️</span><span class="text"><strong>Coupons Sheet</strong> - Discount code management with 6 columns</span></li>' +
-  '<li><span class="icon">🎨</span><span class="text"><strong>Formatting</strong> - Headers, colors, column widths, frozen rows</span></li>' +
-  '<li><span class="icon">✅</span><span class="text"><strong>Data Validation</strong> - Dropdowns for status fields</span></li>' +
-  '<li><span class="icon">📊</span><span class="text"><strong>Sample Data</strong> - Example coupon code for testing</span></li>' +
-  '</ul>' +
-  
-  '<div class="warning">' +
-  '<strong>⚠️ Warning:</strong> If sheets already exist with these names, they will be <strong>reformatted</strong> but existing data will be preserved. ' +
-  'For a completely fresh start, delete existing sheets first.' +
-  '</div>' +
-  
-  '<div class="info">' +
-  '<strong>💡 After Building:</strong><br>' +
-  '1. Link your Google Form to the Registration sheet<br>' +
-  '2. Run "Check & Fix Columns + Data" to verify setup<br>' +
-  '3. Create triggers with System Tools → Create/Update Triggers' +
-  '</div>' +
-  
-  '<div class="btn-container">' +
-  '<button class="btn btn-build" onclick="startBuild()">🚀 BUILD SYSTEM</button>' +
-  '<button class="btn btn-cancel" onclick="google.script.host.close()">Cancel</button>' +
-  '</div>' +
-  '</div>' +
-  
-  '<div class="progress" id="progress">' +
-  '<div class="spinner"></div>' +
-  '<p style="font-size: 18px; color: white;">Building your system...</p>' +
-  '<p id="progressText" style="opacity: 0.8; color: white;">Initializing...</p>' +
-  '</div>' +
-  
-  '<div class="card result" id="result"></div>' +
-  
-  '</div>' +
-  
-  '<script>' +
-  'function startBuild() {' +
-  '  document.getElementById("mainContent").style.display = "none";' +
-  '  document.getElementById("progress").style.display = "block";' +
-  '  google.script.run' +
-  '    .withSuccessHandler(showResult)' +
-  '    .withFailureHandler(showError)' +
-  '    .buildEntireSystem();' +
-  '}' +
-  'function showResult(result) {' +
-  '  document.getElementById("progress").style.display = "none";' +
-  '  var resultDiv = document.getElementById("result");' +
-  '  resultDiv.style.display = "block";' +
-  '  resultDiv.className = "card result success";' +
-  '  resultDiv.innerHTML = result;' +
-  '}' +
-  'function showError(error) {' +
-  '  document.getElementById("progress").style.display = "none";' +
-  '  var resultDiv = document.getElementById("result");' +
-  '  resultDiv.style.display = "block";' +
-  '  resultDiv.className = "card result error";' +
-  '  resultDiv.innerHTML = "<h3>❌ Build Failed</h3><p>" + error.message + "</p>";' +
-  '}' +
-  '<\/script>' +
-  
-  '</body></html>';
+  var esc = Utils.escapeHtml;
+  var S = SYSTEM_CONFIG.SHEETS;
+  function item(icon, title, detail) {
+    return '<li><div style="font-size:17px;line-height:1.3;">' + icon + '</div><div class="grow"><div class="t">' + esc(title) + '</div><div class="d">' + esc(detail) + '</div></div></li>';
+  }
+  var body =
+    '<div id="mainContent">' +
+    uiCard_("What will be created",
+      '<ul class="ui-list">' +
+      item("&#x1F4DD;", S.REGISTRATION, "Form response columns plus the system columns") +
+      item("&#x1F4B0;", S.FINANCE, "The " + SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED.length + " payment tracking columns") +
+      item("&#x1F4CA;", S.PARTICIPANT_DB, "A live view built with a QUERY formula") +
+      item("&#x1F39F;&#xFE0F;", S.COUPONS, "Discount codes, " + Object.keys(SYSTEM_CONFIG.COLS.COUPON).length + " columns") +
+      item("&#x1F3A8;", "Formatting and dropdowns", "Header colours, column widths, frozen rows, status dropdowns") +
+      item("&#x1F9EA;", "A sample coupon", "One example code so you can test a registration") +
+      '</ul>') +
+    uiCallout_("ok", "&#x1F6E1;&#xFE0F;", "<b>Safe to run again.</b> Sheets that already hold data are left as they are; only missing headers are added. " +
+      "For a completely fresh start, delete the existing sheets first.") +
+    uiCard_("After building",
+      '<div class="ui-step"><div class="n">1</div><div>Link your Google Form to <b>' + esc(S.REGISTRATION) + '</b>.</div></div>' +
+      '<div class="ui-step"><div class="n">2</div><div>Run ' + esc(getMenuPathText_("checkAndFixColumns")) + ' to verify the columns.</div></div>' +
+      '<div class="ui-step"><div class="n">3</div><div>Create the triggers with ' + esc(getMenuPathText_("createTriggers")) + '.</div></div>' +
+      '<div class="ui-step"><div class="n">4</div><div>Open ' + esc(getMenuPathText_("showSystemIntroduction")) + '; its first page shows what is still missing.</div></div>') +
+    '<div class="ui-bar">' +
+      '<button class="ui-btn lg" onclick="google.script.host.close()">Cancel</button>' +
+      '<button class="ui-btn success lg" onclick="startBuild()">&#x1F680; Build the system</button>' +
+    '</div>' +
+    '</div>' +
+    '<div id="progress" style="display:none;text-align:center;padding:60px 20px;">' +
+      '<div class="spinner"></div>' +
+      '<div style="font-size:15px;font-weight:600;color:#e6edf3;">Building your system...</div>' +
+      '<div id="progressText" class="ui-muted" style="margin-top:4px;">This takes a few seconds.</div>' +
+    '</div>' +
+    '<div class="ui-card result" id="result" style="display:none;"></div>';
+
+  var script =
+    'function startBuild() {\n' +
+    '  document.getElementById("mainContent").style.display = "none";\n' +
+    '  document.getElementById("progress").style.display = "block";\n' +
+    '  google.script.run.withSuccessHandler(showResult).withFailureHandler(showError).buildEntireSystem();\n' +
+    '}\n' +
+    'function showResult(result) {\n' +
+    '  document.getElementById("progress").style.display = "none";\n' +
+    '  var resultDiv = document.getElementById("result");\n' +
+    '  resultDiv.style.display = "block";\n' +
+    '  resultDiv.innerHTML = result;\n' +
+    '}\n' +
+    'function showError(error) {\n' +
+    '  document.getElementById("progress").style.display = "none";\n' +
+    '  var resultDiv = document.getElementById("result");\n' +
+    '  resultDiv.style.display = "block";\n' +
+    '  resultDiv.innerHTML = "";\n' +
+    '  var h = document.createElement("h3"); h.textContent = "\\u274C Build failed"; h.style.color = "#ff7b72";\n' +
+    '  var p = document.createElement("p"); p.textContent = (error && error.message) ? error.message : String(error);\n' +
+    '  resultDiv.appendChild(h); resultDiv.appendChild(p);\n' +
+    '}';
+
+  return buildAdminDialog_({
+    icon: "&#x1F3D7;&#xFE0F;",
+    title: "Build the system",
+    subtitle: "One-click setup for " + SYSTEM_CONFIG.META.NAME,
+    body: body,
+    script: script,
+    css: '.spinner { width: 42px; height: 42px; margin: 0 auto 18px; border: 4px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 1s linear infinite; }\n' +
+         '@keyframes spin { to { transform: rotate(360deg); } }'
+  });
 }
 
 /**
  * BUILD THE ENTIRE SYSTEM - Main function
  */
+/**
+ * Registration header names by column position, generated from SYSTEM_CONFIG so the
+ * builder always produces the layout the rest of the code reads.
+ */
+function getRegistrationLayoutHeaders_() {
+  var R = SYSTEM_CONFIG.COLS.REG;
+  var headers = [];
+  function put(col, name) {
+    if (col && !headers[col - 1]) headers[col - 1] = name;
+  }
+
+  // Form fields
+  put(R.TIMESTAMP, "Timestamp");
+  put(R.EMAIL, "Email Address");
+  put(R.NAME, "FULL NAME");
+  put(R.SEX, "SEX");
+  put(R.AGE, "AGE");
+  put(R.REGION, "REGION");
+  put(R.CONTACT, "PERSONAL CONTACT NUMBER");
+  put(R.GUARDIAN_NAME, "FULL NAME OF GUARDIAN");
+  put(R.GUARDIAN_CONTACT, "CONTACT NUMBER OF GUARDIAN");
+  put(R.GUARDIAN_REL, "RELATIONSHIP TO GUARDIAN");
+  put(R.FACEBOOK, "FACEBOOK PROFILE LINK");
+  put(R.SCHOOL, "SCHOOL NAME");
+  put(R.GRADE_LEVEL, "GRADE LEVEL");
+  put(R.ADVISER, "FULL NAME OF ADVISER");
+  put(R.COMPETITION_COUNT, "HOW MANY COMPETITIONS");
+  put(R.COMPETITION, "WHICH COMPETITIONS");
+  put(R.PAY_MODE, "MODE OF PAYMENT USED");
+  put(R.PAY_PROOF, "PROOF OF PAYMENT");
+  put(R.REG_FORM, "REGISTRATION FORM");
+  put(R.REF_INPUT, "REFERRAL CODE");
+  put(R.COUPON_INPUT, "COUPON CODE");
+
+  // System columns
+  put(R.GEN_ID, "Gen. ID");
+  put(R.BASE_FEE, "Base Fee");
+  put(R.BUNDLE_DISCOUNT, "Bundle Discount");
+  put(R.COUPON_DISCOUNT, "Coupon Discount");
+  put(R.REF_DISCOUNT, "Referral Discount");
+  put(R.TOTAL_FEE, "Total Fee");
+  put(R.PAYMENT_STATUS, "Payment Status");
+  put(R.REF_COUNT, "Referral Count");
+  put(R.CASHBACK, "Referral Earnings");
+  put(R.EMAIL_SENT, "Email Sent");
+  put(R.OR_EMAIL_SENT, "OR Email Sent");
+  put(R.REMARKS, "Remarks");
+  put(R.LOCKED_COUPON, "LOCKED_COUPON");
+  put(R.LOCKED_REF, "LOCKED_REF");
+  put(R.MASTER_SUBJECT, "MASTER_SUBJECT");
+
+  // SYS_ columns (the config key is the header text)
+  var sysGroups = [SYSTEM_CONFIG.SYS_REG_COLS, SYSTEM_CONFIG.SYS_REG_COLS_END];
+  for (var g = 0; g < sysGroups.length; g++) {
+    for (var key in sysGroups[g]) {
+      if (sysGroups[g].hasOwnProperty(key)) put(sysGroups[g][key], key);
+    }
+  }
+
+  // Form-only columns that the script never reads
+  put(3, "DATA PRIVACY ACT");
+  put(4, "ETHICAL USE PLEDGE");
+  put(15, "PROOF OF SCHOOL");
+  put(16, "ANY VALID ID");
+
+  for (var i = 0; i < headers.length; i++) {
+    if (!headers[i]) headers[i] = "";
+  }
+  return headers;
+}
+
+/**
+ * True when the sheet has no header text and no data rows.
+ */
+function isSheetBlank_(sheet) {
+  return sheet.getLastRow() === 0 || sheet.getLastColumn() === 0;
+}
+
+/**
+ * Write header names only into header cells that are currently blank.
+ * Existing headers are never overwritten. Returns the number of cells filled.
+ */
+function fillBlankHeaders_(sheet, headers) {
+  if (sheet.getMaxColumns() < headers.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
+  }
+  var range = sheet.getRange(1, 1, 1, headers.length);
+  var current = range.getValues()[0];
+  var filled = 0;
+  for (var i = 0; i < headers.length; i++) {
+    if (String(current[i] || "").trim() === "" && headers[i]) {
+      sheet.getRange(1, i + 1).setValue(headers[i]);
+      filled++;
+    }
+  }
+  return filled;
+}
+
 function buildEntireSystem() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var results = [];
-  var errors = [];
-  
+
   try {
     // ========================================
-    // 1. CREATE/SETUP REGISTRATION SHEET
+    // 1. REGISTRATION SHEET
     // ========================================
+    // The layout comes from SYSTEM_CONFIG. Existing headers are NEVER overwritten:
+    // a live sheet only gets header text added where a header cell is blank.
+    var regHeaders = getRegistrationLayoutHeaders_();
     var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-    var regCreated = false;
-    
+    var regIsNew = false;
+
     if (!regSheet) {
       regSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-      regCreated = true;
+      regIsNew = true;
       results.push("✅ Created Registration sheet");
-    } else {
-      results.push("📝 Registration sheet exists - updating headers");
+    } else if (isSheetBlank_(regSheet)) {
+      regIsNew = true;
+      results.push("📝 Registration sheet was empty - setting it up");
     }
-    
-    // Set up Registration headers
-    var regHeaders = [
-      "Timestamp",                    // A - Col 1
-      "Email Address",                // B - Col 2
-      "Full Name",                    // C - Col 3
-      "Nickname",                     // D - Col 4
-      "School",                       // E - Col 5
-      "Year Level",                   // F - Col 6
-      "Contact Number",               // G - Col 7
-      "Category 1",                   // H - Col 8
-      "Category 2",                   // I - Col 9
-      "Category 3",                   // J - Col 10
-      "Entry Title 1",                // K - Col 11
-      "Entry Title 2",                // L - Col 12
-      "Entry Title 3",                // M - Col 13
-      "Referral Code Used",           // N - Col 14
-      "Coupon Code",                  // O - Col 15
-      "Payment Method",               // P - Col 16
-      "Payment Proof",                // Q - Col 17
-      "Gen. ID",                      // R - Col 18
-      "Base Fee",                     // S - Col 19
-      "Bundle Discount",              // T - Col 20
-      "Coupon Discount",              // U - Col 21
-      "Referral Discount",            // V - Col 22
-      "Total Fee",                    // W - Col 23
-      "Payment Status",               // X - Col 24
-      "Referral Count",               // Y - Col 25
-      "Referral Earnings",            // Z - Col 26
-      "Email Sent",                   // AA - Col 27
-      "OR Email Sent",                // AB - Col 28
-      "Remarks",                      // AC - Col 29
-      "LOCKED_COUPON",                // AD - Col 30
-      "LOCKED_REF",                   // AE - Col 31
-      "SYS_PROCESSED",                // AF - Col 32
-      "SYS_REFERRER_CREDITED",        // AG - Col 33
-      "SYS_EMAIL_THREAD_ID",          // AH - Col 34
-      "SYS_REF_NOTIF_SENT"            // AI - Col 35
-    ];
-    
-    // Write headers
-    regSheet.getRange(1, 1, 1, regHeaders.length).setValues([regHeaders]);
-    
-    // Format Registration sheet
-    formatRegistrationSheet_(regSheet, regHeaders.length);
-    results.push("✅ Set up " + regHeaders.length + " Registration columns");
-    
+
+    if (regIsNew) {
+      if (regSheet.getMaxColumns() < regHeaders.length) {
+        regSheet.insertColumnsAfter(regSheet.getMaxColumns(), regHeaders.length - regSheet.getMaxColumns());
+      }
+      regSheet.getRange(1, 1, 1, regHeaders.length).setValues([regHeaders]);
+      formatRegistrationSheet_(regSheet, regHeaders.length);
+      results.push("✅ Set up " + regHeaders.length + " Registration columns");
+    } else {
+      var regFilled = fillBlankHeaders_(regSheet, regHeaders);
+      results.push("📝 Registration sheet already has data - existing headers kept" +
+        (regFilled ? ", " + regFilled + " blank header(s) filled in" : ""));
+    }
+
     // ========================================
-    // 2. CREATE/SETUP FINANCE SHEET
+    // 2. FINANCE SHEET
     // ========================================
+    // The Financial Dashboard is read by header NAME, so its headers must be the ones in
+    // SYSTEM_CONFIG.FINANCE_HEADERS and existing ones must not be replaced.
+    var finHeaders = SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED;
     var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
-    var finCreated = false;
-    
+    var finIsNew = false;
+
     if (!finSheet) {
       finSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.FINANCE);
-      finCreated = true;
+      finIsNew = true;
       results.push("✅ Created Finance sheet");
-    } else {
-      results.push("💰 Finance sheet exists - updating headers");
+    } else if (isSheetBlank_(finSheet)) {
+      finIsNew = true;
+      results.push("💰 Finance sheet was empty - setting it up");
     }
-    
-    // Set up Finance headers
-    var finHeaders = [
-      "Name",           // A - Col 1
-      "Email",          // B - Col 2
-      "Gen. ID",        // C - Col 3
-      "Date",           // D - Col 4
-      "Amount",         // E - Col 5
-      "Status",         // F - Col 6
-      "Verified By"     // G - Col 7
-    ];
-    
-    // Write headers
-    finSheet.getRange(1, 1, 1, finHeaders.length).setValues([finHeaders]);
-    
-    // Format Finance sheet
-    formatFinanceSheet_(finSheet, finHeaders.length);
-    results.push("✅ Set up " + finHeaders.length + " Finance columns");
-    
+
+    if (finIsNew) {
+      finSheet.getRange(1, 1, 1, finHeaders.length).setValues([finHeaders]);
+      formatFinanceSheet_(finSheet, finHeaders.length);
+      results.push("✅ Set up " + finHeaders.length + " Finance columns");
+    } else {
+      // Adds any missing required header at the end; never touches existing ones
+      ColumnManager.ensureFinanceHeaders(finSheet);
+      results.push("💰 Finance sheet already has data - existing headers kept, missing ones added");
+    }
+
     // ========================================
-    // 3. CREATE/SETUP COUPONS SHEET
+    // 3. COUPONS SHEET
     // ========================================
     var couponSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.COUPONS);
-    var couponCreated = false;
-    
+    var couponIsNew = false;
+
     if (!couponSheet) {
       couponSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.COUPONS);
-      couponCreated = true;
+      couponIsNew = true;
       results.push("✅ Created Coupons sheet");
-    } else {
-      results.push("🎟️ Coupons sheet exists - updating headers");
+    } else if (isSheetBlank_(couponSheet)) {
+      couponIsNew = true;
     }
-    
-    // Set up Coupons headers
-    var couponHeaders = [
-      "Code",           // A - Col 1
-      "Value",          // B - Col 2
-      "Start Date",     // C - Col 3
-      "End Date",       // D - Col 4
-      "Max Uses",       // E - Col 5
-      "Used"            // F - Col 6
-    ];
-    
-    // Write headers
-    couponSheet.getRange(1, 1, 1, couponHeaders.length).setValues([couponHeaders]);
-    
-    // Format Coupons sheet
-    formatCouponsSheet_(couponSheet, couponHeaders.length);
-    
-    // Add sample coupon if sheet is empty
-    if (couponSheet.getLastRow() === 1) {
+
+    // Fills the 9 coupon headers (Code ... Owner) only if some are blank
+    ensureCouponHeaders_(couponSheet);
+
+    if (couponIsNew) {
+      formatCouponsSheet_(couponSheet, 9);
+      // [CODE, VALUE, START, END, MAX_USE, CURRENT_USE, STATUS, TYPE, OWNER]
       var sampleCoupon = [
-        "WELCOME50",    // Code
-        50,             // Value (₱50 off)
-        new Date(),     // Start Date (today)
-        new Date(new Date().setMonth(new Date().getMonth() + 3)), // End Date (3 months)
-        100,            // Max Uses
-        0               // Used
+        "WELCOME50",
+        50,
+        new Date(),
+        new Date(new Date().setMonth(new Date().getMonth() + 3)),
+        100,
+        0,
+        "ACTIVE",
+        "PROMO",
+        ""
       ];
       couponSheet.getRange(2, 1, 1, sampleCoupon.length).setValues([sampleCoupon]);
       results.push("✅ Added sample coupon: WELCOME50 (₱50 off)");
+    } else {
+      results.push("🎟️ Coupons sheet already has data - left as is");
     }
-    
-    results.push("✅ Set up " + couponHeaders.length + " Coupon columns");
-    
+
     // ========================================
-    // 4. CREATE/SETUP PARTICIPANT DATABASE SHEET
+    // 4. PARTICIPANT DATABASE SHEET
     // ========================================
     var dbSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB);
-    var dbCreated = false;
-    
+    var dbIsNew = false;
+
     if (!dbSheet) {
       dbSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB);
-      dbCreated = true;
+      dbIsNew = true;
       results.push("✅ Created Participant Database sheet");
+    } else if (isSheetBlank_(dbSheet)) {
+      dbIsNew = true;
+    }
+
+    if (dbIsNew) {
+      // QUERY built from the configured column positions
+      var R = SYSTEM_CONFIG.COLS.REG;
+      var dbCols = [R.TIMESTAMP, R.NAME, R.GRADE_LEVEL, R.CONTACT, R.SCHOOL, R.COMPETITION, R.REF_INPUT, R.GEN_ID, R.PAYMENT_STATUS];
+      var dbLetters = dbCols.map(function (c) { return columnToLetter_(c); });
+      var lastLetter = columnToLetter_(regHeaders.length);
+      var queryFormula = '=QUERY(\'' + SYSTEM_CONFIG.SHEETS.REGISTRATION + '\'!A:' + lastLetter +
+        ', "SELECT ' + dbLetters.join(", ") + ' WHERE A IS NOT NULL", 1)';
+
+      dbSheet.getRange("A1").setFormula(queryFormula);
+      dbSheet.getRange("A1").setNote(
+        "📋 QUERY FORMULA - Auto-pulls from the Registration sheet\n\n" +
+        "Current columns: Timestamp, Name, Grade Level, Contact, School,\n" +
+        "Competitions, Referral Code, Gen. ID, Payment Status\n\n" +
+        "To customize: " + getMenuPathText_("setupParticipantDatabaseQuery") + "."
+      );
+
+      dbSheet.setFrozenRows(1);
+      dbSheet.getRange(1, 1, 1, dbCols.length)
+             .setBackground("#0891b2")
+             .setFontColor("white")
+             .setFontWeight("bold");
+      for (var w = 1; w <= dbCols.length; w++) {
+        dbSheet.setColumnWidth(w, 130);
+      }
+      results.push("✅ Set up Participant Database with QUERY formula");
     } else {
-      results.push("📊 Participant Database exists - updating");
+      results.push("📊 Participant Database already has content - left as is");
     }
-    
-    // Set up the QUERY formula
-    // This pulls clean participant data from Registration sheet
-    var queryFormula = '=QUERY(\'' + SYSTEM_CONFIG.SHEETS.REGISTRATION + '\'!A:AI, "SELECT A, C, F, G, E, H, I, J, N, R, X WHERE A IS NOT NULL", 1)';
-    
-    // Clear and set up the sheet
-    dbSheet.clear();
-    dbSheet.getRange("A1").setFormula(queryFormula);
-    
-    // Add a note explaining how to customize
-    dbSheet.getRange("A1").setNote(
-      "📋 QUERY FORMULA - Auto-pulls from Registration sheet\\n\\n" +
-      "Current columns:\\n" +
-      "A=Timestamp, C=Full Name, F=Year Level, G=Contact,\\n" +
-      "E=School, H-J=Categories, N=Referral Code, R=Gen ID, X=Status\\n\\n" +
-      "To customize: Edit the formula to select different columns.\\n" +
-      "Column letters refer to Registration sheet columns."
-    );
-    
-    // Format header row (will be auto-populated by QUERY)
-    dbSheet.setFrozenRows(1);
-    var dbHeaderRange = dbSheet.getRange(1, 1, 1, 15);
-    dbHeaderRange.setBackground("#0891b2")
-                 .setFontColor("white")
-                 .setFontWeight("bold");
-    
-    // Set column widths
-    for (var w = 1; w <= 15; w++) {
-      dbSheet.setColumnWidth(w, 130);
+
+    // ========================================
+    // 5. DATA VALIDATION (only on sheets this run created)
+    // ========================================
+    setupDataValidation_(regIsNew ? regSheet : null, finIsNew ? finSheet : null);
+    if (regIsNew || finIsNew) results.push("✅ Added data validation (dropdowns)");
+
+    // ========================================
+    // 6. REORDER SHEETS (only on a fresh build)
+    // ========================================
+    if (regIsNew && finIsNew) {
+      try {
+        ss.setActiveSheet(regSheet);
+        ss.moveActiveSheet(1);
+        ss.setActiveSheet(finSheet);
+        ss.moveActiveSheet(2);
+        ss.setActiveSheet(dbSheet);
+        ss.moveActiveSheet(3);
+        ss.setActiveSheet(couponSheet);
+        ss.moveActiveSheet(4);
+        results.push("✅ Organized sheet order");
+      } catch (e) {
+        // Non-critical error
+      }
     }
-    
-    results.push("✅ Set up Participant Database with QUERY formula");
-    
-    // ========================================
-    // 5. SET UP DATA VALIDATION
-    // ========================================
-    setupDataValidation_(regSheet, finSheet);
-    results.push("✅ Added data validation (dropdowns)");
-    
-    // ========================================
-    // 6. REORDER SHEETS
-    // ========================================
-    try {
-      ss.setActiveSheet(regSheet);
-      ss.moveActiveSheet(1);
-      ss.setActiveSheet(finSheet);
-      ss.moveActiveSheet(2);
-      ss.setActiveSheet(dbSheet);
-      ss.moveActiveSheet(3);
-      ss.setActiveSheet(couponSheet);
-      ss.moveActiveSheet(4);
-      results.push("✅ Organized sheet order");
-    } catch (e) {
-      // Non-critical error
-    }
-    
+
     // ========================================
     // 7. BUILD SUCCESS REPORT
     // ========================================
-    var html = '<h2 style="color:#10b981; margin-bottom:20px;">🎉 System Built Successfully!</h2>';
-    html += '<div style="background:#f0fdf4; padding:15px; border-radius:10px; margin-bottom:20px;">';
-    html += '<h3 style="margin:0 0 10px 0; color:#166534;">Build Results:</h3>';
-    html += '<ul style="margin:0; padding-left:20px; color:#166534;">';
+    var html = uiCallout_("ok", "&#x1F389;", "<b>The system is built.</b> Here is what was done and what to do next.");
+    html += '<h2 class="ui-card-title">What was done</h2><ul class="ui-list">';
     for (var i = 0; i < results.length; i++) {
-      html += '<li style="margin:5px 0;">' + results[i] + '</li>';
+      html += '<li><div class="grow">' + results[i] + '</div></li>';
     }
-    html += '</ul></div>';
-    
-    html += '<div style="background:#dbeafe; padding:15px; border-radius:10px; margin-bottom:20px;">';
-    html += '<h3 style="margin:0 0 10px 0; color:#1e40af;">📋 Next Steps:</h3>';
-    html += '<ol style="margin:0; padding-left:20px; color:#1e40af;">';
-    html += '<li style="margin:8px 0;"><strong>Link Google Form:</strong> Open your form → Responses → Link to this spreadsheet → Select "Registration"</li>';
-    html += '<li style="margin:8px 0;"><strong>Create Triggers:</strong> Admin Center → System Tools → Create/Update Triggers</li>';
-    html += '<li style="margin:8px 0;"><strong>Customize Participant Database:</strong> Admin Center → Dashboards → Setup Participant Database Query</li>';
-    html += '<li style="margin:8px 0;"><strong>Test System:</strong> Submit a test form response and verify it processes correctly</li>';
-    html += '<li style="margin:8px 0;"><strong>Add Coupons:</strong> Edit the Coupons sheet to add your discount codes</li>';
-    html += '</ol></div>';
-    
-    html += '<div style="text-align:center; margin-top:20px;">';
-    html += '<button onclick="google.script.host.close()" style="background:#10b981; color:white; border:none; padding:12px 30px; border-radius:8px; font-size:16px; cursor:pointer;">🎉 Done!</button>';
-    html += '</div>';
-    
+    html += '</ul><div class="ui-divider"></div>';
+
+    html += '<h2 class="ui-card-title">Next steps</h2>';
+    var nextSteps = [
+      '<b>Link the Google Form:</b> open the form, Responses, Link to Sheets, choose this spreadsheet, and make it write to "' + Utils.escapeHtml(SYSTEM_CONFIG.SHEETS.REGISTRATION) + '".',
+      '<b>Create the triggers:</b> ' + Utils.escapeHtml(getMenuPathText_("createTriggers")),
+      '<b>Choose the columns of the participant list:</b> ' + Utils.escapeHtml(getMenuPathText_("setupParticipantDatabaseQuery")),
+      '<b>Test:</b> submit one form response and check that it is processed.',
+      '<b>Add your codes:</b> ' + Utils.escapeHtml(getMenuPathText_("openCouponGenerator"))
+    ];
+    for (var n = 0; n < nextSteps.length; n++) {
+      html += '<div class="ui-step"><div class="n">' + (n + 1) + '</div><div>' + nextSteps[n] + '</div></div>';
+    }
+    html += '<div class="ui-bar"><button class="ui-btn success lg" onclick="google.script.host.close()">Done</button></div>';
+
     return html;
-    
+
   } catch (e) {
     Logger.log("Build error: " + e);
     throw new Error("Build failed: " + e.message);
@@ -16462,12 +13937,14 @@ function buildEntireSystem() {
 }
 
 /**
- * Format Registration sheet
+ * Format Registration sheet (header styling follows the SYSTEM_CONFIG layout)
  */
 function formatRegistrationSheet_(sheet, numCols) {
+  var R = SYSTEM_CONFIG.COLS.REG;
+
   // Freeze header row
   sheet.setFrozenRows(1);
-  
+
   // Header formatting
   var headerRange = sheet.getRange(1, 1, 1, numCols);
   headerRange.setBackground("#1e40af")
@@ -16475,68 +13952,40 @@ function formatRegistrationSheet_(sheet, numCols) {
              .setFontWeight("bold")
              .setHorizontalAlignment("center")
              .setVerticalAlignment("middle");
-  
+
   // Set row height for header
   sheet.setRowHeight(1, 35);
-  
-  // Set column widths
-  var colWidths = {
-    1: 150,   // Timestamp
-    2: 200,   // Email
-    3: 180,   // Full Name
-    4: 100,   // Nickname
-    5: 150,   // School
-    6: 80,    // Year Level
-    7: 120,   // Contact
-    8: 120,   // Category 1
-    9: 120,   // Category 2
-    10: 120,  // Category 3
-    11: 150,  // Entry Title 1
-    12: 150,  // Entry Title 2
-    13: 150,  // Entry Title 3
-    14: 120,  // Referral Code Used
-    15: 100,  // Coupon Code
-    16: 120,  // Payment Method
-    17: 150,  // Payment Proof
-    18: 120,  // Gen. ID
-    19: 80,   // Base Fee
-    20: 100,  // Bundle Discount
-    21: 100,  // Coupon Discount
-    22: 100,  // Referral Discount
-    23: 80,   // Total Fee
-    24: 100,  // Payment Status
-    25: 100,  // Referral Count
-    26: 110,  // Referral Earnings
-    27: 100,  // Email Sent
-    28: 100,  // OR Email Sent
-    29: 150,  // Remarks
-    30: 120,  // LOCKED_COUPON
-    31: 100,  // LOCKED_REF
-    32: 110,  // SYS_PROCESSED
-    33: 140,  // SYS_REFERRER_CREDITED
-    34: 140,  // SYS_EMAIL_THREAD_ID
-    35: 120   // SYS_REF_NOTIF_SENT
-  };
-  
-  for (var col in colWidths) {
-    try {
-      sheet.setColumnWidth(parseInt(col), colWidths[col]);
-    } catch (e) {}
+
+  // Column widths
+  for (var c = 1; c <= numCols; c++) {
+    try { sheet.setColumnWidth(c, 130); } catch (e) {}
   }
-  
-  // Color code system columns (30-35) with light gray
-  if (numCols >= 30) {
-    var sysColRange = sheet.getRange(1, 30, 1, Math.min(6, numCols - 29));
-    sysColRange.setBackground("#64748b");
+  try {
+    sheet.setColumnWidth(R.TIMESTAMP, 150);
+    sheet.setColumnWidth(R.EMAIL, 200);
+    sheet.setColumnWidth(R.NAME, 180);
+    sheet.setColumnWidth(R.SCHOOL, 180);
+    sheet.setColumnWidth(R.COMPETITION, 220);
+  } catch (e2) {}
+
+  // Color code fee columns (Base Fee .. Total Fee) with a green header
+  if (numCols >= R.TOTAL_FEE) {
+    sheet.getRange(1, R.BASE_FEE, 1, R.TOTAL_FEE - R.BASE_FEE + 1).setBackground("#059669");
   }
-  
-  // Color code fee columns (19-23) with light green header
-  var feeRange = sheet.getRange(1, 19, 1, 5);
-  feeRange.setBackground("#059669");
-  
-  // Color code referral columns (25-26) with purple header
-  var refRange = sheet.getRange(1, 25, 1, 2);
-  refRange.setBackground("#7c3aed");
+
+  // Color code referral columns (Referral Count, Referral Earnings) with a purple header
+  if (numCols >= R.CASHBACK) {
+    sheet.getRange(1, R.REF_COUNT, 1, R.CASHBACK - R.REF_COUNT + 1).setBackground("#7c3aed");
+  }
+
+  // Color code SYS_ / locked columns with a gray header
+  var sysHeaders = sheet.getRange(1, 1, 1, numCols).getValues()[0];
+  for (var i = 0; i < sysHeaders.length; i++) {
+    var h = String(sysHeaders[i] || "");
+    if (h.indexOf("SYS_") === 0 || h.indexOf("LOCKED_") === 0 || h === "MASTER_SUBJECT") {
+      sheet.getRange(1, i + 1).setBackground("#64748b");
+    }
+  }
 }
 
 /**
@@ -16545,7 +13994,7 @@ function formatRegistrationSheet_(sheet, numCols) {
 function formatFinanceSheet_(sheet, numCols) {
   // Freeze header row
   sheet.setFrozenRows(1);
-  
+
   // Header formatting
   var headerRange = sheet.getRange(1, 1, 1, numCols);
   headerRange.setBackground("#059669")
@@ -16553,18 +14002,16 @@ function formatFinanceSheet_(sheet, numCols) {
              .setFontWeight("bold")
              .setHorizontalAlignment("center")
              .setVerticalAlignment("middle");
-  
+
   // Set row height for header
   sheet.setRowHeight(1, 35);
-  
-  // Set column widths
-  sheet.setColumnWidth(1, 180);  // Name
-  sheet.setColumnWidth(2, 220);  // Email
-  sheet.setColumnWidth(3, 130);  // Gen. ID
-  sheet.setColumnWidth(4, 120);  // Date
-  sheet.setColumnWidth(5, 100);  // Amount
-  sheet.setColumnWidth(6, 100);  // Status
-  sheet.setColumnWidth(7, 120);  // Verified By
+
+  // Column widths by header name
+  var widths = { "Timestamp": 150, "Email": 220, "Name": 180, "Proof Link": 200, "Gen. ID": 130 };
+  var headers = headerRange.getValues()[0];
+  for (var i = 0; i < headers.length; i++) {
+    sheet.setColumnWidth(i + 1, widths[String(headers[i])] || 120);
+  }
 }
 
 /**
@@ -16573,7 +14020,7 @@ function formatFinanceSheet_(sheet, numCols) {
 function formatCouponsSheet_(sheet, numCols) {
   // Freeze header row
   sheet.setFrozenRows(1);
-  
+
   // Header formatting
   var headerRange = sheet.getRange(1, 1, 1, numCols);
   headerRange.setBackground("#7c3aed")
@@ -16581,56 +14028,58 @@ function formatCouponsSheet_(sheet, numCols) {
              .setFontWeight("bold")
              .setHorizontalAlignment("center")
              .setVerticalAlignment("middle");
-  
+
   // Set row height for header
   sheet.setRowHeight(1, 35);
-  
+
   // Set column widths
-  sheet.setColumnWidth(1, 150);  // Code
-  sheet.setColumnWidth(2, 100);  // Value
-  sheet.setColumnWidth(3, 120);  // Start Date
-  sheet.setColumnWidth(4, 120);  // End Date
-  sheet.setColumnWidth(5, 100);  // Max Uses
-  sheet.setColumnWidth(6, 80);   // Used
+  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.CODE, 150);
+  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.VALUE, 100);
+  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.START, 120);
+  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.END, 120);
+  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.MAX_USE, 100);
+  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.CURRENT_USE, 100);
 }
 
 /**
- * Set up data validation dropdowns
+ * Set up data validation dropdowns on freshly built sheets.
+ * Pass null for a sheet to leave it untouched.
  */
 function setupDataValidation_(regSheet, finSheet) {
-  // Payment Status dropdown in Registration (Column X = 24)
-  var paymentStatusRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(["NOT YET", "PAID", "PENDING", "CANCELLED"], true)
-    .setAllowInvalid(false)
-    .build();
-  
-  // Apply to column X (rows 2-1000)
-  regSheet.getRange(2, 24, 999, 1).setDataValidation(paymentStatusRule);
-  
-  // Finance Status dropdown (Column F = 6)
-  finSheet.getRange(2, 6, 999, 1).setDataValidation(paymentStatusRule);
-  
-  // Email Sent dropdown in Registration (Column AA = 27)
-  var emailSentRule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(["SENT", "PENDING", "FAILED", "ERROR"], true)
-    .setAllowInvalid(true)
-    .build();
-  
-  regSheet.getRange(2, 27, 999, 1).setDataValidation(emailSentRule);
-  regSheet.getRange(2, 28, 999, 1).setDataValidation(emailSentRule);
+  if (regSheet) {
+    // Payment Status dropdown in Registration
+    var regStatusRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(getRegistrationStatusOptions_(), true)
+      .setAllowInvalid(true)
+      .build();
+    regSheet.getRange(2, SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS, 999, 1).setDataValidation(regStatusRule);
+  }
+
+  if (finSheet) {
+    // Finance Status dropdown (located by header name). Row 2 is also the template
+    // row that FinanceWriter copies validations from.
+    var statusCol = ColumnManager.headerMap(finSheet)["Status"];
+    if (statusCol) {
+      var finStatusRule = SpreadsheetApp.newDataValidation()
+        .requireValueInList([SYSTEM_CONFIG.ADMIN.NOT_YET_WORD, SYSTEM_CONFIG.ADMIN.TRIGGER_WORD], true)
+        .setAllowInvalid(true)
+        .build();
+      finSheet.getRange(2, statusCol, 999, 1).setDataValidation(finStatusRule);
+    }
+  }
 }
 
 // ============================================================================
-// END OF CODE - V21.0 (PAYMENT VERIFICATION CENTER)
+// END OF MAIN CODE
 // ============================================================================
 
 
 // ============================================================================
-// PART 99: V22 - COMBINED REGISTRATION MERGE (MASTER TRANSACTION)
+// PART 99: COMBINED REGISTRATION MERGE (MASTER TRANSACTION)
 //         + MANUAL RESPONSE EDITOR (LIVE CRUD + AUDIT LOG)
 // ============================================================================
 // NOTES:
-// - This V22 block is self-contained and only hooks into existing V21 functions
+// - This block is self-contained and only hooks into existing functions
 //   via menu entries + merge-aware receipt sending + post-sync merge reapply.
 // - No existing column indices are shifted; merge metadata columns are appended
 //   to the Registration sheet (end of headers).
@@ -16751,8 +14200,8 @@ var GroupThreadService = (function () {
 var MergeService = (function () {
   var HEADERS = V22_CONFIG.MERGE.REG_HEADERS;
   var ROLES = V22_CONFIG.MERGE.ROLES;
-  var MANUAL_TOTAL_HEADER = "SYS_MERGE_MANUAL_TOTAL";  // V23: persisted manual total override
-  var BUNDLE_INFO_HEADER = "SYS_MERGE_BUNDLE_INFO";    // V23: failsafe — records what bundle/manual was used
+  var MANUAL_TOTAL_HEADER = "SYS_MERGE_MANUAL_TOTAL";  // persisted manual total override
+  var BUNDLE_INFO_HEADER = "SYS_MERGE_BUNDLE_INFO";    // failsafe — records what bundle/manual was used
 
   function repo_() { return new SheetRepository(); }
 
@@ -16796,6 +14245,10 @@ var MergeService = (function () {
     }
     if (missing.length) {
       var lastCol = regSheet.getLastColumn();
+      // Make room first: getRange fails beyond the sheet's last physical column
+      if (regSheet.getMaxColumns() < lastCol + missing.length) {
+        regSheet.insertColumnsAfter(regSheet.getMaxColumns(), lastCol + missing.length - regSheet.getMaxColumns());
+      }
       regSheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
       map = ColumnManager.headerMap(regSheet) || {};
     }
@@ -16956,14 +14409,14 @@ var MergeService = (function () {
     var total = 0;
     participants.forEach(function (p) { total += Number(p.finalAmount || 0); });
 
-    // V23: Override with MANUAL_TOTAL from Registration if set (persisted admin override)
+    // Override with MANUAL_TOTAL from Registration if set (persisted admin override)
     var manualTotalCol = cols[MANUAL_TOTAL_HEADER] ? cols[MANUAL_TOTAL_HEADER] - 1 : -1;
     if (manualTotalCol >= 0 && primary) {
       var mtVal = Number(values[primary.rowIndex - 1][manualTotalCol] || 0);
       if (mtVal > 0) total = mtVal;
     }
 
-    // V23.1: Fallback â€” check Finance sheet primary TotalAmount (handles old merges without MANUAL_TOTAL)
+    // Fallback — check Finance sheet primary TotalAmount (handles old merges without MANUAL_TOTAL)
     if (manualTotalCol < 0 || !(Number(values[(primary ? primary.rowIndex : participants[0].rowIndex) - 1][manualTotalCol] || 0) > 0)) {
       try {
         var finSh = finSheet_();
@@ -17080,7 +14533,10 @@ var MergeService = (function () {
 
         // Clear on Registration sheet (Payment Status column)
         if (payStatusCol) {
-          var regRowForPay = p.rowIndex || repo_().findRegistrationRowIndexByEmail(email);
+          // Always look the row up by email: p.rowIndex can be stale because merged rows get
+          // moved (rearranged) while groups are being reapplied, and a stale index would
+          // clear another participant's status.
+          var regRowForPay = repo_().findRegistrationRowIndexByEmail(email);
           if (regRowForPay) {
             var payCell = regSheet.getRange(regRowForPay, payStatusCol);
             payCell.clearDataValidations();
@@ -17095,7 +14551,7 @@ var MergeService = (function () {
     return { applied: true, appliedCount: appliedCount };
   }
 
-  // V23: Apply visual formatting to a merge group (bold primary, color banding)
+  // Apply visual formatting to a merge group (bold primary, color banding)
   var GROUP_COLORS_ = ["#E8F0FE", "#FCE8E6", "#FEF7E0", "#E6F4EA", "#F3E8FD", "#FDE7E0", "#E0F2F1", "#FFF3E0"];
   function groupColorForId_(gid) {
     var hash = 0;
@@ -17122,7 +14578,9 @@ var MergeService = (function () {
       var weight = isPrimary ? "bold" : "normal";
 
       // Registration sheet formatting
-      var regRow = p.regRow || repo_().findRegistrationRowIndexByEmail(email);
+      // (looked up by email: p.regRow is stale once merged rows have been moved together,
+      // and would colour another participant's row)
+      var regRow = repo_().findRegistrationRowIndexByEmail(email);
       if (regRow) {
         try {
           var rr = regSheet.getRange(regRow, 1, 1, regSheet.getLastColumn());
@@ -17145,7 +14603,7 @@ var MergeService = (function () {
     });
   }
 
-  // V23: Shared row rearrangement helper — moves member rows to follow primary
+  // Shared row rearrangement helper — moves member rows to follow primary
   function rearrangeGroupOnSheet_(sheet, emailCol, primaryEmail, memberEmails) {
     for (var k = 0; k < memberEmails.length; k++) {
       var memberEmail = memberEmails[k];
@@ -17301,7 +14759,7 @@ var MergeService = (function () {
     return { ok: true, groups: gids.length, appliedGroups: applied, message: msg };
   }
 
-  // V23: Reapply merge accounting for a single email (called after Finance overwrites)
+  // Reapply merge accounting for a single email (called after Finance overwrites)
   function reapplyMergeForEmail_(email) {
     email = normalizeEmail_(email);
     if (!email) return;
@@ -17382,14 +14840,14 @@ var MergeService = (function () {
       '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;max-width:600px;">' +
       '    <tr>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <img class="header-logo" src="' + Utils.escapeHtml(uplbSrc) + '" alt="UPLB Sociology Society" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
+      '        <img class="header-logo" src="' + Utils.escapeHtml(uplbSrc) + '" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:Times New Roman, serif;font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">HUSAY NG SOKSAY</div>' +
-      '        <div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">UPLB SOCIOLOGY SOCIETY</div>' +
+      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:Times New Roman, serif;font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">' + getEventTitleHtml_() + '</div>' +
+      '        <div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</div>' +
       '      </td>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <img class="header-logo" src="' + Utils.escapeHtml(husaySrc) + '" alt="Husay ng Soksay" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
+      '        <img class="header-logo" src="' + Utils.escapeHtml(husaySrc) + '" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + '" data-logo="event" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '    </tr>' +
       '  </table>' +
@@ -17430,9 +14888,9 @@ var MergeService = (function () {
       '  <p style="font-size:12px;color:#666;margin-bottom:20px;">Verified and Received by:</p>' +
       '  <table class="signature-table" width="100%" cellpadding="0" cellspacing="0" border="0">' +
       '    <tr>' +
-      '      <td width="45%" align="center" valign="top" style="padding:0;"><div style="border-bottom:1px solid #000;width:90%;margin:0 auto 5px auto;"></div><p style="margin:0;font-weight:bold;font-size:11px;text-transform:uppercase;">__VERIFIER_1__</p><p style="margin:2px 0 0 0;font-size:10px;color:#555;">Finance Committee Head<br>HNS 2025</p></td>' +
+      '      <td width="45%" align="center" valign="top" style="padding:0;"><div style="border-bottom:1px solid #000;width:90%;margin:0 auto 5px auto;"></div><p style="margin:0;font-weight:bold;font-size:11px;text-transform:uppercase;">__VERIFIER_1__</p><p style="margin:2px 0 0 0;font-size:10px;color:#555;">' + SYSTEM_CONFIG.ADMIN.VERIFIER_TITLES.FINANCE_HEAD + '</p></td>' +
       '      <td width="10%"></td>' +
-      '      <td width="45%" align="center" valign="top" style="padding:0;"><div style="border-bottom:1px solid #000;width:90%;margin:0 auto 5px auto;"></div><p style="margin:0;font-weight:bold;font-size:11px;text-transform:uppercase;">__VERIFIER_2__</p><p style="margin:2px 0 0 0;font-size:10px;color:#555;">UPLB Sociology Society<br>Finance Committee Head</p></td>' +
+      '      <td width="45%" align="center" valign="top" style="padding:0;"><div style="border-bottom:1px solid #000;width:90%;margin:0 auto 5px auto;"></div><p style="margin:0;font-weight:bold;font-size:11px;text-transform:uppercase;">__VERIFIER_2__</p><p style="margin:2px 0 0 0;font-size:10px;color:#555;">' + SYSTEM_CONFIG.ADMIN.VERIFIER_TITLES.ORG_FINANCE_HEAD + '</p></td>' +
       '    </tr>' +
       '  </table>' +
       '</div>' +
@@ -17477,7 +14935,7 @@ var MergeService = (function () {
     var primaryName = primaryParticipant.name || primaryParticipant.email || "";
 
     // ---- Fill basic info placeholders ----
-    var displayGenId = participant.genId || "â€”";
+    var displayGenId = participant.genId || "—";
     html = html.split("__GEN_ID__").join(EmailBuilder.escapeHtml_(displayGenId));
     html = html.split("__DATE_VERIFIED__").join(EmailBuilder.escapeHtml_(options.paidAt ? Utils.formatDate(options.paidAt) : Utils.formatDate(new Date())));
     html = html.split("__HEADER_TITLE__").join("ACKNOWLEDGEMENT RECEIPT");
@@ -17630,7 +15088,7 @@ var MergeService = (function () {
         emailSpiel += '<p style="font-size:14px;margin:8px 0;line-height:1.5;">' + spielConfig.SUBMISSION_INTRO + '</p>';
       }
       if (spielConfig.SUBMISSION_FORM_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">SUBMISSION FORM FOR 4TH HUSAY NG SOKSAY</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
       }
       if (spielConfig.SUBMISSION_DEADLINE) {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;"><b>DEADLINE FOR ALL SUBMISSIONS:</b> ' + spielConfig.SUBMISSION_DEADLINE + '</p>';
@@ -17641,7 +15099,7 @@ var MergeService = (function () {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;line-height:1.5;">' + spielConfig.PRIMER_INTRO + '</p>';
       }
       if (spielConfig.EVENT_PRIMER_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">4TH Husay Ng Soksay Event Primer</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.PRIMER_BUTTON_LABEL || "Event Primer") + '</a></p>';
       }
 
       // Closing
@@ -17966,7 +15424,7 @@ var MergeService = (function () {
         if (mergeCols[HEADERS.RECEIPT_ID]) regSheet.getRange(p.regRow, mergeCols[HEADERS.RECEIPT_ID]).setValue(receiptId);
         if (mergeCols[HEADERS.UPDATED_AT]) regSheet.getRange(p.regRow, mergeCols[HEADERS.UPDATED_AT]).setValue(now_());
         if (mergeCols[MANUAL_TOTAL_HEADER]) regSheet.getRange(p.regRow, mergeCols[MANUAL_TOTAL_HEADER]).setValue(isPrimary && hasManualTotal ? total : "");
-        // V23: Failsafe — store human-readable bundle/manual info on primary
+        // Failsafe — store human-readable bundle/manual info on primary
         if (mergeCols[BUNDLE_INFO_HEADER] && isPrimary) {
           var bundleInfoVal = "";
           if (options.bundleInfo) {
@@ -18081,7 +15539,7 @@ var MergeService = (function () {
       });
     });
 
-    // V23: Finance row rearrangement (mirror Registration reordering)
+    // Finance row rearrangement (mirror Registration reordering)
     TriggerGuard.mute(function () {
       if (!finCols || !finCols.Email) return;
       var finEmailCol = finCols.Email;
@@ -18115,13 +15573,13 @@ var MergeService = (function () {
       }
     });
 
-    // V23: Apply visual formatting (bold primary + group color banding)
+    // Apply visual formatting (bold primary + group color banding)
     TriggerGuard.mute(function () {
       applyMergeFormatting_(groupObj, { regSheet: regSheet, finSheet: finSheet, finCols: finCols });
     });
 
     // Record ledger snapshot
-    ledgerAppend_(groupId, primary, list, snapshot, "Merged via V22 Merge UI");
+    ledgerAppend_(groupId, primary, list, snapshot, "Merged via Merge UI");
 
     AdminAuditService.log("MERGE_CREATE", primary, "", groupId, {
       primaryEmail: primary,
@@ -18333,7 +15791,7 @@ var MergeService = (function () {
         for (var ps = 0; ps < groupObj.participants.length; ps++) {
           var pRow = groupObj.participants[ps].rowIndex;
           if (!pRow) continue;
-          if (payStatusCol) regSheet.getRange(pRow, payStatusCol).setValue("PAID");
+          if (payStatusCol) regSheet.getRange(pRow, payStatusCol).setValue(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD);
           if (emailSentCol) regSheet.getRange(pRow, emailSentCol).setValue(sentStamp);
           if (sysPaidAtCol) regSheet.getRange(pRow, sysPaidAtCol).setValue(nowStr);
         }
@@ -18443,21 +15901,22 @@ var MergeService = (function () {
     getGroupFromRegistration_: getGroupFromRegistration_,
     propagateFinanceMetaToGroup_: propagateFinanceMetaToGroup_,
     markGroupMembersEmailSkipped_: markGroupMembersEmailSkipped_,
+    rearrangeGroupOnSheet_: rearrangeGroupOnSheet_,
     sendGroupRegistrationReceived_: sendGroupRegistrationReceived_
   };
 })();
 
 // ----------------------------------------------------------------------------
-// V22: HTML UI - Combined Registration Merge Center
+// HTML UI - Combined Registration Merge Center
 // ----------------------------------------------------------------------------
 function openCombinedRegistrationMerge() {
-  // V23: Ensure merge columns exist so search can read them
+  // Ensure merge columns exist so search can read them
   try {
     var regSheet = new SheetRepository().getRegistrationSheet();
     if (regSheet) MergeService.ensureMergeCols_(regSheet);
   } catch (e) {}
 
-  var html = HtmlService.createHtmlOutput(getCombinedRegistrationMergeHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getCombinedRegistrationMergeHtml_(), "groups"))
     .setWidth(1200)
     .setHeight(820);
   SpreadsheetApp.getUi().showModalDialog(html, "🔗 Combined Registration Merge");
@@ -18466,65 +15925,65 @@ function openCombinedRegistrationMerge() {
 function getCombinedRegistrationMergeHtml_() {
   // HTML/CSS in template literal (safe - no backslash sequences)
   var htmlPart = '<!DOCTYPE html>\n<html>\n<head>\n  <base target="_top">\n  <meta charset="utf-8" />\n  <style>\n' +
-    'body{font-family:Arial,sans-serif;margin:0;background:#f6f8fb;color:#111827;}\n' +
-    '.top{padding:14px 18px;background:#111827;color:#fff;display:flex;align-items:center;gap:10px;}\n' +
+    'body{font-family:Arial,sans-serif;margin:0;background:#0d1117;color:#e6edf3;}\n' +
+    '.top{padding:16px 18px 13px;background:#161b22;border-bottom:1px solid #21262d;color:#fff;display:flex;align-items:center;gap:10px;}\n' +
     '.top .title{font-weight:700;}\n' +
     '.wrap{display:flex;gap:14px;padding:14px;}\n' +
-    '.col{background:#fff;border:1px solid #e6e8ec;border-radius:12px;overflow:hidden;}\n' +
+    '.col{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;}\n' +
     '.left{flex:1;min-width:420px;}\n' +
     '.right{width:440px;max-width:440px;}\n' +
-    '.section{padding:14px;border-bottom:1px solid #e6e8ec;}\n' +
+    '.section{padding:14px;border-bottom:1px solid #30363d;}\n' +
     '.section:last-child{border-bottom:none;}\n' +
     '.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}\n' +
     'input,select,button{font:inherit;}\n' +
-    'input[type=text], input[type=number]{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;}\n' +
-    '.btn{padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;cursor:pointer;}\n' +
-    '.btn.primary{background:#1E4FB8;color:#fff;border-color:#1E4FB8;}\n' +
-    '.btn.danger{background:#b91c1c;color:#fff;border-color:#b91c1c;}\n' +
+    'input[type=text], input[type=number]{width:100%;padding:10px 12px;border:1px solid #484f58;border-radius:10px;background:#161b22;}\n' +
+    '.btn{padding:10px 12px;border:1px solid #484f58;border-radius:10px;background:#161b22;cursor:pointer;}\n' +
+    '.btn.primary{background:#1f6feb;color:#fff;border-color:#388bfd;}\n' +
+    '.btn.danger{background:#da3633;color:#fff;border-color:#f85149;}\n' +
     '.btn.small{padding:6px 10px;border-radius:8px;font-size:12px;}\n' +
     '.list{max-height:520px;overflow:auto;}\n' +
-    '.item{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:10px 14px;border-bottom:1px solid #e6e8ec;}\n' +
+    '.item{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:10px 14px;border-bottom:1px solid #30363d;}\n' +
     '.item:last-child{border-bottom:none;}\n' +
-    '.meta{font-size:12px;color:#6b7280;margin-top:2px;}\n' +
-    '.tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:#f1f5ff;border:1px solid #dbe4ff;color:#1e3a8a;margin-right:6px;}\n' +
-    '.tag.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}\n' +
-    '.tag.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;}\n' +
-    '.muted{color:#6b7280;font-size:12px;}\n' +
+    '.meta{font-size:12px;color:#8b949e;margin-top:2px;}\n' +
+    '.tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:#0d1117;border:1px solid rgba(56,139,253,0.4);color:#58a6ff;margin-right:6px;}\n' +
+    '.tag.warn{background:#0d1117;border-color:rgba(210,153,34,0.4);color:#ffa657;}\n' +
+    '.tag.ok{background:#0d1117;border-color:#2ea043;color:#3fb950;}\n' +
+    '.muted{color:#8b949e;font-size:12px;}\n' +
     '.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}\n' +
-    '.hr{height:1px;background:#e6e8ec;margin:10px 0;}\n' +
+    '.hr{height:1px;background:#21262d;margin:10px 0;}\n' +
     '.kpi{display:flex;gap:10px;align-items:center;}\n' +
-    '.kpi .box{flex:1;background:#f6f8fb;border:1px solid #e6e8ec;border-radius:10px;padding:10px;}\n' +
+    '.kpi .box{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px;}\n' +
     '.kpi .num{font-size:18px;font-weight:800;}\n' +
     '.footerActions{display:flex;gap:10px;flex-wrap:wrap;}\n' +
     '.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;}\n' +
-    '.modal{background:#fff;border-radius:14px;max-width:980px;width:980px;max-height:90vh;overflow:auto;border:1px solid #e6e8ec;}\n' +
-    '.modalHead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e6e8ec;}\n' +
+    '.modal{background:#161b22;border-radius:14px;max-width:980px;width:980px;max-height:90vh;overflow:auto;border:1px solid #30363d;}\n' +
+    '.modalHead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #30363d;}\n' +
     '.modalBody{padding:14px;}\n' +
     '.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;}\n' +
-    '.tabs{display:flex;border-bottom:2px solid #e6e8ec;background:#fafbfc;}\n' +
-    '.tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:13px;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}\n' +
-    '.tab:hover{color:#1E4FB8;background:#f0f4ff;}\n' +
-    '.tab.active{color:#1E4FB8;border-bottom-color:#1E4FB8;}\n' +
-    '.tab .badge{display:inline-block;background:#e6e8ec;color:#374151;font-size:10px;padding:2px 7px;border-radius:999px;margin-left:6px;font-weight:700;}\n' +
-    '.tab.active .badge{background:#dbeafe;color:#1E4FB8;}\n' +
-    '.grp-card{border:1px solid #e6e8ec;border-radius:10px;margin-bottom:10px;overflow:hidden;transition:box-shadow .15s;}\n' +
+    '.tabs{display:flex;border-bottom:2px solid #30363d;background:#161b22;}\n' +
+    '.tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:13px;color:#8b949e;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}\n' +
+    '.tab:hover{color:#58a6ff;background:#0d1117;}\n' +
+    '.tab.active{color:#58a6ff;border-bottom-color:#388bfd;}\n' +
+    '.tab .badge{display:inline-block;background:#21262d;color:#c9d1d9;font-size:10px;padding:2px 7px;border-radius:999px;margin-left:6px;font-weight:700;}\n' +
+    '.tab.active .badge{background:rgba(56,139,253,0.15);color:#58a6ff;}\n' +
+    '.grp-card{border:1px solid #30363d;border-radius:10px;margin-bottom:10px;overflow:hidden;transition:box-shadow .15s;}\n' +
     '.grp-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}\n' +
-    '.grp-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:#fafbfc;}\n' +
-    '.grp-head:hover{background:#f0f4ff;}\n' +
-    '.grp-title{font-weight:700;font-size:14px;color:#1e3a8a;}\n' +
+    '.grp-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:#161b22;}\n' +
+    '.grp-head:hover{background:#0d1117;}\n' +
+    '.grp-title{font-weight:700;font-size:14px;color:#58a6ff;}\n' +
     '.grp-stats{display:flex;gap:12px;align-items:center;}\n' +
-    '.grp-stat{font-size:12px;color:#6b7280;}\n' +
-    '.grp-stat b{color:#111827;}\n' +
-    '.grp-arrow{font-size:16px;color:#9ca3af;transition:transform .2s;}\n' +
+    '.grp-stat{font-size:12px;color:#8b949e;}\n' +
+    '.grp-stat b{color:#e6edf3;}\n' +
+    '.grp-arrow{font-size:16px;color:#8b949e;transition:transform .2s;}\n' +
     '.grp-card.open .grp-arrow{transform:rotate(90deg);}\n' +
-    '.grp-body{display:none;border-top:1px solid #e6e8ec;}\n' +
+    '.grp-body{display:none;border-top:1px solid #30363d;}\n' +
     '.grp-card.open .grp-body{display:block;}\n' +
-    '.grp-member{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid #f3f4f6;}\n' +
+    '.grp-member{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid #30363d;}\n' +
     '.grp-member:last-child{border-bottom:none;}\n' +
     '.grp-role{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;}\n' +
-    '.grp-role.primary{background:#dbeafe;color:#1E4FB8;}\n' +
-    '.grp-role.member{background:#f3f4f6;color:#6b7280;}\n' +
-    '.grp-actions{padding:10px 14px;background:#f9fafb;border-top:1px solid #e6e8ec;display:flex;gap:8px;}\n' +
+    '.grp-role.primary{background:rgba(56,139,253,0.15);color:#58a6ff;}\n' +
+    '.grp-role.member{background:#0d1117;color:#8b949e;}\n' +
+    '.grp-actions{padding:10px 14px;background:#161b22;border-top:1px solid #30363d;display:flex;gap:8px;}\n' +
     '.panel{display:none;}\n' +
     '.panel.active{display:block;}\n' +
     '</style>\n</head>\n<body>\n';
@@ -18583,7 +16042,7 @@ function getCombinedRegistrationMergeHtml_() {
   htmlPart += '      <div class="muted" style="margin-top:6px;">Set ONE primary contact.</div>\n';
   htmlPart += '      <div class="hr"></div>\n';
   htmlPart += '      <div id="selected"></div>\n';
-  htmlPart += '      <div style="margin-top:10px;padding:8px;background:#fff7ed;border:1px solid #ffedd5;border-radius:6px;">\n';
+  htmlPart += '      <div style="margin-top:10px;padding:8px;background:#0d1117;border:1px solid rgba(210,153,34,0.4);border-radius:6px;">\n';
   htmlPart += '         <div class="muted" style="margin-bottom:5px;"><b>Primary Role:</b></div>\n';
   htmlPart += '         <label style="margin-right:15px;"><input type="radio" name="pRole" value="STUDENT" checked> Student</label>\n';
   htmlPart += '         <label><input type="radio" name="pRole" value="ADVISER"> Adviser</label>\n';
@@ -18592,20 +16051,20 @@ function getCombinedRegistrationMergeHtml_() {
 
   htmlPart += '    <div class="section">\n';
   htmlPart += '      <div class="grid2">\n';
-  htmlPart += '         <div style="grid-column: span 2; margin-bottom:10px; padding:10px; background:#f3f4f6; border-radius:6px;">\n';
+  htmlPart += '         <div style="grid-column: span 2; margin-bottom:10px; padding:10px; background:#0d1117; border-radius:6px;">\n';
   htmlPart += '          <label class="muted" style="display:block;margin-bottom:5px;">Bundle Preset</label>\n';
   htmlPart += '          <select id="bundleSelect" style="width:100%;margin-bottom:10px;" onchange="updateBundle()">\n';
   htmlPart += '            <option value="">-- No Bundle (Sum Individual) --</option>\n';
-  htmlPart += '            <option value="999">Standard 3 + Special 1 (\u20B1999)</option>\n';
-  htmlPart += '            <option value="749">Standard 3 + Special 0 (\u20B1749)</option>\n';
-  htmlPart += '            <option value="899">Standard 2 + Special 1 (\u20B1899)</option>\n';
-  htmlPart += '            <option value="499">Standard 2 + Special 0 (\u20B1499)</option>\n';
-  htmlPart += '            <option value="649">Standard 1 + Special 1 (\u20B1649)</option>\n';
-  htmlPart += '            <option value="349">Standard 1 + Special 0 (\u20B1349)</option>\n';
-  htmlPart += '            <option value="499">Standard 0 + Special 1 (\u20B1499)</option>\n';
+  // Bundle presets are generated from SYSTEM_CONFIG.PRICING.BUNDLES
+  Object.keys(SYSTEM_CONFIG.PRICING.BUNDLES).forEach(function (bundleKey) {
+    var bundlePrice = SYSTEM_CONFIG.PRICING.BUNDLES[bundleKey];
+    var bm = /^STD_(\d+)_SPC_(\d+)$/.exec(bundleKey);
+    var bundleLabel = bm ? ("Standard " + bm[1] + " + Special " + bm[2]) : bundleKey;
+    htmlPart += '            <option value="' + bundlePrice + '">' + bundleLabel + ' (\u20B1' + bundlePrice + ')</option>\n';
+  });
   htmlPart += '          </select>\n';
   htmlPart += '          <label class="muted" style="display:block;margin-bottom:5px;">Manual Total Override (PHP)</label>\n';
-  htmlPart += '          <input type="number" id="manualTotal" placeholder="Leave empty to use sum" style="background:#fff;" />\n';
+  htmlPart += '          <input type="number" id="manualTotal" placeholder="Leave empty to use sum" style="background:#161b22;" />\n';
   htmlPart += '        </div>\n';
   htmlPart += '        <div>\n';
   htmlPart += '          <label class="muted">Group ID (optional)</label>\n';
@@ -18660,13 +16119,13 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('<script>');
   h.push('window.onerror=function(m,s,l,c,e){');
   h.push('  var el=document.getElementById("results")||document.body;');
-  h.push('  el.innerHTML=\'<div style="color:#b91c1c;background:#fef2f2;padding:20px;border-radius:10px;margin:10px;"><b>Script Error (line \'+l+\'):</b><br>\'+String(m)+\'</div>\';');
+  h.push('  el.innerHTML=\'<div style="color:#ff7b72;background:#0d1117;padding:20px;border-radius:10px;margin:10px;"><b>Script Error (line \'+l+\'):</b><br>\'+String(m)+\'</div>\';');
   h.push('  console.error("MERGE UI ERROR:", m, "line:", l, e);');
   h.push('  return true;');
   h.push('};');
   h.push('window.addEventListener("error", function(ev) {');
   h.push('  var el=document.getElementById("results");');
-  h.push('  if(el) el.innerHTML=\'<div style="color:#b91c1c;background:#fef2f2;padding:20px;border-radius:10px;margin:10px;"><b>Script Load Error:</b><br>\'+String(ev.message||ev)+\'</div>\';');
+  h.push('  if(el) el.innerHTML=\'<div style="color:#ff7b72;background:#0d1117;padding:20px;border-radius:10px;margin:10px;"><b>Script Load Error:</b><br>\'+String(ev.message||ev)+\'</div>\';');
   h.push('});');
   h.push('</script>');
 
@@ -18737,7 +16196,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  if(selected.some(function(x){ return x.email===p.email; })) return;');
   h.push('  selected.push(p);');
   h.push('  if(!primaryEmail) primaryEmail = p.email;');
-  h.push('  // V23: Auto-populate merge settings from existing group data');
+  h.push('  // Auto-populate merge settings from existing group data');
   h.push('  if(p.mergeGroupId) {');
   h.push('    var gidEl = document.getElementById("groupId");');
   h.push('    if(gidEl && !gidEl.value) gidEl.value = p.mergeGroupId;');
@@ -18804,7 +16263,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('    wrap.appendChild(right);');
   h.push('    root.appendChild(wrap);');
   h.push('  });');
-  h.push('  // V23: Use manual total for KPI if set');
+  h.push('  // Use manual total for KPI if set');
   h.push('  var mtVal = Number(document.getElementById("manualTotal").value || 0);');
   h.push('  var displayTotal = (mtVal > 0) ? mtVal : total;');
   h.push('  document.getElementById("kpiCount").textContent = String(selected.length);');
@@ -18858,7 +16317,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  if(selected.length < 2) { setStatus("Select at least 2 participants first."); return; }');
   h.push('  setStatus("Generating preview...");');
   h.push('  google.script.run.withSuccessHandler(function(html){');
-  h.push('    openModal(html);');
+  h.push('    openModal(paperHtml(html));');
   h.push('    setStatus("Preview ready.");');
   h.push('  }).withFailureHandler(function(err){');
   h.push('    setStatus("Error: " + err);');
@@ -18869,7 +16328,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  if(selected.length < 2) { setStatus("Select at least 2 participants first."); return; }');
   h.push('  setStatus("Generating preview...");');
   h.push('  google.script.run.withSuccessHandler(function(html){');
-  h.push('    openModal(html);');
+  h.push('    openModal(paperHtml(html));');
   h.push('    setStatus("Preview ready.");');
   h.push('  }).withFailureHandler(function(err){');
   h.push('    setStatus("Error: " + err);');
@@ -18884,7 +16343,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('      setStatus("Merge failed: " + (res && res.error ? res.error : "Unknown"));');
   h.push('      return;');
   h.push('    }');
-  h.push('    setStatus("&#x2705; Merged! Group ID: " + res.groupId);');
+  h.push('    setStatus("\u2705 Merged! Group ID: " + res.groupId);');
   h.push('    document.getElementById("lastGroup").textContent = "Last Group: " + res.groupId + " | Total: " + money(res.total||0) + (res.payRef?(" | PayRef: " + res.payRef):"");');
   h.push('    if(res.groupId && !document.getElementById("groupId").value) document.getElementById("groupId").value = res.groupId;');
   h.push('    // Show success modal with Start New Merge button');
@@ -18907,18 +16366,18 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('var _pendingSendFn = null;');
   h.push('function showSendConfirm(previewHtml, onConfirmFn){');
   h.push('  _pendingSendFn = onConfirmFn;');
-  h.push('  openModal(previewHtml || "");');
+  h.push('  openModal(paperHtml(previewHtml || ""));');
   h.push('  var mb = document.getElementById("modalBody");');
   h.push('  var btnRow = document.createElement("div");');
-  h.push('  btnRow.style.cssText = "display:flex;gap:12px;justify-content:center;padding:12px 0 0;border-top:1px solid #eee;margin-top:12px;";');
+  h.push('  btnRow.style.cssText = "display:flex;gap:12px;justify-content:center;padding:12px 0 0;border-top:1px solid #30363d;margin-top:12px;";');
   h.push('  var confirmBtn = document.createElement("button");');
   h.push('  confirmBtn.className = "btn primary";');
-  h.push('  confirmBtn.style.cssText = "background:#16a34a;color:#fff;padding:10px 24px;font-size:14px;cursor:pointer;border:none;border-radius:6px;";');
+  h.push('  confirmBtn.style.cssText = "background:#238636;color:#fff;padding:10px 24px;font-size:14px;cursor:pointer;border:none;border-radius:6px;";');
   h.push('  confirmBtn.textContent = "\\u2705 Confirm Send";');
   h.push('  confirmBtn.onclick = function(){ closeModal(); if(_pendingSendFn) _pendingSendFn(); _pendingSendFn=null; };');
   h.push('  var cancelBtn = document.createElement("button");');
   h.push('  cancelBtn.className = "btn";');
-  h.push('  cancelBtn.style.cssText = "padding:10px 24px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;";');
+  h.push('  cancelBtn.style.cssText = "padding:10px 24px;font-size:14px;cursor:pointer;border:1px solid #484f58;border-radius:6px;background:#161b22;";');
   h.push('  cancelBtn.textContent = "\\u274C Cancel";');
   h.push('  cancelBtn.onclick = function(){ closeModal(); _pendingSendFn=null; };');
   h.push('  btnRow.appendChild(confirmBtn);');
@@ -18944,7 +16403,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  setStatus("Sending group receipt...");');
   h.push('  google.script.run.withSuccessHandler(function(res){');
   h.push('    if(res && res.sent){');
-  h.push('      setStatus("&#x2705; Sent group receipt.");');
+  h.push('      setStatus("\u2705 Sent group receipt.");');
   h.push('    } else if(res && res.skipped){');
   h.push('      setStatus("\\u23ED Skipped (duplicate guard / rate limit).");');
   h.push('    } else {');
@@ -18973,7 +16432,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  setStatus("Sending Reg Received email...");');
   h.push('  google.script.run.withSuccessHandler(function(res){');
   h.push('    if(res && res.sent){');
-  h.push('      setStatus("&#x2705; Sent Reg Received email.");');
+  h.push('      setStatus("\u2705 Sent Reg Received email.");');
   h.push('    } else {');
   h.push('      setStatus("\\u274C Send failed: " + (res&&res.error?res.error:""));');
   h.push('    }');
@@ -18990,7 +16449,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  setStatus("Unmerging...");');
   h.push('  google.script.run.withSuccessHandler(function(res){');
   h.push('    if(res && res.ok){');
-  h.push('      setStatus("&#x2705; Unmerged. Restored: " + (res.restored||0));');
+  h.push('      setStatus("\u2705 Unmerged. Restored: " + (res.restored||0));');
   h.push('    } else {');
   h.push('      setStatus("\\u274C Unmerge failed: " + (res && res.error ? res.error : "Unknown"));');
   h.push('    }');
@@ -19002,12 +16461,13 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('function reapply(){');
   h.push('  setStatus("Reapplying all merge groups...");');
   h.push('  google.script.run.withSuccessHandler(function(res){');
-  h.push('    setStatus("&#x2705; " + (res && res.message ? res.message : "Done."));');
+  h.push('    setStatus("\u2705 " + (res && res.message ? res.message : "Done."));');
   h.push('  }).withFailureHandler(function(err){');
   h.push('    setStatus("Error: " + err);');
   h.push('  }).V22_merge_reapplyAll();');
   h.push('}');
   h.push('');
+  h.push('function paperHtml(x){ return "<div class=\\"email-paper\\">" + x + "</div>"; }');
   h.push('function openModal(html){');
   h.push('  document.getElementById("modalBody").innerHTML = html || "";');
   h.push('  document.getElementById("overlay").style.display = "flex";');
@@ -19055,7 +16515,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('    document.getElementById("groupCount").textContent = String(allGroups.length);');
   h.push('    renderGroups(allGroups);');
   h.push('  }).withFailureHandler(function(err) {');
-  h.push('    document.getElementById("groupsList").innerHTML = \'<div style="text-align:center;padding:40px;color:#b91c1c;">Error loading groups: \' + String(err.message || err) + \'<br><br><span class="muted">Make sure merge columns exist (run at least one merge first) and the Registration sheet is accessible.</span></div>\';');
+  h.push('    document.getElementById("groupsList").innerHTML = \'<div style="text-align:center;padding:40px;color:#ff7b72;">Error loading groups: \' + String(err.message || err) + \'<br><br><span class="muted">Make sure merge columns exist (run at least one merge first) and the Registration sheet is accessible.</span></div>\';');
   h.push('  }).V22_merge_getAllGroups();');
   h.push('}');
   h.push('');
@@ -19144,7 +16604,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('    if (!primaryEmail && selected.length > 0) primaryEmail = selected[0].email;');
   h.push('  }');
   h.push('  document.getElementById("groupId").value = groupId;');
-  h.push('  // V23: Populate bundle/manual total from group data');
+  h.push('  // Populate bundle/manual total from group data');
   h.push('  if (group) {');
   h.push('    var mt = group.manualTotal || 0;');
   h.push('    if (mt > 0) {');
@@ -19159,7 +16619,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('        if (!matched) bSel.selectedIndex = 0;');
   h.push('      }');
   h.push('    }');
-  h.push('    // V23: Populate pay ref from group data');
+  h.push('    // Populate pay ref from group data');
   h.push('    if (group.payRef) {');
   h.push('      document.getElementById("payRef").value = group.payRef;');
   h.push('    }');
@@ -19173,7 +16633,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  if (!confirm("Send group receipt (PAID) for " + groupId + "?")) return;');
   h.push('  setStatus("Sending receipt for " + groupId + "...");');
   h.push('  google.script.run.withSuccessHandler(function(res) {');
-  h.push('    if (res && res.sent) setStatus("&#x2705; Receipt sent for " + groupId);');
+  h.push('    if (res && res.sent) setStatus("\u2705 Receipt sent for " + groupId);');
   h.push('    else setStatus("\\u274C Failed: " + (res && res.reason ? res.reason : "Unknown"));');
   h.push('  }).withFailureHandler(function(err) {');
   h.push('    setStatus("Error: " + err);');
@@ -19189,7 +16649,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('    resultsEl.innerHTML = \'<div class="muted" style="text-align:center;padding:40px;">Loading participants...</div>\';');
   h.push('    setStatus("Connecting...");');
   h.push('    if (typeof google === "undefined" || !google.script || !google.script.run) {');
-  h.push('      resultsEl.innerHTML = \'<div style="text-align:center;padding:40px;color:#b91c1c;background:#fef2f2;border-radius:10px;margin:10px;">\' +');
+  h.push('      resultsEl.innerHTML = \'<div style="text-align:center;padding:40px;color:#ff7b72;background:#0d1117;border-radius:10px;margin:10px;">\' +');
   h.push('        \'<div style="font-weight:700;font-size:14px;margin-bottom:6px;">\\u274C google.script.run not available</div>\' +');
   h.push('        \'<div style="font-size:12px;">The Apps Script bridge is not loaded. Try closing and reopening the dialog.</div></div>\';');
   h.push('      setStatus("Error: google.script.run unavailable");');
@@ -19199,10 +16659,10 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('      .withSuccessHandler(function(list) {');
   h.push('        window._mergeStartupDone = true;');
   h.push('        if (!list || list.length === 0) {');
-  h.push('          resultsEl.innerHTML = \'<div style="text-align:center;padding:40px;color:#9a3412;background:#fff7ed;border-radius:10px;margin:10px;">\' +');
+  h.push('          resultsEl.innerHTML = \'<div style="text-align:center;padding:40px;color:#ffa657;background:#0d1117;border-radius:10px;margin:10px;">\' +');
   h.push('            \'<div style="font-weight:700;font-size:14px;margin-bottom:6px;">\\u26A0 No Participants Found</div>\' +');
   h.push('            \'<div style="font-size:12px;">The Registration sheet is either empty or could not be read.<br>\' +');
-  h.push('            \'Make sure the sheet named <b>"Registration Form"</b> exists and has data rows.</div></div>\';');
+  h.push('            \'Make sure the sheet named <b>"' + Utils.escapeHtml(SYSTEM_CONFIG.SHEETS.REGISTRATION) + '"</b> exists and has data rows.</div></div>\';');
   h.push('          setStatus("No participants found.");');
   h.push('        } else {');
   h.push('          renderResults(list);');
@@ -19211,7 +16671,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('      .withFailureHandler(function(err) {');
   h.push('        window._mergeStartupDone = true;');
   h.push('        var msg = String(err.message || err);');
-  h.push('        resultsEl.innerHTML = \'<div style="text-align:center;padding:40px;color:#b91c1c;background:#fef2f2;border-radius:10px;margin:10px;">\' +');
+  h.push('        resultsEl.innerHTML = \'<div style="text-align:center;padding:40px;color:#ff7b72;background:#0d1117;border-radius:10px;margin:10px;">\' +');
   h.push('          \'<div style="font-weight:700;font-size:14px;margin-bottom:6px;">\\u274C Connection Error</div>\' +');
   h.push('          \'<div style="font-size:12px;">\' + esc(msg) + \'</div></div>\';');
   h.push('        setStatus("Error: " + msg);');
@@ -19220,7 +16680,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('  } catch (startupErr) {');
   h.push('    console.error("MERGE STARTUP ERROR:", startupErr);');
   h.push('    try {');
-  h.push('      document.getElementById("results").innerHTML = \'<div style="text-align:center;padding:40px;color:#b91c1c;background:#fef2f2;border-radius:10px;margin:10px;">\' +');
+  h.push('      document.getElementById("results").innerHTML = \'<div style="text-align:center;padding:40px;color:#ff7b72;background:#0d1117;border-radius:10px;margin:10px;">\' +');
   h.push('        \'<div style="font-weight:700;font-size:14px;margin-bottom:6px;">\\u274C Startup Error</div>\' +');
   h.push('        \'<div style="font-size:12px;">\' + String(startupErr) + \'</div></div>\';');
   h.push('    } catch(e2) {}');
@@ -19233,7 +16693,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('(function diagnostic() {');
   h.push('  var el = document.getElementById("results");');
   h.push('  if (typeof searchNow === "undefined") {');
-  h.push('    if(el) el.innerHTML = \'<div style="text-align:center;padding:40px;color:#b91c1c;background:#fef2f2;border-radius:10px;margin:10px;">\' +');
+  h.push('    if(el) el.innerHTML = \'<div style="text-align:center;padding:40px;color:#ff7b72;background:#0d1117;border-radius:10px;margin:10px;">\' +');
   h.push('      \'<div style="font-weight:700;font-size:14px;margin-bottom:6px;">\\u274C Main Script Failed to Load</div>\' +');
   h.push('      \'<div style="font-size:12px;">The merge UI JavaScript did not parse correctly.<br>\' +');
   h.push('      \'Open browser DevTools (F12 > Console tab) to see the specific error.<br><br>\' +');
@@ -19244,7 +16704,7 @@ function getCombinedRegistrationMergeHtml_() {
   h.push('    if (!window._mergeStartupDone && el) {');
   h.push('      var content = (el.innerHTML || "").trim();');
   h.push('      if (content.indexOf("Loading") > -1 || !content) {');
-  h.push('        el.innerHTML = \'<div style="text-align:center;padding:20px;color:#92400e;background:#fffbeb;border-radius:10px;margin:10px;">\' +');
+  h.push('        el.innerHTML = \'<div style="text-align:center;padding:20px;color:#e3b341;background:rgba(210,153,34,0.15);border-radius:10px;margin:10px;">\' +');
   h.push('          \'<div style="font-weight:700;font-size:14px;margin-bottom:6px;">&#x23F3; Server call timed out</div>\' +');
   h.push('          \'<div style="font-size:12px;">The initial search did not respond. Retrying...</div></div>\';');
   h.push('        searchNow();');
@@ -19259,11 +16719,11 @@ function getCombinedRegistrationMergeHtml_() {
 }
 
 // ----------------------------------------------------------------------------
-// V22: Server-side - Get All Merge Groups for View Groups tab
+// Server-side - Get All Merge Groups for View Groups tab
 // ----------------------------------------------------------------------------
 
 /**
- * V22: Get all existing merge groups with participant details.
+ * Get all existing merge groups with participant details.
  * Called by the "View Groups" tab in the Merge UI.
  */
 function V22_merge_getAllGroups() {
@@ -19323,7 +16783,7 @@ function V22_merge_getAllGroups() {
       });
       if (isPrimary) {
         groupMap[gid].primaryEmail = email;
-        // V23: Read manual total and bundle info from primary's row
+        // Read manual total and bundle info from primary's row
         if (colManualTotal) {
           var mt = Number(r[colManualTotal - 1] || 0);
           if (mt > 0) groupMap[gid].manualTotal = mt;
@@ -19336,7 +16796,7 @@ function V22_merge_getAllGroups() {
       groupMap[gid].groupTotal += amt;
     }
 
-    // V23: Fallback — read Finance sheet to detect manual total overrides for old groups
+    // Fallback — read Finance sheet to detect manual total overrides for old groups
     var finSheet = null;
     var finCols = null;
     var finData = null;
@@ -19370,11 +16830,11 @@ function V22_merge_getAllGroups() {
         if (a.role !== "PRIMARY" && b.role === "PRIMARY") return 1;
         return (a.name || "").localeCompare(b.name || "");
       });
-      // V23: Use manual total as display total if set
+      // Use manual total as display total if set
       if (grp.manualTotal && grp.manualTotal > 0) {
         grp.groupTotal = grp.manualTotal;
       }
-      // V23: Read pay ref and fallback total from Finance sheet
+      // Read pay ref and fallback total from Finance sheet
       if (grp.primaryEmail && finEmailMap[grp.primaryEmail.toLowerCase()]) {
         var finInfo = finEmailMap[grp.primaryEmail.toLowerCase()];
         if (finInfo.payRef) grp.payRef = finInfo.payRef;
@@ -19393,18 +16853,20 @@ function V22_merge_getAllGroups() {
 }
 
 // ----------------------------------------------------------------------------
-// V22: HTML UI - Manual Response Editor (Live CRUD)
+// HTML UI - Manual Response Editor (Live CRUD)
 // ----------------------------------------------------------------------------
 function openManualResponseEditor() {
-  var html = HtmlService.createHtmlOutput(getManualResponseEditorHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getManualResponseEditorHtml_(), "register"))
     .setWidth(1200)
     .setHeight(860);
-  SpreadsheetApp.getUi().showModalDialog(html, "✏️ Manual Response Editor (V22)");
+  SpreadsheetApp.getUi().showModalDialog(html, "✏️ Manual Response Editor");
 }
 
   function getManualResponseEditorHtml_() {
     var config = SYSTEM_CONFIG.PRICING.SINGLE || {};
     var comps = Object.keys(config);
+    var paidWord = Utils.escapeHtml(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD);
+    var notYetWord = Utils.escapeHtml(SYSTEM_CONFIG.ADMIN.NOT_YET_WORD);
     // Build checkboxes HTML
     var checksHtml = '';
     comps.forEach(function(c){
@@ -19420,36 +16882,36 @@ function openManualResponseEditor() {
   <base target="_top">
   <meta charset="utf-8" />
   <style>
-    body{font-family:Arial,sans-serif;margin:0;background:#f6f8fb;color:#111827;}
-    .top{padding:14px 18px;background:#111827;color:#fff;display:flex;align-items:center;gap:10px;}
+    body{font-family:Arial,sans-serif;margin:0;background:#0d1117;color:#e6edf3;}
+    .top{padding:16px 18px 13px;background:#161b22;border-bottom:1px solid #21262d;color:#fff;display:flex;align-items:center;gap:10px;}
     .top .title{font-weight:700;}
     .wrap{display:grid;grid-template-columns:1fr 420px;gap:14px;padding:14px;}
-    .col{background:#fff;border:1px solid #e6e8ec;border-radius:12px;overflow:hidden;}
-    .section{padding:14px;border-bottom:1px solid #e6e8ec;}
+    .col{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;}
+    .section{padding:14px;border-bottom:1px solid #30363d;}
     .section:last-child{border-bottom:none;}
     .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
     input,select,button,textarea{font:inherit;}
-    input[type=text], input[type=number], textarea, select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;}
+    input[type=text], input[type=number], textarea, select{width:100%;padding:10px 12px;border:1px solid #484f58;border-radius:10px;background:#161b22;}
     textarea{min-height:90px;resize:vertical;}
-    .btn{padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;cursor:pointer;}
-    .btn.primary{background:#1E4FB8;color:#fff;border-color:#1E4FB8;}
-    .btn.danger{background:#b91c1c;color:#fff;border-color:#b91c1c;}
+    .btn{padding:10px 12px;border:1px solid #484f58;border-radius:10px;background:#161b22;cursor:pointer;}
+    .btn.primary{background:#1f6feb;color:#fff;border-color:#388bfd;}
+    .btn.danger{background:#da3633;color:#fff;border-color:#f85149;}
     .btn.small{padding:6px 10px;border-radius:8px;font-size:12px;}
     .list{max-height:340px;overflow:auto;}
-    .item{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:10px 14px;border-bottom:1px solid #e6e8ec;}
+    .item{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:10px 14px;border-bottom:1px solid #30363d;}
     .item:last-child{border-bottom:none;}
-    .meta{font-size:12px;color:#6b7280;margin-top:2px;}
-    .tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:#f1f5ff;border:1px solid #dbe4ff;color:#1e3a8a;margin-right:6px;}
-    .tag.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+    .meta{font-size:12px;color:#8b949e;margin-top:2px;}
+    .tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:#0d1117;border:1px solid rgba(56,139,253,0.4);color:#58a6ff;margin-right:6px;}
+    .tag.warn{background:#0d1117;border-color:rgba(210,153,34,0.4);color:#ffa657;}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .hr{height:1px;background:#e6e8ec;margin:10px 0;}
-    .muted{color:#6b7280;font-size:12px;}
+    .hr{height:1px;background:#21262d;margin:10px 0;}
+    .muted{color:#8b949e;font-size:12px;}
     .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;}
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;}
-    .modal{background:#fff;border-radius:14px;max-width:980px;width:980px;max-height:90vh;overflow:auto;border:1px solid #e6e8ec;}
-    .modalHead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e6e8ec;}
+    .modal{background:#161b22;border-radius:14px;max-width:980px;width:980px;max-height:90vh;overflow:auto;border:1px solid #30363d;}
+    .modalHead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #30363d;}
     .modalBody{padding:14px;}
-    .diffRow{padding:8px 10px;border:1px solid #e6e8ec;border-radius:10px;background:#f9fafb;margin-bottom:8px;}
+    .diffRow{padding:8px 10px;border:1px solid #30363d;border-radius:10px;background:#161b22;margin-bottom:8px;}
     .diffKey{font-weight:700;}
   </style>
 </head>
@@ -19500,7 +16962,7 @@ function openManualResponseEditor() {
 
         <div style="margin-top:10px;">
           <label class="muted">Competitions (Check all that apply)</label>
-          <div id="compList" style="max-height:200px;overflow:auto;border:1px solid #d1d5db;border-radius:10px;padding:12px;background:#fff;margin-top:5px;">
+          <div id="compList" style="max-height:200px;overflow:auto;border:1px solid #484f58;border-radius:10px;padding:12px;background:#161b22;margin-top:5px;">
              ${checksHtml}
           </div>
         </div>
@@ -19514,10 +16976,8 @@ function openManualResponseEditor() {
             <label class="muted">Finance Status</label>
             <select id="finStatus">
               <option value="">(no change)</option>
-              <option value="PAID">PAID</option>
-              <option value="NOT YET PAID">NOT YET PAID</option>
-              <option value="PENDING">PENDING</option>
-              <option value="MISMATCH">MISMATCH</option>
+              <option value="${paidWord}">${paidWord}</option>
+              <option value="${notYetWord}">${notYetWord}</option>
             </select>
           </div>
         </div>
@@ -19733,7 +17193,7 @@ function openManualResponseEditor() {
     var email = loaded.record.registration.email;
     setStatus('Generating preview...');
     google.script.run.withSuccessHandler(function(res){
-      openModal(kind==='AR'?'Receipt Preview':'Registration Email Preview', res && res.html ? res.html : '<div class="muted">No preview.</div>');
+      openModal(kind==='AR'?'Receipt Preview':'Registration Email Preview', res && res.html ? '<div class="email-paper">' + res.html + '</div>' : '<div class="muted">No preview.</div>');
       setStatus('Preview ready.');
     }).withFailureHandler(function(err){
       setStatus('Error: ' + err);
@@ -19768,7 +17228,7 @@ function openManualResponseEditor() {
 }
 
 // ----------------------------------------------------------------------------
-// V22: Server endpoints for Merge UI
+// Server endpoints for Merge UI
 // ----------------------------------------------------------------------------
 function V22_merge_searchParticipants(query) {
   try {
@@ -19862,7 +17322,7 @@ function V22_merge_searchParticipants(query) {
       if (out.length >= 200) break;
     }
 
-    // V23: Second pass — propagate primary's manualTotal/bundleInfo to all group members
+    // Second pass — propagate primary's manualTotal/bundleInfo to all group members
     var groupSettings = {};
     for (var gi = 0; gi < out.length; gi++) {
       var item = out[gi];
@@ -19894,6 +17354,17 @@ function V22_merge_previewGroupReceipt(payload) {
   var repo = new SheetRepository();
   var regSheet = repo.getRegistrationSheet();
   if (!regSheet) return "<div class='muted'>Missing Registration sheet.</div>";
+
+  // "Send Group Receipt" with only a Group ID typed in: preview the saved group itself
+  if (emails.length < 2 && payload.groupId) {
+    var savedGroup = MergeService.getGroupFromRegistration_(String(payload.groupId).trim(), regSheet);
+    if (savedGroup && savedGroup.participants && savedGroup.participants.length) {
+      var savedPrimary = savedGroup.participants.filter(function (p) {
+        return Utils.normalizeEmail(p.email) === Utils.normalizeEmail(savedGroup.primaryEmail);
+      })[0] || savedGroup.participants[0];
+      return MergeService.buildGroupReceiptHtml_(savedGroup, savedPrimary, { payRef: (payload.payRef || ""), verifier: "", paidAt: new Date(), preview: true });
+    }
+  }
 
   // Build temporary group object from selected rows (no writes)
   var uniq = {};
@@ -19944,32 +17415,65 @@ function V22_merge_previewGroupReceipt(payload) {
 function V22_merge_previewGroupRegReceived(payload) {
   payload = payload || {};
   var emails = payload.emails || [];
-  var primary = payload.primaryEmail || (emails[0] || "");
-  var total = 0;
-  
-  if (payload.manualTotal) {
-    total = Number(payload.manualTotal) || 0;
-  } else {
-    var repo = new SheetRepository();
-    var list = [];
-    emails.forEach(function(e){
-       var row = repo.findRegistrationRowIndexByEmail(e);
-       if(row) list.push(repo.getRegistrationRow(row));
-    });
-    list.forEach(function(r){
-      total += Number(r[SYSTEM_CONFIG.COLS.REG.FINAL_AMOUNT - 1] || 0);
-    });
+  var primaryEmail = Utils.normalizeEmail(payload.primaryEmail || (emails[0] || ""));
+  var repo = new SheetRepository();
+  var REG = SYSTEM_CONFIG.COLS.REG;
+
+  // Only a Group ID typed in: preview the saved group itself
+  var savedGroupTotal = 0;
+  if (emails.length < 2 && payload.groupId) {
+    var savedGroup = MergeService.getGroupFromRegistration_(String(payload.groupId).trim(), repo.getRegistrationSheet());
+    if (savedGroup && savedGroup.participants && savedGroup.participants.length) {
+      emails = savedGroup.participants.map(function (p) { return p.email; });
+      primaryEmail = Utils.normalizeEmail(savedGroup.primaryEmail);
+      savedGroupTotal = Number(savedGroup.total || 0);
+    }
   }
 
-  // Create a dummy group object for preview
+  // Build the group from the selected rows (no writes), with the same fields the real
+  // group email uses, so the preview shows the actual name, Gen ID and codes.
+  var participants = [];
+  var total = 0;
+  emails.forEach(function (e) {
+    var email = Utils.normalizeEmail(e);
+    var rowIndex = email ? repo.findRegistrationRowIndexByEmail(email) : null;
+    if (!rowIndex) return;
+    var r = repo.getRegistrationRow(rowIndex);
+    participants.push({
+      email: email,
+      name: String(r[REG.NAME - 1] || "").trim(),
+      genId: String(r[REG.GEN_ID - 1] || "").trim(),
+      competitions: String(r[REG.COMPETITION - 1] || "").trim(),
+      finalAmount: Number(r[REG.FINAL_AMOUNT - 1] || 0),
+      role: (email === primaryEmail) ? MergeService.ROLES.PRIMARY : MergeService.ROLES.MEMBER,
+      couponCode: String(r[REG.COUPON_INPUT - 1] || "").trim(),
+      refCodeUsed: String(r[REG.REF_INPUT - 1] || "").trim(),
+      couponDiscount: Number(r[REG.COUPON_DISCOUNT - 1] || 0),
+      refDiscount: Number(r[REG.REF_DISCOUNT - 1] || 0)
+    });
+    total += Number(r[REG.FINAL_AMOUNT - 1] || 0);
+  });
+
+  if (!participants.length) return "<div class='muted'>Select participants to preview.</div>";
+  if (savedGroupTotal > 0) total = savedGroupTotal;
+
+  if (payload.manualTotal) {
+    var manual = Number(payload.manualTotal);
+    if (!isNaN(manual) && manual > 0) total = manual;
+  }
+
   var groupObj = {
     groupId: payload.groupId || "GRP-PREVIEW",
-    primaryEmail: primary,
-    participants: emails.map(function(e){ return { name: "Participant (" + e + ")", email: e }; }), // simplified
+    primaryEmail: primaryEmail,
+    participants: participants,
     total: total
   };
 
-  return MergeService.buildGroupRegReceivedHtml_(groupObj, { preview: true });
+  var primary = participants.filter(function (p) { return p.role === MergeService.ROLES.PRIMARY; })[0] || participants[0];
+
+  // (participant, options) - the options object used to be passed in the participant slot,
+  // which left the preview with a blank name and broken logo images
+  return MergeService.buildGroupRegReceivedHtml_(groupObj, primary, { preview: true });
 }
 
 function V22_merge_executeMerge(payload) {
@@ -19984,7 +17488,7 @@ function V22_merge_executeMerge(payload) {
     resetEmailTracking: !!payload.resetEmailTracking,
     manualTotal: payload.manualTotal,
     primaryRole: payload.primaryRole, // Feature 4
-    bundleInfo: payload.bundleLabel || ""  // V23: failsafe label
+    bundleInfo: payload.bundleLabel || ""  // failsafe label
   });
 }
 
@@ -20008,7 +17512,7 @@ function V22_merge_reapplyAll() {
 }
 
 // ----------------------------------------------------------------------------
-// V22: Server endpoints for Manual Editor UI
+// Server endpoints for Manual Editor UI
 // ----------------------------------------------------------------------------
 function V22_editor_searchParticipants(query) {
   return V22_merge_searchParticipants(query);
@@ -20161,7 +17665,8 @@ function V22_editor_previewEmail(payload) {
         })();
         var thisPart = null;
       for (var fi = 0; fi < groupObj.participants.length; fi++) {
-        if (groupObj.participants[fi].email && normalizeEmail_(groupObj.participants[fi].email) === normalizeEmail_(email)) { thisPart = groupObj.participants[fi]; break; }
+        // (Utils.normalizeEmail: normalizeEmail_ is private to MergeService and does not exist here)
+        if (groupObj.participants[fi].email && Utils.normalizeEmail(groupObj.participants[fi].email) === Utils.normalizeEmail(email)) { thisPart = groupObj.participants[fi]; break; }
       }
       if (!thisPart) thisPart = groupObj.participants[0];
       return { html: MergeService.buildGroupReceiptHtml_(groupObj, thisPart, meta) };
@@ -20274,6 +17779,20 @@ function V22_editor_saveEdits(payload) {
     if (conflict) return { ok: false, error: "Cannot change email. Target email already exists: " + newEmail };
   }
 
+  // Apply only what the admin actually changed. The dialog always sends every field, and
+  // writing the unchanged ones back used to reset the Finance total to the gross amount on
+  // every save (dropping the cashback deduction, or a merged group's total).
+  var beforeReg = before.record.registration;
+  var beforeFin = before.record.finance;
+  if (newName === String(beforeReg.name || "").trim()) newName = "";
+  if (newCompetitions !== null && newCompetitions === String(beforeReg.competitions || "").trim()) newCompetitions = null;
+  if (newFinalAmount !== null && Number(newFinalAmount) === Number(beforeReg.finalAmount || 0)) newFinalAmount = null;
+  if (newFinStatus === String(beforeFin.status || "").trim()) newFinStatus = "";
+  if (newPayRef === String(beforeFin.payRef || beforeReg.sysPayRef || "").trim()) newPayRef = "";
+  if (newVerifier === String(beforeFin.verifier || beforeReg.sysVerifier || "").trim()) newVerifier = "";
+  if (newPaidAt === String(beforeFin.sysPaidAt || beforeReg.sysPaidAt || "").trim()) newPaidAt = "";
+  var statusEditFinRow = null; // set below when the Finance status really changes
+
   TriggerGuard.mute(function () {
     if (newName) regSheet.getRange(regRow, SYSTEM_CONFIG.COLS.REG.NAME).setValue(newName);
     if (newEmail && newEmail !== originalEmail) regSheet.getRange(regRow, SYSTEM_CONFIG.COLS.REG.EMAIL).setValue(newEmail);
@@ -20299,17 +17818,39 @@ function V22_editor_saveEdits(payload) {
         if (finCols.TotalAmount) {
           if (newFinTotal !== null && !isNaN(newFinTotal)) {
             finSheet.getRange(finRow, finCols.TotalAmount).setValue(newFinTotal);
-          } else if (newFinalAmount !== null && !isNaN(newFinalAmount)) {
-            // keep finance aligned with reg if override not provided
-            finSheet.getRange(finRow, finCols.TotalAmount).setValue(newFinalAmount);
+          } else if (newFinalAmount !== null && !isNaN(newFinalAmount) && !groupId) {
+            // Keep finance aligned with the new registration amount, NET of referral
+            // cashback like everywhere else. Merged rows are skipped: their total belongs
+            // to the group and is restored by the merge reapply below.
+            var editCashback = Number(regSheet.getRange(regRow, SYSTEM_CONFIG.COLS.REG.CASHBACK).getValue() || 0);
+            finSheet.getRange(finRow, finCols.TotalAmount).setValue(Math.max(0, newFinalAmount - editCashback));
           }
         }
 
-        if (finCols.Status && newFinStatus) finSheet.getRange(finRow, finCols.Status).setValue(newFinStatus);
+        if (finCols.Status && newFinStatus) {
+          finSheet.getRange(finRow, finCols.Status).setValue(newFinStatus);
+          statusEditFinRow = finRow;
+        }
         if (finCols.PayRef && newPayRef) finSheet.getRange(finRow, finCols.PayRef).setValue(newPayRef);
         if (finCols.Verifier && newVerifier) finSheet.getRange(finRow, finCols.Verifier).setValue(newVerifier);
         if (finCols.SysPaidAt && newPaidAt) finSheet.getRange(finRow, finCols.SysPaidAt).setValue(newPaidAt);
       });
+    }
+  }
+
+  // A status changed here is processed exactly like typing it into the Financial Dashboard:
+  // receipt on PAID, referral credit (or its removal on reversal), SYS_PAID_AT, and the
+  // Registration "Payment Status" column. Before, the editor only wrote the word, so the
+  // referrer was never credited and the two sheets disagreed.
+  var statusFlowRan = false;
+  if (newFinStatus && statusEditFinRow && finCols && finCols.Status) {
+    try {
+      handleFinanceEditSync(
+        { range: finSheet.getRange(statusEditFinRow, finCols.Status), oldValue: beforeFin.status || "" },
+        sysCols, finCols, "Status");
+      statusFlowRan = true;
+    } catch (statusErr) {
+      AuditLogService.warn("MANUAL_EDIT_STATUS_FLOW_FAIL", String(statusErr));
     }
   }
 
@@ -20334,7 +17875,11 @@ function V22_editor_saveEdits(payload) {
 
   // Optional resend
   var resendResult = null;
-  if (resend === "AR") {
+  var becamePaid = statusFlowRan && Utils.normalizeStatusValue(newFinStatus) === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD;
+  if (resend === "AR" && becamePaid) {
+    // The PAID update above already sent the receipt
+    resendResult = { sent: true, viaStatusUpdate: true };
+  } else if (resend === "AR") {
     if (isMergedMember) {
       resendResult = { ok: false, error: "This record is a MERGED MEMBER. Send the GROUP receipt instead." };
     } else if (groupId) {
@@ -20431,7 +17976,7 @@ function V22_editor_saveEdits(payload) {
 }
 
 // ----------------------------------------------------------------------------
-// V22: Menu helpers (called from onOpen menu additions)
+// Menu helpers (called from onOpen menu additions)
 // ----------------------------------------------------------------------------
 function reapplyAllMergeGroups() {
   var ui = SpreadsheetApp.getUi();
@@ -20463,7 +18008,7 @@ function promptUnmergeGroup() {
 }
 
 // ----------------------------------------------------------------------------
-// V22: Patch missing EmailService.sendThreadedEmail (used by Payment Verification Center)
+// Patch missing EmailService.sendThreadedEmail (used by Payment Verification Center)
 // ----------------------------------------------------------------------------
 if (typeof EmailService !== "undefined" && !EmailService.sendThreadedEmail) {
   EmailService.sendThreadedEmail = function (options, threadInfoOrNull) {
@@ -20484,11 +18029,13 @@ if (typeof EmailService !== "undefined" && !EmailService.sendThreadedEmail) {
     }
 
     try {
-      if (threadInfo && threadInfo.threadId && threadInfo.messageId) {
-        return EmailThreadService.sendReplyEmail(to, subject, htmlBody, inlineImages, threadInfo.threadId, threadInfo.messageId, senderName);
-      }
-      // First email
-      return EmailThreadService.sendFirstEmail(to, subject, htmlBody, inlineImages);
+      // These helpers report failure in their result instead of throwing, so a failed
+      // Gmail API send must be turned into an error here to reach the fallback below.
+      var apiResult = (threadInfo && threadInfo.threadId && threadInfo.messageId)
+        ? EmailThreadService.sendReplyEmail(to, subject, htmlBody, inlineImages, threadInfo.threadId, threadInfo.messageId, senderName)
+        : EmailThreadService.sendFirstEmail(to, subject, htmlBody, inlineImages, senderName);
+      if (apiResult && apiResult.success) return apiResult;
+      throw new Error(apiResult && apiResult.error ? apiResult.error : "Gmail API send failed");
     } catch (e2) {
       // fallback
       try {
@@ -20504,7 +18051,7 @@ if (typeof EmailService !== "undefined" && !EmailService.sendThreadedEmail) {
 }
 
 // ============================================================================
-// PART 20: PAYMENT VERIFICATION CENTER (V21.0) - OPTIMIZED VERSION
+// PART 20: PAYMENT VERIFICATION CENTER - OPTIMIZED VERSION
 // ============================================================================
 // PERFORMANCE FIXES:
 // 1. Added caching for frequently accessed data
@@ -20559,7 +18106,7 @@ var PVC_Cache = (function() {
  * - Progress tracking
  */
 /**
- * SIMPLIFIED Payment Verification Data Loader - V3
+ * SIMPLIFIED Payment Verification Data Loader
  * Simple row-by-row loading with full details
  */
 function getPaymentVerificationData_Optimized() {
@@ -20594,72 +18141,82 @@ function getPaymentVerificationData_Optimized() {
       } catch(e) { return { groupId: 0, role: 0 }; }
     })();
     
-    // Process all rows
-    for (var row = 2; row <= lastRow; row++) {
-      try {
-        // Get basic info
-        var email = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.EMAIL).getValue() || "").trim();
-        if (!email) continue; // Skip if no email
-        
-        // [MOVED UP] Get merge info
-        var mergeGroupId = "";
-        var mergeRole = "";
-        if (mergeCols.groupId) mergeGroupId = String(regSheet.getRange(row, mergeCols.groupId).getValue() || "").trim();
-        if (mergeCols.role) mergeRole = String(regSheet.getRange(row, mergeCols.role).getValue() || "").trim();
+    // Read the whole sheet once (one call instead of ~14 cell reads per row)
+    var REG = SYSTEM_CONFIG.COLS.REG;
+    var lastCol = regSheet.getLastColumn();
+    var allRows = regSheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    var headerMapPvc = ColumnManager.headerMap(regSheet);
+    var sysRefDiscCol = headerMapPvc[SYSTEM_CONFIG.SYS_REG_HEADERS.REF_DISCOUNT_APPLIED] || 0;
+    var applicantAmtCol = getApplicantAmtCol_(regSheet, false);
+    function cell(rowVals, col) { return (col && col <= rowVals.length) ? rowVals[col - 1] : ""; }
 
-        var totalFee = Number(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.TOTAL_FEE).getValue() || 0);
+    // Process all rows
+    for (var ri = 0; ri < allRows.length; ri++) {
+      var row = ri + 2;
+      try {
+        var rv = allRows[ri];
+
+        // Get basic info
+        var email = String(cell(rv, REG.EMAIL) || "").trim();
+        if (!email) continue; // Skip if no email
+
+        // Merge info
+        var mergeGroupId = mergeCols.groupId ? String(cell(rv, mergeCols.groupId) || "").trim() : "";
+        var mergeRole = mergeCols.role ? String(cell(rv, mergeCols.role) || "").trim() : "";
+
+        var totalFee = Number(cell(rv, REG.TOTAL_FEE) || 0);
         if (totalFee <= 0 && !mergeGroupId) continue; // Skip if no fee AND not merged
 
-        var name = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.NAME).getValue() || "").trim();
-        var genId = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.GEN_ID).getValue() || "").trim();
-        
+        var name = String(cell(rv, REG.NAME) || "").trim();
+        var genId = String(cell(rv, REG.GEN_ID) || "").trim();
+
         // Get competitions and calculate breakdown
-        var competitionsStr = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.COMPETITION).getValue() || "").trim();
+        var competitionsStr = String(cell(rv, REG.COMPETITION) || "").trim();
         var competitionsArray = [];
         var competitionBreakdown = [];
         var calculatedTotal = 0;
-        
+
         if (competitionsStr) {
           var rawComps = competitionsStr.split(",");
           for (var c = 0; c < rawComps.length; c++) {
             var comp = rawComps[c].trim();
             if (comp) {
               competitionsArray.push(comp);
-              var price = competitionPrices[comp.toUpperCase()] || 349;
+              var price = competitionPrices[comp.toUpperCase()] || SYSTEM_CONFIG.PRICING.BUNDLES.STD_1_SPC_0;
               competitionBreakdown.push({ competition: comp, price: price });
               calculatedTotal += price;
             }
           }
         }
-        
-        // Get discounts
-        var bundleDiscount = Number(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.BUNDLE_DISCOUNT).getValue() || 0);
-        var couponDiscount = Number(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.COUPON_DISCOUNT).getValue() || 0);
-        var refDiscount = Number(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.REF_DISCOUNT).getValue() || 0);
-        
+
+        var couponCode = String(cell(rv, REG.LOCKED_COUPON) || "").trim();
+        var referralCode = String(cell(rv, REG.LOCKED_REF) || "").trim();
+        var paymentMode = String(cell(rv, REG.PAY_MODE) || "").trim();
+        var paymentProof = String(cell(rv, REG.PAY_PROOF) || "").trim();
+
+        // Discounts. The Bundle / Coupon / Referral Discount columns are only filled by the
+        // System Updater; registration itself stores just the final amount. When a column is
+        // blank, derive the discount the same way registration priced it, so the system amount
+        // equals what the participant was actually told to pay.
+        var pricingPvc = competitionsStr ? PricingEngine.calculate("", competitionsStr) : { finalPrice: 0, bundleDiscount: 0 };
+        var bundleDiscount = Number(cell(rv, REG.BUNDLE_DISCOUNT) || 0);
+        if (!bundleDiscount) bundleDiscount = Number(pricingPvc.bundleDiscount || 0);
+        var refDiscount = Number(cell(rv, REG.REF_DISCOUNT) || 0);
+        if (!refDiscount && sysRefDiscCol) refDiscount = Number(cell(rv, sysRefDiscCol) || 0);
+        var couponDiscount = Number(cell(rv, REG.COUPON_DISCOUNT) || 0);
+        if (!couponDiscount && couponCode && !mergeGroupId) {
+          couponDiscount = Math.max(0, Number(pricingPvc.finalPrice || 0) - refDiscount - totalFee);
+        }
+
         // Calculate expected total
         var expectedTotal = Math.max(0, calculatedTotal - bundleDiscount - couponDiscount - refDiscount);
-        
-        // Get payment details
-        var couponCode = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.LOCKED_COUPON).getValue() || "").trim();
-        var referralCode = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.LOCKED_REF).getValue() || "").trim();
-        var paymentMode = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.PAY_MODE).getValue() || "").trim();
-        var paymentProof = String(regSheet.getRange(row, SYSTEM_CONFIG.COLS.REG.PAY_PROOF).getValue() || "").trim();
 
-        // [ALREADY RETRIEVED UPSTREAM]
-        
         // Read applicant-stated amount from SYS_APPLICANT_AMT column
-        var applicantAmt = 0;
-        try {
-          var applicantAmtCol = SYSTEM_CONFIG.SYS_REG_COLS_END.SYS_APPLICANT_AMT;
-          if (applicantAmtCol && regSheet.getMaxColumns() >= applicantAmtCol) {
-            applicantAmt = Number(regSheet.getRange(row, applicantAmtCol).getValue() || 0);
-          }
-        } catch(e) {}
-        
+        var applicantAmt = Number(cell(rv, applicantAmtCol) || 0);
+
         // Determine status
         var status = (Math.abs(applicantAmt - expectedTotal) > 1) ? "mismatch" : "matched";
-        
+
         // Calculate if they have discounts
         var totalDiscounts = bundleDiscount + couponDiscount + refDiscount;
         var hasDiscounts = totalDiscounts > 0;
@@ -20667,7 +18224,7 @@ function getPaymentVerificationData_Optimized() {
         if (bundleDiscount > 0) discountInfo.push("Bundle: -₱" + bundleDiscount);
         if (couponDiscount > 0) discountInfo.push("Coupon" + (couponCode ? " (" + couponCode + ")" : "") + ": -₱" + couponDiscount);
         if (refDiscount > 0) discountInfo.push("Referral" + (referralCode ? " (" + referralCode + ")" : "") + ": -₱" + refDiscount);
-        
+
         payments.push({
           rowIndex: row,
           id: genId,
@@ -20694,17 +18251,12 @@ function getPaymentVerificationData_Optimized() {
           mergeGroupId: mergeGroupId,
           mergeRole: mergeRole
         });
-        
-        // Log progress every 50 rows
-        if (row % 50 === 0) {
-          Logger.log("PVC: Processed " + (row - 1) + " rows, found " + payments.length + " payments");
-        }
-        
+
       } catch (rowError) {
         Logger.log("PVC: Error on row " + row + " - " + rowError);
       }
     }
-    
+
     Logger.log("PVC: Loaded " + payments.length + " payments");
     
     // Calculate stats
@@ -20849,8 +18401,8 @@ function buildPaymentVerificationEmailHtml_Optimized_(paymentData, emailContent)
   
   // Header with logos
   htmlParts.push('<div style="text-align: center; margin-bottom: 30px;">');
-  htmlParts.push('<img src="cid:uplb_logo" style="height: 60px; margin: 0 15px;" alt="UPLB Logo" />');
-  htmlParts.push('<img src="cid:husay_logo" style="height: 60px; margin: 0 15px;" alt="Husay ng Soksay Logo" />');
+  htmlParts.push('<img src="cid:uplb_logo" style="height: 60px; margin: 0 15px;" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + ' logo" />');
+  htmlParts.push('<img src="cid:husay_logo" style="height: 60px; margin: 0 15px;" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + ' logo" />');
   htmlParts.push('</div>');
   
   // Title
@@ -20860,7 +18412,7 @@ function buildPaymentVerificationEmailHtml_Optimized_(paymentData, emailContent)
   
   // Greeting
   htmlParts.push('<p style="font-size: 16px;">Dear <strong>' + escapeHtml_(paymentData.name) + '</strong>,</p>');
-  htmlParts.push('<p>We noticed a discrepancy in your registration payment for <strong>HUSAY NG SOKSAY</strong>. Please review the details below:</p>');
+  htmlParts.push('<p>We noticed a discrepancy in your registration payment for <strong>' + getEventTitleHtml_() + '</strong>. Please review the details below:</p>');
   
   // Registration Details Box
   htmlParts.push('<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">');
@@ -20919,7 +18471,7 @@ function buildPaymentVerificationEmailHtml_Optimized_(paymentData, emailContent)
   htmlParts.push('<p style="margin: 5px 0;"><strong>Email:</strong> ' + (SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT.EMAIL || "") + '</p>');
   htmlParts.push('<p style="margin: 5px 0;"><strong>Facebook:</strong> ' + (SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT.FACEBOOK || "") + '</p>');
   htmlParts.push('<p style="margin: 5px 0;"><strong>Instagram:</strong> ' + (SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT.INSTAGRAM || "") + '</p>');
-  htmlParts.push('<p style="margin-top: 20px; font-style: italic;">Para sa malayang mga kwento,<br><strong>The Husay Ng Soksay Team</strong></p>');
+  htmlParts.push('<p style="margin-top: 20px; font-style: italic;">' + (SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.SIGN_OFF || "") + '</p>');
   htmlParts.push('</div>');
   
   htmlParts.push('</body></html>');
@@ -21000,7 +18552,7 @@ function sendBulkVerificationEmails_Optimized() {
     for (var j = 0; j < currentBatch.length; j++) {
       try {
         var emailContent = {
-          subject: "[HUSAY NG SOKSAY] Payment Verification Required - " + currentBatch[j].id,
+          subject: "[" + String(SYSTEM_CONFIG.META.NAME).toUpperCase() + "] Payment Verification Required - " + currentBatch[j].id,
           items: {
             paymentAmount: true,
             competitions: true,
@@ -21026,7 +18578,7 @@ function sendBulkVerificationEmails_Optimized() {
       
       // Rate limiting - wait between emails (reduced from 2000ms to 1500ms)
       if (j < currentBatch.length - 1) {
-        Utilities.sleep(1500);
+        pauseBetweenEmails_();
       }
     }
     
@@ -21050,670 +18602,6 @@ function sendBulkVerificationEmails_Optimized() {
     errors: errors.slice(0, 5), // Return first 5 errors only
     duration: duration
   };
-}
-
-/**
- * Get the HTML for Payment Verification Center UI - OPTIMIZED
- */
-function getPaymentVerificationCenterHtml_Optimized_() {
-  return '<!DOCTYPE html>\n' +
-  '<html>\n' +
-  '<head>\n' +
-  '  <meta charset="UTF-8">\n' +
-  '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\n' +
-  '  <style>\n' +
-  '    * { margin: 0; padding: 0; box-sizing: border-box; }\n' +
-  '    body { font-family: system-ui, -apple-system, sans-serif; background: #111827; color: white; padding: 20px; }\n' +
-  '    .container { max-width: 100%; margin: 0 auto; }\n' +
-  '    .header { margin-bottom: 25px; }\n' +
-  '    .header h1 { font-size: 28px; color: #fbbf24; display: flex; align-items: center; gap: 12px; }\n' +
-  '    .header p { color: #9ca3af; margin-top: 8px; }\n' +
-  '    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }\n' +
-  '    .stat-card { background: #1f2937; border-radius: 10px; padding: 20px; border: 1px solid #374151; }\n' +
-  '    .stat-card.border-red { border-color: rgba(239, 68, 68, 0.3); }\n' +
-  '    .stat-card.border-green { border-color: rgba(34, 197, 94, 0.3); }\n' +
-  '    .stat-card.border-yellow { border-color: rgba(251, 191, 36, 0.3); }\n' +
-  '    .stat-value { font-size: 32px; font-weight: bold; margin-bottom: 5px; }\n' +
-  '    .stat-value.text-blue { color: #60a5fa; }\n' +
-  '    .stat-value.text-red { color: #f87171; }\n' +
-  '    .stat-value.text-green { color: #4ade80; }\n' +
-  '    .stat-value.text-yellow { color: #fbbf24; }\n' +
-  '    .stat-label { color: #9ca3af; font-size: 14px; }\n' +
-  '    .controls { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }\n' +
-  '    .search-box { flex: 1; min-width: 200px; position: relative; }\n' +
-  '    .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6b7280; }\n' +
-  '    .search-box input { width: 100%; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px 10px 10px 40px; color: white; font-size: 14px; }\n' +
-  '    .search-box input:focus { outline: none; border-color: #fbbf24; }\n' +
-  '    select { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px 15px; color: white; font-size: 14px; cursor: pointer; }\n' +
-  '    select:focus { outline: none; border-color: #fbbf24; }\n' +
-  '    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }\n' +
-  '    .btn-bulk { background: #dc2626; color: white; }\n' +
-  '    .btn-bulk:hover { background: #b91c1c; }\n' +
-  '    .btn-bulk:disabled { background: #6b7280; cursor: not-allowed; }\n' +
-  '    .btn-refresh { background: #374151; color: white; }\n' +
-  '    .btn-refresh:hover { background: #4b5563; }\n' +
-  '    .btn-action { background: #3b82f6; color: white; padding: 6px 12px; font-size: 13px; }\n' +
-  '    .btn-action:hover { background: #2563eb; }\n' +
-  '    .btn-resolve { background: #10b981; color: white; padding: 6px 12px; font-size: 13px; }\n' +
-  '    .btn-resolve:hover { background: #059669; }\n' +
-  '    .btn-view { background: #6b7280; color: white; padding: 6px 12px; font-size: 13px; }\n' +
-  '    .btn-view:hover { background: #4b5563; }\n' +
-  '    .table-container { background: #1f2937; border-radius: 10px; border: 1px solid #374151; overflow: hidden; }\n' +
-  '    table { width: 100%; border-collapse: collapse; }\n' +
-  '    thead { background: #374151; position: sticky; top: 0; z-index: 10; }\n' +
-  '    th { padding: 12px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; }\n' +
-  '    th.text-right { text-align: right; }\n' +
-  '    th.text-center { text-align: center; }\n' +
-  '    td { padding: 12px; border-top: 1px solid #374151; font-size: 13px; }\n' +
-  '    td.text-right { text-align: right; }\n' +
-  '    td.text-center { text-align: center; }\n' +
-  '    tbody tr:hover { background: rgba(55, 65, 81, 0.3); }\n' +
-  '    .id-cell { font-family: monospace; font-size: 12px; }\n' +
-  '    .name-cell { font-weight: 500; }\n' +
-  '    .email-cell { color: #9ca3af; font-size: 12px; }\n' +
-  '    .comp-badge { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }\n' +
-  '    .amount-red { color: #f87171; }\n' +
-  '    .amount-green { color: #4ade80; }\n' +
-  '    .diff-red { font-weight: bold; color: #f87171; }\n' +
-  '    .diff-yellow { font-weight: bold; color: #fbbf24; }\n' +
-  '    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }\n' +
-  '    .status-mismatch { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }\n' +
-  '    .status-matched { background: rgba(34, 197, 94, 0.2); color: #86efac; }\n' +
-  '    .status-sent { background: rgba(251, 191, 36, 0.2); color: #fde047; }\n' +
-  '    .status-merged { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }\n' +
-  '    .actions { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }\n' +
-  '    .loading { text-align: center; padding: 50px; color: #9ca3af; }\n' +
-  '    .spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #374151; border-top-color: #fbbf24; border-radius: 50%; animation: spin 1s linear infinite; }\n' +
-  '    @keyframes spin { to { transform: rotate(360deg); } }\n' +
-  '    .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }\n' +
-  '    .empty-state i { font-size: 64px; color: #374151; margin-bottom: 20px; }\n' +
-  '    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; }\n' +
-  '    .modal.show { display: flex; align-items: center; justify-content: center; }\n' +
-  '    .modal-content { background: #1f2937; border-radius: 12px; border: 1px solid #374151; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; }\n' +
-  '    .modal-header { padding: 20px; border-bottom: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; }\n' +
-  '    .modal-header h3 { color: #fbbf24; font-size: 20px; }\n' +
-  '    .modal-close { background: none; border: none; color: #9ca3af; font-size: 24px; cursor: pointer; }\n' +
-  '    .modal-close:hover { color: white; }\n' +
-  '    .modal-body { padding: 20px; }\n' +
-  '    .info-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin-bottom: 15px; }\n' +
-  '    .checklist { margin: 15px 0; }\n' +
-  '    .checklist label { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; }\n' +
-  '    .checklist label:hover { background: rgba(55, 65, 81, 0.3); border-radius: 4px; }\n' +
-  '    .checklist input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }\n' +
-  '    .form-group { margin-bottom: 15px; }\n' +
-  '    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #9ca3af; }\n' +
-  '    .form-group input[type="text"], .form-group textarea { width: 100%; background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px; color: white; font-size: 13px; font-family: inherit; }\n' +
-  '    .form-group input[type="text"]:focus, .form-group textarea:focus { outline: none; border-color: #fbbf24; }\n' +
-  '    .form-group textarea { min-height: 250px; font-family: monospace; font-size: 12px; }\n' +
-  '    .modal-footer { padding: 15px 20px; border-top: 1px solid #374151; display: flex; justify-content: flex-end; gap: 10px; }\n' +
-  '    .detail-panel { background: #1f2937; border-radius: 10px; border: 1px solid #374151; padding: 20px; margin-top: 20px; }\n' +
-  '    .detail-header { font-size: 18px; color: #fbbf24; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }\n' +
-  '    .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }\n' +
-  '    .detail-section h4 { font-size: 13px; color: #9ca3af; margin-bottom: 10px; }\n' +
-  '    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #374151; }\n' +
-  '    .detail-row:last-child { border-bottom: none; }\n' +
-  '    .detail-row.total { font-weight: bold; border-top: 2px solid #374151; margin-top: 8px; padding-top: 12px; }\n' +
-  '    .progress-bar { width: 100%; height: 4px; background: #374151; border-radius: 2px; overflow: hidden; margin-top: 10px; }\n' +
-  '    .progress-fill { height: 100%; background: #fbbf24; transition: width 0.3s; }\n' +
-  '    .toast { position: fixed; bottom: 20px; right: 20px; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 15px 20px; z-index: 2000; display: none; }\n' +
-  '    .toast.show { display: block; animation: slideIn 0.3s ease; }\n' +
-  '    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }\n' +
-  '    .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }\n' +
-  '    .pagination button { background: #374151; border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }\n' +
-  '    .pagination button:hover { background: #4b5563; }\n' +
-  '    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }\n' +
-  '    .pagination span { color: #9ca3af; padding: 8px; }\n' +
-  '  </style>\n' +
-  '</head>\n' +
-  '<body>\n' +
-  '  <div class="container">\n' +
-  '    <!-- Header -->\n' +
-  '    <div class="header">\n' +
-  '      <h1><i class="fas fa-shield-alt"></i> Payment Verification Center</h1>\n' +
-  '      <p>Detect mismatches, send verification emails, and track resolution status</p>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Stats Dashboard -->\n' +
-  '    <div class="stats-grid" id="statsGrid">\n' +
-  '      <div class="stat-card">\n' +
-  '        <div class="stat-value text-blue">-</div>\n' +
-  '        <div class="stat-label">Total Payments</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-red">\n' +
-  '        <div class="stat-value text-red">-</div>\n' +
-  '        <div class="stat-label">Mismatches</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-green">\n' +
-  '        <div class="stat-value text-green">-</div>\n' +
-  '        <div class="stat-label">Matched</div>\n' +
-  '      </div>\n' +
-  '      <div class="stat-card border-yellow">\n' +
-  '        <div class="stat-value text-yellow">-</div>\n' +
-  '        <div class="stat-label">Pending Resolution</div>\n' +
-  '      </div>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Controls -->\n' +
-  '    <div class="controls">\n' +
-  '      <div class="search-box">\n' +
-  '        <i class="fas fa-search"></i>\n' +
-  '        <input type="text" id="searchInput" placeholder="Search by name or registration ID...">\n' +
-  '      </div>\n' +
-  '      <select id="filterStatus">\n' +
-  '        <option value="all">All Status</option>\n' +
-  '        <option value="mismatch">Mismatches Only</option>\n' +
-  '        <option value="matched">Matched Only</option>\n' +
-  '      </select>\n' +
-  '      <button class="btn btn-bulk" id="bulkEmailBtn" onclick="sendBulkEmails()"><i class="fas fa-envelope"></i> Bulk Email Mismatches</button>\n' +
-  '      <button class="btn btn-refresh" onclick="sortPaymentsByGroup()"><i class="fas fa-layer-group"></i> Sort by Group</button>\n' +
-  '      <button class="btn btn-refresh" onclick="refreshData()"><i class="fas fa-sync-alt"></i> Refresh</button>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Loading State -->\n' +
-  '    <div id="loading" class="loading">\n' +
-  '      <div class="spinner"></div>\n' +
-  '      <p style="margin-top: 15px;">Loading payment data...</p>\n' +
-  '      <div class="progress-bar"><div class="progress-fill" id="loadProgress" style="width: 0%"></div></div>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Table -->\n' +
-  '    <div class="table-container" id="tableContainer" style="display: none;">\n' +
-  '      <table>\n' +
-  '        <thead>\n' +
-  '          <tr>\n' +
-  '            <th>Reg ID</th>\n' +
-  '            <th>Name</th>\n' +
-  '            <th>Competitions</th>\n' +
-  '            <th class="text-right">Applicant Amt</th>\n' +
-  '            <th class="text-right">System Amt</th>\n' +
-  '            <th class="text-center">Diff</th>\n' +
-  '            <th class="text-center">Status</th>\n' +
-  '            <th class="text-center">Actions</th>\n' +
-  '          </tr>\n' +
-  '        </thead>\n' +
-  '        <tbody id="tableBody">\n' +
-  '        </tbody>\n' +
-  '      </table>\n' +
-  '      <div class="pagination" id="pagination"></div>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Empty State -->\n' +
-  '    <div id="emptyState" class="empty-state" style="display: none;">\n' +
-  '      <i class="fas fa-check-circle"></i>\n' +
-  '      <h3>All Clear!</h3>\n' +
-  '      <p>No payment verification issues found.</p>\n' +
-  '    </div>\n' +
-  '\n' +
-  '    <!-- Detail Panel -->\n' +
-  '    <div id="detailPanel" class="detail-panel" style="display: none;">\n' +
-  '      <div class="detail-header">\n' +
-  '        <i class="fas fa-user"></i>\n' +
-  '        <span id="detailTitle">Payment Details</span>\n' +
-  '      </div>\n' +
-  '      <div class="detail-grid">\n' +
-  '        <div class="detail-section" id="detailInfo"></div>\n' +
-  '        <div class="detail-section" id="detailBreakdown"></div>\n' +
-  '      </div>\n' +
-  '    </div>\n' +
-  '  </div>\n' +
-  '\n' +
-  '  <!-- Toast Notification -->\n' +
-  '  <div id="toast" class="toast"></div>\n' +
-  '\n' +
-  '  <!-- Email Modal -->\n' +
-  '  <div id="emailModal" class="modal">\n' +
-  '    <div class="modal-content">\n' +
-  '      <div class="modal-header">\n' +
-  '        <h3><i class="fas fa-envelope"></i> Compose Verification Email</h3>\n' +
-  '        <button class="modal-close" onclick="closeEmailModal()">&times;</button>\n' +
-  '      </div>\n' +
-  '      <div class="modal-body">\n' +
-  '        <div class="info-box">\n' +
-  '          <strong>Sending to:</strong> <span id="emailRecipient"></span>\n' +
-  '        </div>\n' +
-  '\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Request Reconfirmation For:</label>\n' +
-  '          <div class="checklist">\n' +
-  '            <label><input type="checkbox" id="checkPaymentAmount" checked> Payment Amount</label>\n' +
-  '            <label><input type="checkbox" id="checkCompetitions" checked> Competition Selections</label>\n' +
-  '            <label><input type="checkbox" id="checkCouponCode"> Coupon Code</label>\n' +
-  '            <label><input type="checkbox" id="checkReferralCode"> Referral Code</label>\n' +
-  '            <label><input type="checkbox" id="checkPaymentMethod" checked> Payment Method</label>\n' +
-  '            <label><input type="checkbox" id="checkProofOfPayment" checked> Proof of Payment</label>\n' +
-  '          </div>\n' +
-  '        </div>\n' +
-  '\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Subject:</label>\n' +
-  '          <input type="text" id="emailSubject" value="">\n' +
-  '        </div>\n' +
-  '\n' +
-  '        <div class="form-group">\n' +
-  '          <label>Preview (Email will be sent with formatted HTML):</label>\n' +
-  '          <textarea id="emailBody" readonly></textarea>\n' +
-  '        </div>\n' +
-  '      </div>\n' +
-  '      <div class="modal-footer">\n' +
-  '        <button class="btn btn-refresh" onclick="closeEmailModal()">Cancel</button>\n' +
-  '        <button class="btn btn-action" onclick="sendVerificationEmail()"><i class="fas fa-paper-plane"></i> Send Email</button>\n' +
-  '      </div>\n' +
-  '    </div>\n' +
-  '  </div>\n' +
-  '\n' +
-  '  <script>\n' +
-  '    var allPayments = [];\n' +
-  '    var filteredPayments = [];\n' +
-  '    var currentPayment = null;\n' +
-  '    var currentPage = 1;\n' +
-  '    var itemsPerPage = 20;\n' +
-  '\n' +
-  '    // Initialize\n' +
-  '    window.onload = function() {\n' +
-  '      loadData();\n' +
-  '      \n' +
-  '      // Setup search with debounce\n' +
-  '      var searchTimeout;\n' +
-  '      document.getElementById("searchInput").addEventListener("input", function() {\n' +
-  '        clearTimeout(searchTimeout);\n' +
-  '        searchTimeout = setTimeout(filterPayments, 300);\n' +
-  '      });\n' +
-  '      document.getElementById("filterStatus").addEventListener("change", filterPayments);\n' +
-  '    };\n' +
-  '\n' +
-  '    function showToast(message, duration) {\n' +
-  '      var toast = document.getElementById("toast");\n' +
-  '      toast.textContent = message;\n' +
-  '      toast.classList.add("show");\n' +
-  '      setTimeout(function() {\n' +
-  '        toast.classList.remove("show");\n' +
-  '      }, duration || 3000);\n' +
-  '    }\n' +
-  '\n' +
-  '    function loadData() {\n' +
-  '      document.getElementById("loading").style.display = "block";\n' +
-  '      document.getElementById("tableContainer").style.display = "none";\n' +
-  '      document.getElementById("emptyState").style.display = "none";\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(data) {\n' +
-  '          allPayments = data.payments || [];\n' +
-  '          updateStats(data.stats || {});\n' +
-  '          filterPayments();\n' +
-  '          document.getElementById("loading").style.display = "none";\n' +
-  '          if (allPayments.length === 0) {\n' +
-  '            document.getElementById("emptyState").style.display = "block";\n' +
-  '          } else {\n' +
-  '            document.getElementById("tableContainer").style.display = "block";\n' +
-  '          }\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          document.getElementById("loading").innerHTML = "<p style=\\"color:#f87171;\\">Error loading data: " + (error.message || error) + "</p>";\n' +
-  '        })\n' +
-  '        .getPaymentVerificationData_Optimized();\n' +
-  '    }\n' +
-  '\n' +
-  '    function updateStats(stats) {\n' +
-  '      var cards = document.getElementById("statsGrid").children;\n' +
-  '      cards[0].querySelector(".stat-value").textContent = stats.total || 0;\n' +
-  '      cards[1].querySelector(".stat-value").textContent = stats.mismatches || 0;\n' +
-  '      cards[2].querySelector(".stat-value").textContent = stats.matched || 0;\n' +
-  '      cards[3].querySelector(".stat-value").textContent = stats.pending || 0;\n' +
-  '    }\n' +
-  '\n' +
-  '    function sortPaymentsByGroup() {\n' +
-  '      if (!allPayments || !allPayments.length) return;\n' +
-  '      showToast("Sorting by merge groups...", 2000);\n' +
-  '      \n' +
-  '      allPayments.sort(function(a, b) {\n' +
-  '        var aG = a.mergeGroupId || "";\n' +
-  '        var bG = b.mergeGroupId || "";\n' +
-  '        \n' +
-  '        // Merged groups first\n' +
-  '        if (aG && !bG) return -1;\n' +
-  '        if (!aG && bG) return 1;\n' +
-  '        \n' +
-  '        if (aG && bG) {\n' +
-  '          if (aG < bG) return -1;\n' +
-  '          if (aG > bG) return 1;\n' +
-  '          // Same group: Primary first\n' +
-  '          if ((a.mergeRole||"") === "PRIMARY") return -1;\n' +
-  '          if ((b.mergeRole||"") === "PRIMARY") return 1;\n' +
-  '        }\n' +
-  '        \n' +
-  '        return (a.rowIndex || 0) - (b.rowIndex || 0);\n' +
-  '      });\n' +
-  '      \n' +
-  '      filterPayments();\n' +
-  '    }\n' +
-  '\n' +
-  '    function filterPayments() {\n' +
-  '      var searchTerm = document.getElementById("searchInput").value.toLowerCase();\n' +
-  '      var status = document.getElementById("filterStatus").value;\n' +
-  '      \n' +
-  '      filteredPayments = allPayments.filter(function(p) {\n' +
-  '        var matchesSearch = !searchTerm || \n' +
-  '                            p.name.toLowerCase().indexOf(searchTerm) >= 0 || \n' +
-  '                            p.id.toLowerCase().indexOf(searchTerm) >= 0;\n' +
-  '        var matchesFilter = status === "all" || p.status === status;\n' +
-  '        return matchesSearch && matchesFilter;\n' +
-  '      });\n' +
-  '      \n' +
-  '      currentPage = 1;\n' +
-  '      renderTable();\n' +
-  '      renderPagination();\n' +
-  '    }\n' +
-  '\n' +
-  '    function renderTable() {\n' +
-  '      var tbody = document.getElementById("tableBody");\n' +
-  '      tbody.innerHTML = "";\n' +
-  '      \n' +
-  '      if (filteredPayments.length === 0) {\n' +
-  '        tbody.innerHTML = "<tr><td colspan=\\"8\\" style=\\"text-align:center; padding:40px; color:#9ca3af;\\">No payments match your filters</td></tr>";\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      // Pagination\n' +
-  '      var start = (currentPage - 1) * itemsPerPage;\n' +
-  '      var end = Math.min(start + itemsPerPage, filteredPayments.length);\n' +
-  '      var pageData = filteredPayments.slice(start, end);\n' +
-  '      \n' +
-  '      // Use DocumentFragment for better performance\n' +
-  '      var fragment = document.createDocumentFragment();\n' +
-  '      \n' +
-  '      pageData.forEach(function(payment) {\n' +
-  '        var tr = document.createElement("tr");\n' +
-  '        \n' +
-  '        // ID\n' +
-  '        var tdId = document.createElement("td");\n' +
-  '        tdId.className = "id-cell";\n' +
-  '        tdId.textContent = payment.id;\n' +
-  '        tr.appendChild(tdId);\n' +
-  '        \n' +
-  '        // Name\n' +
-  '        var tdName = document.createElement("td");\n' +
-  '        var nameHtml = "<div class=\\"name-cell\\">" + escapeHtml(payment.name);\n' +
-  '        if (payment.mergeGroupId) {\n' +
-  '           nameHtml += " <span class=\\"status-badge status-merged\\" title=\\"Group: " + escapeHtml(payment.mergeGroupId) + "\\">MERGED</span>";\n' +
-  '        }\n' +
-  '        nameHtml += "</div><div class=\\"email-cell\\">" + escapeHtml(payment.email) + "</div>";\n' +
-  '        tdName.innerHTML = nameHtml;\n' +
-  '        tr.appendChild(tdName);\n' +
-  '        \n' +
-  '        // Competitions\n' +
-  '        var tdComp = document.createElement("td");\n' +
-  '        var compHtml = "";\n' +
-  '        for (var i = 0; i < Math.min(payment.competitions.length, 3); i++) {\n' +
-  '          compHtml += "<span class=\\"comp-badge\\">" + escapeHtml(payment.competitions[i]) + "</span> ";\n' +
-  '        }\n' +
-  '        if (payment.competitions.length > 3) {\n' +
-  '          compHtml += "<span class=\\"comp-badge\\">+" + (payment.competitions.length - 3) + " more</span>";\n' +
-  '        }\n' +
-  '        tdComp.innerHTML = compHtml;\n' +
-  '        tr.appendChild(tdComp);\n' +
-  '        \n' +
-  '        // Applicant Amount\n' +
-  '        var tdApplicant = document.createElement("td");\n' +
-  '        tdApplicant.className = "text-right " + (payment.applicantAmt !== payment.systemAmt ? "amount-red" : "amount-green");\n' +
-  '        tdApplicant.textContent = "₱" + payment.applicantAmt.toLocaleString();\n' +
-  '        tr.appendChild(tdApplicant);\n' +
-  '        \n' +
-  '        // System Amount\n' +
-  '        var tdSystem = document.createElement("td");\n' +
-  '        tdSystem.className = "text-right amount-green";\n' +
-  '        tdSystem.textContent = "₱" + payment.systemAmt.toLocaleString();\n' +
-  '        tr.appendChild(tdSystem);\n' +
-  '        \n' +
-  '        // Difference\n' +
-  '        var tdDiff = document.createElement("td");\n' +
-  '        tdDiff.className = "text-center";\n' +
-  '        if (payment.applicantAmt !== payment.systemAmt) {\n' +
-  '          var diff = Math.abs(payment.systemAmt - payment.applicantAmt);\n' +
-  '          var sign = payment.applicantAmt < payment.systemAmt ? "-" : "+";\n' +
-  '          var cssClass = payment.applicantAmt < payment.systemAmt ? "diff-red" : "diff-yellow";\n' +
-  '          tdDiff.innerHTML = "<span class=\\"" + cssClass + "\\">" + sign + "₱" + diff.toLocaleString() + "</span>";\n' +
-  '        } else {\n' +
-  '          tdDiff.innerHTML = "<span class=\\"amount-green\\">✓</span>";\n' +
-  '        }\n' +
-  '        tr.appendChild(tdDiff);\n' +
-  '        \n' +
-  '        // Status\n' +
-  '        var tdStatus = document.createElement("td");\n' +
-  '        tdStatus.className = "text-center";\n' +
-  '        if (payment.status === "mismatch") {\n' +
-  '          var statusText = payment.emailSent ? "Email Sent" : "Mismatch";\n' +
-  '          var statusClass = payment.emailSent ? "status-sent" : "status-mismatch";\n' +
-  '          tdStatus.innerHTML = "<span class=\\"status-badge " + statusClass + "\\">" + statusText + "</span>";\n' +
-  '        } else {\n' +
-  '          tdStatus.innerHTML = "<span class=\\"status-badge status-matched\\">Matched</span>";\n' +
-  '        }\n' +
-  '        tr.appendChild(tdStatus);\n' +
-  '        \n' +
-  '        // Actions\n' +
-  '        var tdActions = document.createElement("td");\n' +
-  '        tdActions.className = "text-center";\n' +
-  '        var actions = "<div class=\\"actions\\">";\n' +
-  '        if (payment.status === "mismatch" && !payment.resolved) {\n' +
-  '          actions += "<button class=\\"btn btn-action\\" onclick=\\"openEmailModal(&quot;" + payment.rowIndex + "&quot;)\\"><i class=\\"fas fa-envelope\\"></i></button>";\n' +
-  '          actions += "<button class=\\"btn btn-resolve\\" onclick=\\"markResolved(" + payment.rowIndex + ")\\"><i class=\\"fas fa-check\\"></i></button>";\n' +
-  '        }\n' +
-  '        actions += "<button class=\\"btn btn-view\\" onclick=\\"showDetails(&quot;" + payment.rowIndex + "&quot;)\\"><i class=\\"fas fa-eye\\"></i></button>";\n' +
-  '        actions += "</div>";\n' +
-  '        tdActions.innerHTML = actions;\n' +
-  '        tr.appendChild(tdActions);\n' +
-  '        \n' +
-  '        fragment.appendChild(tr);\n' +
-  '      });\n' +
-  '      \n' +
-  '      tbody.appendChild(fragment);\n' +
-  '    }\n' +
-  '\n' +
-  '    function renderPagination() {\n' +
-  '      var totalPages = Math.ceil(filteredPayments.length / itemsPerPage);\n' +
-  '      var pagination = document.getElementById("pagination");\n' +
-  '      \n' +
-  '      if (totalPages <= 1) {\n' +
-  '        pagination.innerHTML = "";\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      var html = "";\n' +
-  '      html += "<button " + (currentPage === 1 ? "disabled" : "") + " onclick=\\"changePage(" + (currentPage - 1) + ")\\">Previous</button>";\n' +
-  '      html += "<span>Page " + currentPage + " of " + totalPages + "</span>";\n' +
-  '      html += "<button " + (currentPage === totalPages ? "disabled" : "") + " onclick=\\"changePage(" + (currentPage + 1) + ")\\">Next</button>";\n' +
-  '      pagination.innerHTML = html;\n' +
-  '    }\n' +
-  '\n' +
-  '    function changePage(page) {\n' +
-  '      currentPage = page;\n' +
-  '      renderTable();\n' +
-  '      renderPagination();\n' +
-  '    }\n' +
-  '\n' +
-  '    function escapeHtml(text) {\n' +
-  '      if (!text) return "";\n' +
-  '      return String(text)\n' +
-  '        .replace(/&/g, "&amp;")\n' +
-  '        .replace(/</g, "&lt;")\n' +
-  '        .replace(/>/g, "&gt;")\n' +
-  '        .replace(/"/g, "&quot;")\n' +
-  '        .replace(/\'/g, "&#039;");\n' +
-  '    }\n' +
-  '\n' +
-  '    function openEmailModal(rowIndex) {\n' +
-  '      currentPayment = allPayments.find(function(p) { return p.rowIndex === parseInt(rowIndex); });\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      document.getElementById("emailRecipient").textContent = currentPayment.name + " (" + currentPayment.email + ")";\n' +
-  '      document.getElementById("emailSubject").value = "[HUSAY NG SOKSAY] Payment Verification Required - " + currentPayment.id;\n' +
-  '      generateEmailPreview();\n' +
-  '      document.getElementById("emailModal").classList.add("show");\n' +
-  '    }\n' +
-  '\n' +
-  '    function closeEmailModal() {\n' +
-  '      document.getElementById("emailModal").classList.remove("show");\n' +
-  '      currentPayment = null;\n' +
-  '    }\n' +
-  '\n' +
-  '    function generateEmailPreview() {\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      var breakdown = currentPayment.competitionBreakdown.map(function(c) {\n' +
-  '        return "• " + c.competition + ": ₱" + c.price.toLocaleString();\n' +
-  '      }).join("\\n");\n' +
-  '      \n' +
-  '      var diff = Math.abs(currentPayment.systemAmt - currentPayment.applicantAmt);\n' +
-  '      var diffType = currentPayment.applicantAmt < currentPayment.systemAmt ? "(Underpayment)" : "(Overpayment)";\n' +
-  '      \n' +
-  '      var items = [];\n' +
-  '      if (document.getElementById("checkPaymentAmount").checked) items.push("✅ Please verify the payment amount");\n' +
-  '      if (document.getElementById("checkCompetitions").checked) items.push("✅ Please confirm your competition selections");\n' +
-  '      if (document.getElementById("checkCouponCode").checked) items.push("✅ Please verify your coupon code (if any)");\n' +
-  '      if (document.getElementById("checkReferralCode").checked) items.push("✅ Please verify your referral code (if any)");\n' +
-  '      if (document.getElementById("checkPaymentMethod").checked) items.push("✅ Please confirm your payment method");\n' +
-  '      if (document.getElementById("checkProofOfPayment").checked) items.push("✅ Please re-upload your proof of payment");\n' +
-  '      \n' +
-  '      var preview = "Dear " + currentPayment.name + ",\\n\\n" +\n' +
-  '        "We noticed a discrepancy in your registration payment for HUSAY NG SOKSAY.\\n\\n" +\n' +
-  '        "📋 REGISTRATION DETAILS\\n" +\n' +
-  '        "Registration ID: " + currentPayment.id + "\\n" +\n' +
-  '        "Email: " + currentPayment.email + "\\n\\n" +\n' +
-  '        "🏆 COMPETITIONS REGISTERED\\n" +\n' +
-  '        breakdown + "\\n\\n" +\n' +
-  '        "💰 PAYMENT SUMMARY\\n" +\n' +
-  '        "Your Submitted Amount: ₱" + currentPayment.applicantAmt.toLocaleString() + "\\n" +\n' +
-  '        "System Calculated Amount: ₱" + currentPayment.systemAmt.toLocaleString() + "\\n" +\n' +
-  '        "Difference: ₱" + diff.toLocaleString() + " " + diffType + "\\n\\n" +\n' +
-  '        items.join("\\n") + "\\n\\n" +\n' +
-  '        "Please reply to this email with the correct information or contact us if you have any questions.\\n\\n" +\n' +
-  '        "Best regards,\\nHUSAY NG SOKSAY Registration Team";\n' +
-  '      \n' +
-  '      document.getElementById("emailBody").value = preview;\n' +
-  '    }\n' +
-  '\n' +
-  '    // Update preview when checkboxes change\n' +
-  '    document.addEventListener("DOMContentLoaded", function() {\n' +
-  '      var checkboxes = document.querySelectorAll(".checklist input[type=\\"checkbox\\"]");\n' +
-  '      checkboxes.forEach(function(cb) {\n' +
-  '        cb.addEventListener("change", generateEmailPreview);\n' +
-  '      });\n' +
-  '    });\n' +
-  '\n' +
-  '    function sendVerificationEmail() {\n' +
-  '      if (!currentPayment) return;\n' +
-  '      \n' +
-  '      var emailContent = {\n' +
-  '        subject: document.getElementById("emailSubject").value,\n' +
-  '        items: {\n' +
-  '          paymentAmount: document.getElementById("checkPaymentAmount").checked,\n' +
-  '          competitions: document.getElementById("checkCompetitions").checked,\n' +
-  '          couponCode: document.getElementById("checkCouponCode").checked,\n' +
-  '          referralCode: document.getElementById("checkReferralCode").checked,\n' +
-  '          paymentMethod: document.getElementById("checkPaymentMethod").checked,\n' +
-  '          proofOfPayment: document.getElementById("checkProofOfPayment").checked\n' +
-  '        }\n' +
-  '      };\n' +
-  '      \n' +
-  '      closeEmailModal();\n' +
-  '      showToast("Sending email...", 3000);\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(result) {\n' +
-  '          showToast("✅ " + result.message, 5000);\n' +
-  '          refreshData();\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          showToast("❌ Error sending email: " + (error.message || error), 5000);\n' +
-  '        })\n' +
-  '        .sendPaymentVerificationEmail_Optimized(currentPayment, emailContent);\n' +
-  '    }\n' +
-  '\n' +
-  '    function markResolved(rowIndex) {\n' +
-  '      if (!confirm("Mark this payment as resolved?")) return;\n' +
-  '      \n' +
-  '      showToast("Processing...", 2000);\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(result) {\n' +
-  '          showToast("✅ " + result.message, 3000);\n' +
-  '          refreshData();\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          showToast("❌ Error: " + (error.message || error), 5000);\n' +
-  '        })\n' +
-  '        .markPaymentResolved_Optimized(rowIndex);\n' +
-  '    }\n' +
-  '\n' +
-  '    function showDetails(rowIndex) {\n' +
-  '      var payment = allPayments.find(function(p) { return p.rowIndex === parseInt(rowIndex); });\n' +
-  '      if (!payment) return;\n' +
-  '      \n' +
-  '      var panel = document.getElementById("detailPanel");\n' +
-  '      document.getElementById("detailTitle").textContent = "Payment Details - " + payment.name;\n' +
-  '      \n' +
-  '      // Info section\n' +
-  '      var infoHtml = "<h4>Registration Info</h4>";\n' +
-  '      infoHtml += "<div class=\\"detail-row\\"><span>ID:</span><span>" + escapeHtml(payment.id) + "</span></div>";\n' +
-  '      infoHtml += "<div class=\\"detail-row\\"><span>Email:</span><span>" + escapeHtml(payment.email) + "</span></div>";\n' +
-  '      infoHtml += "<div class=\\"detail-row\\"><span>Status:</span><span class=\\"" + (payment.status === "mismatch" ? "amount-red" : "amount-green") + "\\">" + payment.status.toUpperCase() + "</span></div>";\n' +
-  '      if (payment.couponCode) infoHtml += "<div class=\\"detail-row\\"><span>Coupon:</span><span>" + escapeHtml(payment.couponCode) + "</span></div>";\n' +
-  '      if (payment.referralCode) infoHtml += "<div class=\\"detail-row\\"><span>Referral:</span><span>" + escapeHtml(payment.referralCode) + "</span></div>";\n' +
-  '      document.getElementById("detailInfo").innerHTML = infoHtml;\n' +
-  '      \n' +
-  '      // Breakdown section\n' +
-  '      var breakdownHtml = "<h4>Competition Breakdown</h4>";\n' +
-  '      payment.competitionBreakdown.forEach(function(comp) {\n' +
-  '        breakdownHtml += "<div class=\\"detail-row\\"><span>" + escapeHtml(comp.competition) + "</span><span class=\\"amount-green\\">₱" + comp.price.toLocaleString() + "</span></div>";\n' +
-  '      });\n' +
-  '      breakdownHtml += "<div class=\\"detail-row total\\"><span>System Total</span><span class=\\"amount-green\\">₱" + payment.systemAmt.toLocaleString() + "</span></div>";\n' +
-  '      breakdownHtml += "<div class=\\"detail-row total\\"><span>Applicant Paid</span><span class=\\"" + (payment.applicantAmt !== payment.systemAmt ? "amount-red" : "amount-green") + "\\">₱" + payment.applicantAmt.toLocaleString() + "</span></div>";\n' +
-  '      document.getElementById("detailBreakdown").innerHTML = breakdownHtml;\n' +
-  '      \n' +
-  '      panel.style.display = "block";\n' +
-  '      panel.scrollIntoView({ behavior: "smooth" });\n' +
-  '    }\n' +
-  '\n' +
-  '    function sendBulkEmails() {\n' +
-  '      var mismatches = allPayments.filter(function(p) { return p.status === "mismatch" && !p.emailSent; });\n' +
-  '      \n' +
-  '      if (mismatches.length === 0) {\n' +
-  '        showToast("No unsent mismatch emails to send.", 3000);\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      if (!confirm("Send verification emails to " + mismatches.length + " participants with payment mismatches?")) {\n' +
-  '        return;\n' +
-  '      }\n' +
-  '      \n' +
-  '      // Disable button during processing\n' +
-  '      var btn = document.getElementById("bulkEmailBtn");\n' +
-  '      btn.disabled = true;\n' +
-  '      btn.innerHTML = "<i class=\\"fas fa-spinner fa-spin\\"></i> Sending...";\n' +
-  '      \n' +
-  '      showToast("Sending " + mismatches.length + " emails... This may take a few minutes.", 5000);\n' +
-  '      \n' +
-  '      google.script.run\n' +
-  '        .withSuccessHandler(function(result) {\n' +
-  '          btn.disabled = false;\n' +
-  '          btn.innerHTML = "<i class=\\"fas fa-envelope\\"></i> Bulk Email Mismatches";\n' +
-  '          showToast("✅ " + result.message, 5000);\n' +
-  '          refreshData();\n' +
-  '        })\n' +
-  '        .withFailureHandler(function(error) {\n' +
-  '          btn.disabled = false;\n' +
-  '          btn.innerHTML = "<i class=\\"fas fa-envelope\\"></i> Bulk Email Mismatches";\n' +
-  '          showToast("❌ Error: " + (error.message || error), 5000);\n' +
-  '        })\n' +
-  '        .sendBulkVerificationEmails_Optimized();\n' +
-  '    }\n' +
-  '\n' +
-  '    function refreshData() {\n' +
-  '      document.getElementById("detailPanel").style.display = "none";\n' +
-  '      loadData();\n' +
-  '    }\n' +
-  '  </script>\n' +
-  '</body>\n' +
-  '</html>';
 }
 
 // ============================================================================
@@ -21756,12 +18644,49 @@ function sendBulkVerificationEmails() {
 }
 
 // ============================================================================
-// PAYMENT VERIFICATION CENTER UI (V3 - WITH EDITABLE AMOUNTS & DISCOUNTS)
+// PAYMENT VERIFICATION CENTER UI (WITH EDITABLE AMOUNTS & DISCOUNTS)
 // ============================================================================
 
 /**
  * Update applicant payment amount for a specific row
  */
+/**
+ * Locate the applicant-amount column on the Registration sheet by its header.
+ * A fixed column number is unsafe here: the merge feature appends its own columns at the end
+ * of the sheet and can land on the same position, so amounts would be written into a merge
+ * column (or the other way round).
+ * @param {Sheet} regSheet
+ * @param {boolean} createIfMissing - add the column (with its header) when it does not exist
+ * @returns {number} 1-based column, or 0 when it does not exist and was not created
+ */
+function getApplicantAmtCol_(regSheet, createIfMissing) {
+  var HEADER = "SYS_APPLICANT_AMT";
+  var map = ColumnManager.headerMap(regSheet);
+  if (map[HEADER]) return map[HEADER];
+
+  var lastCol = regSheet.getLastColumn();
+  var cfgCol = SYSTEM_CONFIG.SYS_REG_COLS_END.SYS_APPLICANT_AMT || 0;
+  var cfgHeader = (cfgCol && cfgCol <= lastCol) ? String(regSheet.getRange(1, cfgCol).getValue() || "").trim() : "";
+
+  if (cfgCol && !cfgHeader) {
+    // The configured position is free (or holds older amounts saved without a header)
+    if (!createIfMissing) return cfgCol <= lastCol ? cfgCol : 0;
+    if (regSheet.getMaxColumns() < cfgCol) {
+      regSheet.insertColumnsAfter(regSheet.getMaxColumns(), cfgCol - regSheet.getMaxColumns());
+    }
+    regSheet.getRange(1, cfgCol).setValue(HEADER);
+    return cfgCol;
+  }
+
+  if (!createIfMissing) return 0;
+
+  // The configured position belongs to another column: add a new one at the end
+  var newCol = lastCol + 1;
+  if (regSheet.getMaxColumns() < newCol) regSheet.insertColumnAfter(regSheet.getMaxColumns());
+  regSheet.getRange(1, newCol).setValue(HEADER);
+  return newCol;
+}
+
 function updateApplicantPaymentAmount_Optimized(rowIndex, newAmount) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -21771,14 +18696,9 @@ function updateApplicantPaymentAmount_Optimized(rowIndex, newAmount) {
       return { success: false, error: "Registration sheet not found" };
     }
     
-    // Update the SYS_APPLICANT_AMT column (column 53/BA)
-    var applicantAmtCol = SYSTEM_CONFIG.SYS_REG_COLS_END.SYS_APPLICANT_AMT;
-    
-    // Ensure the column exists
-    if (regSheet.getMaxColumns() < applicantAmtCol) {
-      regSheet.insertColumnsAfter(regSheet.getMaxColumns(), applicantAmtCol - regSheet.getMaxColumns());
-    }
-    
+    // Update the SYS_APPLICANT_AMT column (located by header, created if missing)
+    var applicantAmtCol = getApplicantAmtCol_(regSheet, true);
+
     regSheet.getRange(rowIndex, applicantAmtCol).setValue(newAmount);
     
     Logger.log("Updated row " + rowIndex + " applicant amount to " + newAmount);
@@ -21797,14 +18717,14 @@ function updateApplicantPaymentAmount_Optimized(rowIndex, newAmount) {
  * Open the Payment Verification Center dashboard
  */
 function openPaymentVerificationCenter() {
-  var html = HtmlService.createHtmlOutput(getPaymentVerificationCenterHtml_V3_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getPaymentVerificationCenterHtml_V3_(), "pay"))
     .setWidth(1300)
     .setHeight(750);
   SpreadsheetApp.getUi().showModalDialog(html, "🛡️ Payment Verification Center");
 }
 
 /**
- * Generate HTML for Payment Verification Center V3
+ * Generate HTML for Payment Verification Center
  * Features: Editable applicant amounts + Discount info display
  */
 function getPaymentVerificationCenterHtml_V3_() {
@@ -21813,75 +18733,75 @@ function getPaymentVerificationCenterHtml_V3_() {
   '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">' +
   '<style>' +
   '* { margin: 0; padding: 0; box-sizing: border-box; }' +
-  'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #111827; color: #e5e7eb; }' +
+  'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #e6edf3; }' +
   '.container { padding: 20px; max-width: 1400px; margin: 0 auto; }' +
   '.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }' +
-  '.header h1 { font-size: 28px; color: #fbbf24; }' +
+  '.header h1 { font-size: 28px; color: #e3b341; }' +
   '.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }' +
-  '.stat-card { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border-radius: 12px; padding: 20px; border: 1px solid #374151; }' +
-  '.stat-label { color: #9ca3af; font-size: 13px; margin-bottom: 8px; }' +
+  '.stat-card { background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border-radius: 12px; padding: 20px; border: 1px solid #30363d; }' +
+  '.stat-label { color: #8b949e; font-size: 13px; margin-bottom: 8px; }' +
   '.stat-value { font-size: 32px; font-weight: bold; }' +
-  '.stat-card.total .stat-value { color: #3b82f6; }' +
-  '.stat-card.mismatch .stat-value { color: #ef4444; }' +
-  '.stat-card.matched .stat-value { color: #10b981; }' +
-  '.stat-card.pending .stat-value { color: #f59e0b; }' +
+  '.stat-card.total .stat-value { color: #58a6ff; }' +
+  '.stat-card.mismatch .stat-value { color: #ff7b72; }' +
+  '.stat-card.matched .stat-value { color: #3fb950; }' +
+  '.stat-card.pending .stat-value { color: #e3b341; }' +
   '.controls { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }' +
-  '.search-box { flex: 1; min-width: 300px; display: flex; align-items: center; background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 0 15px; }' +
-  '.search-box i { color: #6b7280; margin-right: 10px; }' +
+  '.search-box { flex: 1; min-width: 300px; display: flex; align-items: center; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0 15px; }' +
+  '.search-box i { color: #8b949e; margin-right: 10px; }' +
   '.search-box input { flex: 1; background: none; border: none; color: white; padding: 12px 0; font-size: 14px; outline: none; }' +
   '.filter-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
-  'select { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px 15px; color: white; font-size: 14px; cursor: pointer; }' +
-  'select:focus { outline: none; border-color: #fbbf24; }' +
-  '.btn { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #111827; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }' +
-  '.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3); }' +
+  'select { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 15px; color: white; font-size: 14px; cursor: pointer; }' +
+  'select:focus { outline: none; border-color: #bb8009; }' +
+  '.btn { background: linear-gradient(135deg, #9e6a03 0%, #9e6a03 100%); color: #e6edf3; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }' +
+  '.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(210,153,34,0.3); }' +
   '.btn:active { transform: translateY(0); }' +
   '.btn i { font-size: 14px; }' +
-  '.btn-refresh { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }' +
-  '.btn-view { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; padding: 8px 16px; font-size: 13px; }' +
+  '.btn-refresh { background: linear-gradient(135deg, #1f6feb 0%, #1f6feb 100%); color: white; }' +
+  '.btn-view { background: linear-gradient(135deg, #484f58 0%, #30363d 100%); color: white; padding: 8px 16px; font-size: 13px; }' +
   '.tooltip { position: relative; display: inline-block; }' +
-  '.tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #1f2937; color: #fff; text-align: left; border-radius: 6px; padding: 8px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; border: 1px solid #374151; font-size: 12px; }' +
+  '.tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #161b22; color: #fff; text-align: left; border-radius: 6px; padding: 8px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; border: 1px solid #30363d; font-size: 12px; }' +
   '.tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }' +
-  '.table-container { background: #1f2937; border-radius: 12px; border: 1px solid #374151; overflow: hidden; }' +
+  '.table-container { background: #161b22; border-radius: 12px; border: 1px solid #30363d; overflow: hidden; }' +
   'table { width: 100%; border-collapse: collapse; }' +
-  'thead { background: #111827; }' +
-  'th { padding: 12px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; border-bottom: 2px solid #374151; }' +
+  'thead { background: #0d1117; }' +
+  'th { padding: 12px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; border-bottom: 2px solid #30363d; }' +
   'th.text-right { text-align: right; }' +
   'th.text-center { text-align: center; }' +
-  'td { padding: 12px; border-top: 1px solid #374151; font-size: 13px; }' +
+  'td { padding: 12px; border-top: 1px solid #30363d; font-size: 13px; }' +
   'td.text-right { text-align: right; }' +
   'td.text-center { text-align: center; }' +
   'tbody tr:hover { background: rgba(55, 65, 81, 0.3); }' +
-  '.id-cell { font-family: monospace; font-size: 12px; color: #9ca3af; }' +
+  '.id-cell { font-family: monospace; font-size: 12px; color: #8b949e; }' +
   '.name-cell { font-weight: 500; }' +
-  '.email-cell { color: #9ca3af; font-size: 12px; margin-top: 4px; }' +
-  '.comp-badge { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }' +
-  '.amount-red { color: #f87171; }' +
-  '.amount-green { color: #4ade80; }' +
-  '.amount-input { background: rgba(31, 41, 55, 0.5); border: 1px solid #374151; border-radius: 4px; color: inherit; text-align: right; font-size: 13px; width: 90px; padding: 6px 8px; font-family: inherit; }' +
-  '.amount-input:focus { outline: none; border-color: #fbbf24; background: rgba(31, 41, 55, 0.8); }' +
-  '.amount-input:hover { border-color: #6b7280; }' +
-  '.discount-info { font-size: 10px; color: #9ca3af; margin-top: 4px; display: flex; align-items: center; gap: 4px; }' +
-  '.diff-red { font-weight: bold; color: #f87171; }' +
-  '.diff-yellow { font-weight: bold; color: #fbbf24; }' +
+  '.email-cell { color: #8b949e; font-size: 12px; margin-top: 4px; }' +
+  '.comp-badge { display: inline-block; background: rgba(56,139,253,0.2); color: #58a6ff; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }' +
+  '.amount-red { color: #ff7b72; }' +
+  '.amount-green { color: #3fb950; }' +
+  '.amount-input { background: rgba(31, 41, 55, 0.5); border: 1px solid #30363d; border-radius: 4px; color: inherit; text-align: right; font-size: 13px; width: 90px; padding: 6px 8px; font-family: inherit; }' +
+  '.amount-input:focus { outline: none; border-color: #bb8009; background: rgba(31, 41, 55, 0.8); }' +
+  '.amount-input:hover { border-color: #6e7681; }' +
+  '.discount-info { font-size: 10px; color: #8b949e; margin-top: 4px; display: flex; align-items: center; gap: 4px; }' +
+  '.diff-red { font-weight: bold; color: #ff7b72; }' +
+  '.diff-yellow { font-weight: bold; color: #e3b341; }' +
   '.status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }' +
-  '.status-mismatch { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }' +
-  '.status-matched { background: rgba(34, 197, 94, 0.2); color: #86efac; }' +
-  '.status-sent { background: rgba(251, 191, 36, 0.2); color: #fde047; }' +
+  '.status-mismatch { background: rgba(248,81,73,0.2); color: #ffa198; }' +
+  '.status-matched { background: rgba(46,160,67,0.2); color: #3fb950; }' +
+  '.status-sent { background: rgba(210,153,34,0.2); color: #e3b341; }' +
   '.actions { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }' +
-  '.loading { text-align: center; padding: 50px; color: #9ca3af; }' +
-  '.spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #374151; border-top-color: #fbbf24; border-radius: 50%; animation: spin 1s linear infinite; }' +
+  '.loading { text-align: center; padding: 50px; color: #8b949e; }' +
+  '.spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #30363d; border-top-color: #bb8009; border-radius: 50%; animation: spin 1s linear infinite; }' +
   '@keyframes spin { to { transform: rotate(360deg); } }' +
-  '.empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }' +
-  '.empty-state i { font-size: 64px; color: #374151; margin-bottom: 20px; }' +
-  '.toast { position: fixed; bottom: 20px; right: 20px; background: #1f2937; color: white; padding: 15px 20px; border-radius: 8px; border: 1px solid #374151; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s; z-index: 10000; max-width: 400px; }' +
+  '.empty-state { text-align: center; padding: 60px 20px; color: #8b949e; }' +
+  '.empty-state i { font-size: 64px; color: #c9d1d9; margin-bottom: 20px; }' +
+  '.toast { position: fixed; bottom: 20px; right: 20px; background: #161b22; color: white; padding: 15px 20px; border-radius: 8px; border: 1px solid #30363d; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s; z-index: 10000; max-width: 400px; }' +
   '.toast.show { opacity: 1; }' +
   '.pagination { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px; }' +
-  '.pagination button { background: #1f2937; border: 1px solid #374151; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }' +
-  '.pagination button:hover:not(:disabled) { background: #374151; }' +
+  '.pagination button { background: #161b22; border: 1px solid #30363d; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }' +
+  '.pagination button:hover:not(:disabled) { background: #21262d; }' +
   '.pagination button:disabled { opacity: 0.5; cursor: not-allowed; }' +
   '</style></head><body>' +
   '<div class="container"><div class="header">' +
-  '<h1><i class="fas fa-shield-alt"></i> Payment Verification Center V3</h1>' +
+  '<h1><i class="fas fa-shield-alt"></i> Payment Verification Center</h1>' +
   '<button class="btn btn-refresh" onclick="refreshData()"><i class="fas fa-sync-alt"></i> Refresh</button>' +
   '</div>' +
   '<div class="stats" id="stats">' +
@@ -21903,8 +18823,8 @@ function getPaymentVerificationCenterHtml_V3_() {
   '<div id="emptyState" class="empty-state" style="display:none;"><i class="fas fa-check-circle"></i><h2>All Clear!</h2><p>No payment records found that require verification.</p></div>' +
   '<div id="tableContainer" class="table-container" style="display:none;"><table><thead><tr>' +
   '<th>ID</th><th>Name</th><th>Competitions</th>' +
-  '<th class="text-right">Applicant Amt <span class="tooltip"><i class="fas fa-info-circle" style="color:#6b7280;font-size:11px"></i><span class="tooltiptext">Click to edit the amount the applicant claims they paid</span></span></th>' +
-  '<th class="text-right">System Amt <span class="tooltip"><i class="fas fa-info-circle" style="color:#6b7280;font-size:11px"></i><span class="tooltiptext">Calculated total (after discounts)</span></span></th>' +
+  '<th class="text-right">Applicant Amt <span class="tooltip"><i class="fas fa-info-circle" style="color:#8b949e;font-size:11px"></i><span class="tooltiptext">Click to edit the amount the applicant claims they paid</span></span></th>' +
+  '<th class="text-right">System Amt <span class="tooltip"><i class="fas fa-info-circle" style="color:#8b949e;font-size:11px"></i><span class="tooltiptext">Calculated total (after discounts)</span></span></th>' +
   '<th class="text-center">Difference</th><th class="text-center">Status</th><th class="text-center">Actions</th>' +
   '</tr></thead><tbody id="tableBody"></tbody></table><div id="pagination" class="pagination"></div></div></div>' +
   '<div id="toast" class="toast"></div>' +
@@ -21913,10 +18833,10 @@ function getPaymentVerificationCenterHtml_V3_() {
   'window.onload=function(){loadData();var searchTimeout;document.getElementById("searchInput").addEventListener("input",function(){clearTimeout(searchTimeout);searchTimeout=setTimeout(filterPayments,300);});document.getElementById("filterStatus").addEventListener("change",filterPayments);};' +
   'function showToast(message,duration){var toast=document.getElementById("toast");toast.textContent=message;toast.classList.add("show");setTimeout(function(){toast.classList.remove("show");},duration||3000);}' +
   'function loadData(){document.getElementById("loading").style.display="block";document.getElementById("tableContainer").style.display="none";document.getElementById("emptyState").style.display="none";' +
-  'google.script.run.withSuccessHandler(function(data){if(data.error){showToast("Error: "+data.error,5000);document.getElementById("loading").innerHTML="<p style=\\"color:#f87171;\\">Error: "+data.error+"</p>";return;}' +
+  'google.script.run.withSuccessHandler(function(data){if(data.error){showToast("Error: "+data.error,5000);document.getElementById("loading").innerHTML="<p style=\\"color:#ff7b72;\\">Error: "+data.error+"</p>";return;}' +
   'allPayments=data.payments||[];updateStats(data.stats||{});filterPayments();document.getElementById("loading").style.display="none";' +
   'if(allPayments.length===0){document.getElementById("emptyState").style.display="block";}else{document.getElementById("tableContainer").style.display="block";}' +
-  '}).withFailureHandler(function(error){document.getElementById("loading").innerHTML="<p style=\\"color:#f87171;\\">Error loading data: "+(error.message||error)+"</p>";}).getPaymentVerificationData_Optimized();}' +
+  '}).withFailureHandler(function(error){document.getElementById("loading").innerHTML="<p style=\\"color:#ff7b72;\\">Error loading data: "+(error.message||error)+"</p>";}).getPaymentVerificationData_Optimized();}' +
   'function updateStats(stats){document.getElementById("statTotal").textContent=stats.total||0;document.getElementById("statMismatches").textContent=stats.mismatches||0;document.getElementById("statMatched").textContent=stats.matched||0;document.getElementById("statPending").textContent=stats.pending||0;}' +
   'function filterPayments(){var searchTerm=document.getElementById("searchInput").value.toLowerCase();var statusFilter=document.getElementById("filterStatus").value;' +
   'filteredPayments=allPayments.filter(function(payment){var matchesSearch=!searchTerm||payment.name.toLowerCase().includes(searchTerm)||payment.email.toLowerCase().includes(searchTerm)||payment.id.toLowerCase().includes(searchTerm);' +
@@ -21959,7 +18879,7 @@ function getPaymentVerificationCenterHtml_V3_() {
 }
 
 // ============================================================================
-// PART 21: V22 ADMIN MENU & HELPERS
+// PART 21: ADMIN MENU & HELPERS
 // ============================================================================
 
 /**
@@ -21970,231 +18890,80 @@ function getPaymentVerificationCenterHtml_V3_() {
 function rearrangeMergedRows() {
   var ui = SpreadsheetApp.getUi();
   var lock = LockService.getScriptLock();
-  
-  if (ui.alert("Rearrange Merged Rows?", 
+
+  if (ui.alert("Rearrange Merged Rows?",
       "This will move rows in BOTH sheets so that merged group members appear immediately below their primary contact:\n\n" +
-      "• Registration sheet (Registration Form)\n" +
-      "• Financial Dashboard sheet\n\n" +
+      "- Registration sheet (" + SYSTEM_CONFIG.SHEETS.REGISTRATION + ")\n" +
+      "- Finance sheet (" + SYSTEM_CONFIG.SHEETS.FINANCE + ")\n\n" +
       "This helps in visual verification.\n\nContinue?", ui.ButtonSet.YES_NO) != ui.Button.YES) return;
 
   if (!lock.tryLock(30000)) {
     ui.alert("System is busy. Please try again later.");
     return;
   }
-  
+
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
     var repo = new SheetRepository();
     var regSheet = repo.getRegistrationSheet();
-    var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
-    
-    // === STEP 1: Rearrange Registration Sheet ===
+    var finSheet = repo.getFinanceSheet();
+    if (!regSheet) { ui.alert("Registration sheet not found."); return; }
+
     SpreadsheetApp.getActiveSpreadsheet().toast("Scanning merge groups...", "Rearrange", -1);
-    
+
     var regData = regSheet.getDataRange().getValues();
     var regMap = ColumnManager.headerMap(regSheet);
-    
+
     var colGroup = regMap[V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID];
     var colRole = regMap[V22_CONFIG.MERGE.REG_HEADERS.ROLE];
     var colEmail = SYSTEM_CONFIG.COLS.REG.EMAIL;
-    
+
     if (!colGroup || !colRole) {
-      ui.alert("Merge columns (Group ID/Role) not found. Please run 'Open Merge Interface' first to initialize.");
+      ui.alert("Merge columns (Group ID/Role) not found. Please run " + getMenuPathText_("openCombinedRegistrationMerge") + " first to initialize.");
       return;
     }
-    
-    // Group Data by merge group ID
+
+    // Collect each group's primary and member emails (in sheet order)
     var groups = {};
     for (var i = 1; i < regData.length; i++) {
-      var gid = String(regData[i][colGroup-1] || "").trim();
-      var email = String(regData[i][colEmail-1] || "").trim();
-      var role = String(regData[i][colRole-1] || "").toUpperCase();
-      
+      var gid = String(regData[i][colGroup - 1] || "").trim();
+      var email = Utils.normalizeEmail(regData[i][colEmail - 1]);
+      var role = String(regData[i][colRole - 1] || "").toUpperCase();
       if (!gid || !email) continue;
-      
-      if (!groups[gid]) groups[gid] = { primary: null, primaryRow: null, members: [] };
-      
-      if (role.indexOf("PRIMARY") !== -1) {
-        groups[gid].primary = email;
-        groups[gid].primaryRow = i + 1; // 1-indexed row number
-      } else {
-        groups[gid].members.push({ email: email, row: i + 1 });
-      }
+
+      if (!groups[gid]) groups[gid] = { primary: null, members: [] };
+      if (role.indexOf("PRIMARY") !== -1) groups[gid].primary = email;
+      else groups[gid].members.push(email);
     }
-    
-    // Reorder each group in Registration
+
+    var finCols = finSheet ? ColumnManager.getFinanceCols(finSheet) : null;
     var groupIds = Object.keys(groups);
-    var movedCount = 0;
-    
-    SpreadsheetApp.getActiveSpreadsheet().toast("Rearranging Registration sheet...", "Rearrange", -1);
-    
-    for (var g = 0; g < groupIds.length; g++) {
-      var gid = groupIds[g];
-      var group = groups[gid];
-      
-      if (!group.primary || group.members.length === 0) continue;
-      
-      // Sort members by current row position (ascending)
-      group.members.sort(function(a, b) { return a.row - b.row; });
-      
-      // Move each member to be immediately after primary
-      // Important: Move from bottom to top to avoid shifting issues
-      for (var m = group.members.length - 1; m >= 0; m--) {
-        var member = group.members[m];
-        var targetRow = group.primaryRow + 1; // Place right after primary
-        
-        if (member.row === targetRow) continue; // Already in place
-        
-        try {
-          var sourceRange = regSheet.getRange(member.row, 1, 1, regSheet.getLastColumn());
-          regSheet.moveRows(sourceRange, targetRow);
-          movedCount++;
-          
-          // Update row indices after move
-          if (member.row > targetRow) {
-            // Moving up
-            for (var u = 0; u < group.members.length; u++) {
-              if (group.members[u].row >= targetRow && group.members[u].row < member.row) {
-                group.members[u].row++;
-              }
-            }
-            member.row = targetRow;
-          } else {
-            // Moving down
-            for (var d = 0; d < group.members.length; d++) {
-              if (group.members[d].row > member.row && group.members[d].row <= targetRow) {
-                group.members[d].row--;
-              }
-            }
-            member.row = targetRow;
-          }
-          
-        } catch (e) {
-          Logger.log("Failed to move " + member.email + " in Registration: " + e);
-          ui.alert("Error moving row in Registration: " + e + "\n\nThis might be due to protected ranges or sheet permissions.");
-          return;
+    var groupsDone = 0;
+
+    // Rows are located again by email before every move. The previous version worked from
+    // row numbers captured once at the start, which went stale after the first move, so with
+    // more than one group it moved unrelated rows.
+    TriggerGuard.mute(function () {
+      for (var g = 0; g < groupIds.length; g++) {
+        var group = groups[groupIds[g]];
+        if (!group.primary || group.members.length === 0) continue;
+
+        SpreadsheetApp.getActiveSpreadsheet().toast("Group " + (g + 1) + " of " + groupIds.length + "...", "Rearrange", -1);
+
+        MergeService.rearrangeGroupOnSheet_(regSheet, colEmail, group.primary, group.members);
+        if (finSheet && finCols && finCols.Email) {
+          MergeService.rearrangeGroupOnSheet_(finSheet, finCols.Email, group.primary, group.members);
         }
+        groupsDone++;
       }
-    }
-    
-    // === STEP 2: Rearrange Financial Dashboard ===
-    if (finSheet) {
-      SpreadsheetApp.getActiveSpreadsheet().toast("Rearranging Financial Dashboard...", "Rearrange", -1);
-      
-      var finData = finSheet.getDataRange().getValues();
-      var finMap = ColumnManager.headerMap(finSheet);
-      
-      // Find Email column in Financial Dashboard
-      var finEmailCol = null;
-      for (var col in finMap) {
-        if (col.toLowerCase().indexOf("email") !== -1) {
-          finEmailCol = finMap[col];
-          break;
-        }
-      }
-      
-      if (!finEmailCol) {
-        ui.alert("Warning: Could not find Email column in Financial Dashboard. Skipping Financial Dashboard rearrangement.");
-      } else {
-        // Build email-to-group mapping
-        var emailToGroup = {};
-        for (var r = 1; r < regData.length; r++) {
-          var gid = String(regData[r][colGroup-1] || "").trim();
-          var email = String(regData[r][colEmail-1] || "").trim().toLowerCase();
-          var role = String(regData[r][colRole-1] || "").toUpperCase();
-          
-          if (gid && email) {
-            emailToGroup[email] = {
-              groupId: gid,
-              isPrimary: role.indexOf("PRIMARY") !== -1
-            };
-          }
-        }
-        
-        // Build Financial Dashboard groups
-        var finGroups = {};
-        for (var f = 1; f < finData.length; f++) {
-          var finEmail = String(finData[f][finEmailCol-1] || "").trim().toLowerCase();
-          if (!finEmail) continue;
-          
-          var groupInfo = emailToGroup[finEmail];
-          if (!groupInfo) continue;
-          
-          var fgid = groupInfo.groupId;
-          if (!finGroups[fgid]) {
-            finGroups[fgid] = { primary: null, primaryRow: null, members: [] };
-          }
-          
-          if (groupInfo.isPrimary) {
-            finGroups[fgid].primary = finEmail;
-            finGroups[fgid].primaryRow = f + 1;
-          } else {
-            finGroups[fgid].members.push({ email: finEmail, row: f + 1 });
-          }
-        }
-        
-        // Rearrange Financial Dashboard groups
-        var finGroupIds = Object.keys(finGroups);
-        var finMovedCount = 0;
-        
-        for (var fg = 0; fg < finGroupIds.length; fg++) {
-          var fgid = finGroupIds[fg];
-          var fgroup = finGroups[fgid];
-          
-          if (!fgroup.primary || fgroup.members.length === 0) continue;
-          
-          // Sort members by current row position
-          fgroup.members.sort(function(a, b) { return a.row - b.row; });
-          
-          // Move from bottom to top
-          for (var fm = fgroup.members.length - 1; fm >= 0; fm--) {
-            var fmember = fgroup.members[fm];
-            var ftargetRow = fgroup.primaryRow + 1;
-            
-            if (fmember.row === ftargetRow) continue;
-            
-            try {
-              var fsourceRange = finSheet.getRange(fmember.row, 1, 1, finSheet.getLastColumn());
-              finSheet.moveRows(fsourceRange, ftargetRow);
-              finMovedCount++;
-              
-              // Update indices
-              if (fmember.row > ftargetRow) {
-                for (var fu = 0; fu < fgroup.members.length; fu++) {
-                  if (fgroup.members[fu].row >= ftargetRow && fgroup.members[fu].row < fmember.row) {
-                    fgroup.members[fu].row++;
-                  }
-                }
-                fmember.row = ftargetRow;
-              } else {
-                for (var fd = 0; fd < fgroup.members.length; fd++) {
-                  if (fgroup.members[fd].row > fmember.row && fgroup.members[fd].row <= ftargetRow) {
-                    fgroup.members[fd].row--;
-                  }
-                }
-                fmember.row = ftargetRow;
-              }
-              
-            } catch (e) {
-              Logger.log("Failed to move " + fmember.email + " in Financial Dashboard: " + e);
-              // Continue with other rows instead of failing completely
-            }
-          }
-        }
-        
-        SpreadsheetApp.getActiveSpreadsheet().toast("Done. Moved " + movedCount + " Registration rows, " + finMovedCount + " Financial rows.", "Success", 3);
-        ui.alert("✅ Rearrangement Complete.\n\n" +
-                 "Registration: Moved " + movedCount + " rows\n" +
-                 "Financial Dashboard: Moved " + finMovedCount + " rows\n\n" +
-                 "Merged groups are now contiguous in both sheets.");
-      }
-    } else {
-      SpreadsheetApp.getActiveSpreadsheet().toast("Done. Moved " + movedCount + " rows.", "Success", 3);
-      ui.alert("✅ Rearrangement Complete.\n\n" +
-               "Registration: Moved " + movedCount + " rows\n" +
-               "(Financial Dashboard sheet not found)");
-    }
-    
+    });
+
+    SpreadsheetApp.flush();
+    SpreadsheetApp.getActiveSpreadsheet().toast("Done. Rearranged " + groupsDone + " group(s).", "Success", 3);
+    ui.alert("Rearrangement complete.\n\n" +
+             "Merged groups rearranged: " + groupsDone + "\n" +
+             (finSheet ? "Rows in " + SYSTEM_CONFIG.SHEETS.REGISTRATION + " and " + SYSTEM_CONFIG.SHEETS.FINANCE + " are now contiguous per group."
+                       : "(" + SYSTEM_CONFIG.SHEETS.FINANCE + " sheet not found - only " + SYSTEM_CONFIG.SHEETS.REGISTRATION + " was rearranged.)"));
+
   } catch (e) {
     ui.alert("Error: " + e);
     Logger.log("Error in rearrangeMergedRows: " + e);
@@ -22250,8 +19019,8 @@ function addMergeGroupIndicators() {
   
   if (ui.alert("Add Visual Merge Indicators?", 
       "This will add color-coded backgrounds and borders to merged groups in BOTH:\n" +
-      "• Registration sheet (Registration Form)\n" +
-      "• Financial Dashboard sheet\n\n" +
+      "• Registration sheet (" + SYSTEM_CONFIG.SHEETS.REGISTRATION + ")\n" +
+      "• Finance sheet (" + SYSTEM_CONFIG.SHEETS.FINANCE + ")\n\n" +
       "Each merge group will have a unique color, making it easy to see which participants belong together.\n\nContinue?", 
       ui.ButtonSet.YES_NO) != ui.Button.YES) return;
 
@@ -22271,7 +19040,7 @@ function addMergeGroupIndicators() {
     var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
     
     if (!finSheet) {
-      ui.alert("Financial Dashboard sheet not found. Only Registration sheet will be colored.");
+      ui.alert("" + SYSTEM_CONFIG.SHEETS.FINANCE + " sheet not found. Only " + SYSTEM_CONFIG.SHEETS.REGISTRATION + " will be colored.");
     }
     
     var regData = regSheet.getDataRange().getValues();
@@ -22282,7 +19051,7 @@ function addMergeGroupIndicators() {
     var colEmail = SYSTEM_CONFIG.COLS.REG.EMAIL;
     
     if (!colGroup || !colRole) {
-      ui.alert("Merge columns (Group ID/Role) not found. Please run 'Open Merge Interface' first to initialize.");
+      ui.alert("Merge columns (Group ID/Role) not found. Please run " + getMenuPathText_("openCombinedRegistrationMerge") + " first to initialize.");
       return;
     }
     
@@ -22307,7 +19076,7 @@ function addMergeGroupIndicators() {
     var lastRow = regSheet.getLastRow();
     if (lastRow > 1) {
       regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).setBackground("white");
-      regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).setBorder(null, null, null, null, null, null);
+      regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).setBorder(false, false, false, false, false, false); // false removes a border; null leaves it unchanged
     }
     
     // Group rows by merge group ID  in Registration
@@ -22388,7 +19157,7 @@ function addMergeGroupIndicators() {
         var finLastRow = finSheet.getLastRow();
         if (finLastRow > 1) {
           finSheet.getRange(2, 1, finLastRow - 1, finSheet.getLastColumn()).setBackground("white");
-          finSheet.getRange(2, 1, finLastRow - 1, finSheet.getLastColumn()).setBorder(null, null, null, null, null, null);
+          finSheet.getRange(2, 1, finLastRow - 1, finSheet.getLastColumn()).setBorder(false, false, false, false, false, false); // false removes a border; null leaves it unchanged
         }
         
         // Build email-to-group mapping from Registration
@@ -22447,7 +19216,7 @@ function addMergeGroupIndicators() {
     ui.alert("✅ Visual Indicators Applied!\n\n" +
              "Applied color coding and borders to " + groupCount + " merge groups in:\n" +
              "• Registration sheet\n" +
-             (finSheet ? "• Financial Dashboard sheet\n\n" : "\n") +
+             (finSheet ? "• Finance sheet (" + SYSTEM_CONFIG.SHEETS.FINANCE + ")\n\n" : "\n") +
              "Each group has a unique background color and is surrounded by a thick border.");
     
   } catch (e) {
@@ -22468,7 +19237,7 @@ function removeMergeGroupIndicators() {
   if (ui.alert("Remove Visual Indicators?", 
       "This will reset all backgrounds and borders in:\n" +
       "• Registration sheet\n" +
-      "• Financial Dashboard sheet\n\nContinue?", 
+      "• Finance sheet (" + SYSTEM_CONFIG.SHEETS.FINANCE + ")\n\nContinue?", 
       ui.ButtonSet.YES_NO) != ui.Button.YES) return;
   
   try {
@@ -22482,7 +19251,7 @@ function removeMergeGroupIndicators() {
     
     if (lastRow > 1) {
       regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).setBackground("white");
-      regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).setBorder(null, null, null, null, null, null);
+      regSheet.getRange(2, 1, lastRow - 1, regSheet.getLastColumn()).setBorder(false, false, false, false, false, false); // false removes a border; null leaves it unchanged
     }
     
     // Reset Financial Dashboard
@@ -22493,7 +19262,7 @@ function removeMergeGroupIndicators() {
       
       if (finLastRow > 1) {
         finSheet.getRange(2, 1, finLastRow - 1, finSheet.getLastColumn()).setBackground("white");
-        finSheet.getRange(2, 1, finLastRow - 1, finSheet.getLastColumn()).setBorder(null, null, null, null, null, null);
+        finSheet.getRange(2, 1, finLastRow - 1, finSheet.getLastColumn()).setBorder(false, false, false, false, false, false); // false removes a border; null leaves it unchanged
       }
     }
     
@@ -22505,185 +19274,629 @@ function removeMergeGroupIndicators() {
 
 
 // ============================================================================
-// ACTIVE onOpen() - V23 with all features
+// ADMIN CENTER MENU - SINGLE SOURCE OF TRUTH
 // ============================================================================
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  
-  ui.createMenu("🛠️ Admin Center")
-    // ===== SYSTEM BUILDER =====
-    .addItem("🏗️ BUILD BUILD BUILD", "showSystemBuilder")
-    .addItem("🔄 SYSTEM UPDATER", "runSystemUpdater")
-    .addSeparator()
-    
-    // ===== SYSTEM INTRODUCTION =====
-    .addItem("📚 System Introduction & Guide", "showSystemIntroduction")
-    .addSeparator()
-    
-    // ===== DASHBOARDS & REPORTS =====
-    .addSubMenu(ui.createMenu("📊 Dashboards & Reports")
-      .addItem("📈 Analytics Dashboard", "showAnalyticsDashboard")
-      .addItem("💰 Finance Dashboard", "showFinanceDashboard")
-      .addSeparator()
-      .addItem("📊 Setup Participant Database Query", "setupParticipantDatabaseQuery")
-      .addSeparator()
-      .addItem("📋 Export Cashback Report", "exportCashbackReport"))
-    
-    // ===== FINANCE OPERATIONS =====
-    .addSubMenu(ui.createMenu("💰 Finance Operations")
-      .addItem("🛡️ Payment Verification Center", "openPaymentVerificationCenter")
-      .addSeparator()
-      .addItem("🔄 Sync Dashboard (Light)", "syncDashboard")
-      .addItem("🧱 Rebuild Dashboard (Full + QA)", "rebuildFinanceDashboardFull")
-      .addItem("✅ Validate Dashboard (QA Only)", "validateFinanceDashboard")
-      .addSeparator()
-      .addItem("🧹 Cleanup Orphaned Rows", "cleanupOrphanedFinanceRows"))
-    
-    // ===== EMAIL MANAGEMENT =====
-    .addSubMenu(ui.createMenu("📧 Email Management")
-      .addItem("📢 Announcement Center", "openAnnouncementCenter")
-      .addSeparator()
-      .addItem("📊 Email Status Dashboard", "showEmailDashboard")
-      .addItem("✅ Quick Verify AR Emails", "quickVerifyOREmails")
-      .addSeparator()
-      .addSubMenu(ui.createMenu("👁️ Preview Emails")
-        .addItem("📝 Registration Confirmation", "previewConfirmedEmail")
-        .addItem("🧾 Acknowledgement Receipt", "previewReceipt")
-        .addItem("🎉 Referral Credit Notification", "previewReferralCredit")
-        .addItem("📋 Referral Removal Notification", "previewReferralRemoval"))
-      .addSeparator()
-      .addSubMenu(ui.createMenu("📤 Bulk Operations")
-        .addItem("🔄 Resend All Failed/Error Emails", "resendAllFailedEmails")
-        .addItem("📨 Resend All Pending AR Emails", "resendAllPendingOREmails")
-        .addItem("🔗 Resend All Pending Referral Notifs", "resendAllPendingReferralNotifications"))
-      .addSubMenu(ui.createMenu("📌 Selected Row")
-        .addItem("📧 Resend Email", "resendSelectedRowEmailMenu")
-        .addItem("🔗 Resend Referral Notification", "resendSelectedRowReferralNotification")
-        .addSeparator()
-        .addItem("🔍 Check Email Status", "checkSelectedRowEmailStatus")
-        .addItem("🗑️ Clear Email Tracking", "clearSelectedRowEmailTracking"))
-      .addSeparator()
-      .addItem("📊 View Rate Limit Status", "viewRateLimitStatus")
-      .addItem("🔄 Reset Rate Limiter", "resetRateLimiter"))
-    
-    // ===== SYSTEM TOOLS =====
-    .addSubMenu(ui.createMenu("🔧 System Tools")
-      .addItem("🎛️ Open System Dashboard", "openSystemDashboard")
-      .addSeparator()
-      .addItem("🚑 Run Health Check", "runHealthCheck")
-      .addItem("🧪 Run Quick Self-Test", "runQuickSelfTest")
-      .addItem("🩺 Full System Health Check", "runSystemHealthCheck")
-      .addSeparator()
-      .addItem("🔄 Smart Migration (Fix Old Data)", "runSmartMigration")
-      .addItem("⚡ Force Reprocess Selected Row", "forceReprocess")
-      .addSeparator()
-      .addItem("📧 Test Email Threading (New Email)", "testEmailThreading")
-      .addItem("📧 Test ALL Emails Threading (Selected Row)", "testThreadingExistingRegistration")
-      .addSeparator()
-      .addItem("🔐 Test Logo Permissions", "testLogoPermissions")
-      .addItem("⚙️ Create/Update Triggers", "createTriggers"))
-    
+// The menu is defined ONCE, in getAdminMenuDefinition_(). onOpen() builds the real
+// Admin Center menu from it, and the System Guide prints its "Menu" tab from the very
+// same list, so the guide can never describe a menu that is not there.
+//
+// To add, rename or move a tool, edit the list below. Each entry is one of:
+//   ["Label shown in the menu", "functionName", "What it does (shown in the guide)"]
+//   "-"                                     a separator line
+//   { menu: "Sub-menu label", items: [ ... ] }
+// ============================================================================
 
-    // ===== COLUMN TOOLS =====
-    .addSubMenu(ui.createMenu("⚙️ Column Configuration")
-      .addItem("🔍 Check & Fix Columns + Data", "checkAndFixColumns")
-      .addItem("🔎 Auto-Detect Column Mapping", "autoDetectColumnMapping")
-      .addSeparator()
-      .addItem("🧪 Test Column Access", "testColumnAccess")
-      .addItem("📋 Show All Column Headers", "showColumnMapping"))
-    
-    // ===== DATA MANAGEMENT =====
-    .addSubMenu(ui.createMenu("🗑️ Data Management")
-      .addItem("🔍 Diagnose Form Connection", "diagnoseFormConnection")
-      .addItem("📍 Where is Form Writing?", "showFormDestination")
-      .addSeparator()
-      .addItem("❌ Delete Selected Row", "deleteSelectedRow")
-      .addItem("❌ Delete Selected Rows (Range)", "deleteSelectedRows")
-      .addSeparator()
-      .addItem("🧹 Clear ALL Registration Data", "clearAllRegistrationData")
-      .addItem("🧹 Clear ALL Finance Data", "clearAllFinanceData")
-      .addItem("🔄 Clear Form Responses (Auto)", "clearAllFormResponses")
-      .addSeparator()
-      .addItem("🔧 Repair Form Link", "repairFormLink")
-      .addItem("🔗 Force Re-link Form", "forceRelinkForm")
-      .addSeparator()
-      .addItem("💣 FULL SYSTEM RESET", "fullSystemReset")
-      .addSeparator()
-      .addItem("📋 Troubleshooting Guide", "showFormResponseClearingGuide"))
+var ADMIN_MENU_TITLE = "🛠️ Admin Center";
 
-    // ===== V22: MERGE/GROUPING SYSTEM =====
-    .addSubMenu(ui.createMenu("🔗 Merge / Grouping System")
-      .addItem("🔗 Open Merge Interface", "openCombinedRegistrationMerge")
-      .addSeparator()
-      .addItem("🎨 Add Visual Group Indicators", "addMergeGroupIndicators")
-      .addItem("🧹 Remove Visual Indicators", "removeMergeGroupIndicators")
-      .addItem("📐 Rearrange Merged Rows (Contiguous)", "rearrangeMergedRows")
-      .addSeparator()
-      .addItem("🔁 Reapply All Merges", "reapplyAllMergeGroups")
-      .addItem("📧 Send Group Receipt (Paid)", "promptSendGroupReceipt")
-      .addItem("📧 Send Group Received (Pending)", "promptSendGroupRegReceived")
-      .addSeparator()
-      .addItem("🔓 Unmerge Group (by ID)", "promptUnmergeGroup"))
+function getAdminMenuDefinition_() {
+  var S = SYSTEM_CONFIG.SHEETS;   // descriptions name the sheets as they are called in the settings
+  return [
+    ["🏗️ BUILD BUILD BUILD", "showSystemBuilder",
+      "First-time setup. Creates any missing sheet (" + [S.REGISTRATION, S.FINANCE, S.COUPONS, S.PARTICIPANT_DB].join(", ") + ") with the right headers. Sheets that already hold data are left exactly as they are."],
+    ["🔄 SYSTEM UPDATER", "runSystemUpdater",
+      "Fills in missing data on the sheet you are viewing, for the rows you selected: missing Gen IDs, pricing columns, blank payment status, paid-referral counts, missing Finance rows."],
+    "-",
+    ["📚 System Introduction & Guide", "showSystemIntroduction",
+      "This guide. It is rebuilt from the current settings, sheets and menu every time you open it."],
+    "-",
 
-    // ===== V22: MANUAL EDITOR SYSTEM =====
-    .addSubMenu(ui.createMenu("✏️ Manual Editor System")
-      .addItem("✏️ Open Manual Editor (Live CRUD)", "openManualResponseEditor"))
+    { menu: "📊 Dashboards & Reports", items: [
+      ["📈 Analytics Dashboard", "showAnalyticsDashboard",
+        "Registration trend, competitions, regions, schools, and grade / sex / age breakdowns."],
+      ["💰 Finance Dashboard", "showFinanceDashboard",
+        "Expected revenue, collected versus pending, discounts given, payment modes, merge groups and the payment list."],
+      "-",
+      ["📊 Setup Participant Database Query", "setupParticipantDatabaseQuery",
+        "Choose which " + S.REGISTRATION + " columns appear in the " + S.PARTICIPANT_DB + " sheet (a live, read-only view)."],
+      "-",
+      ["📋 Export Cashback Report", "exportCashbackReport",
+        "Writes the " + S.CASHBACK_REPORT + " sheet: every referrer with their paid-referral count and the cashback owed."]
+    ] },
 
-    // ===== V23: SUBMISSION & DEPERSONALIZATION =====
-    .addSubMenu(ui.createMenu("🔒 Submission & Depersonalization")
-      .addItem("📋 Submission Dashboard", "openSubmissionDashboard")
-      .addSeparator()
-      .addSubMenu(ui.createMenu("🔄 Processing")
-        .addItem("🔄 Reprocess All Pending", "reprocessAllPendingSubmissions")
-        .addItem("⚡ Reprocess Selected Row", "reprocessSelectedSubmission"))
-      .addSubMenu(ui.createMenu("📨 Emails")
-        .addItem("📨 Resend All Unsent Confirmations", "resendAllPendingSubmissionConfirmations")
-        .addItem("📧 Resend Confirmation (Selected)", "resendSubmissionConfirmation")
-        .addSeparator()
-        .addItem("👁️ Preview Submission Email", "previewSubmissionAcknowledgement"))
-      .addSubMenu(ui.createMenu("🔍 Audit & Integrity")
-        .addItem("🔍 Audit Participant Numbers", "auditParticipantNumbers")
-        .addItem("🔧 Fix Duplicate Participant Numbers", "fixDuplicateParticipantNumbers")
-        .addItem("🔗 Audit & Sync Drive Files", "auditAndSyncDriveFiles"))
-      .addSubMenu(ui.createMenu("🚩 Flagging & PII")
-        .addItem("🚩 Flag Selected Submission", "flagSubmission")
-        .addItem("✅ Unflag Selected Submission", "unflagSubmission")
-        .addItem("📨 Send Correction Request", "sendCorrectionRequest")
-        .addSeparator()
-        .addItem("🔍 Scan Selected for PII", "scanSubmissionForPii"))
-      .addSubMenu(ui.createMenu("⚙️ Configuration")
-        .addItem("⚙️ Configure Anon Folders", "configureAnonFolders")
-        .addItem("📦 Migrate Files to New Folders", "migrateAnonFiles"))
-      .addSeparator()
-      .addItem("🧪 Test Depersonalization System", "runDepersonalizationTestSuite"))
+    { menu: "💰 Finance Operations", items: [
+      ["🛡️ Payment Verification Center", "openPaymentVerificationCenter",
+        "Compare what each participant should pay with what they actually sent. Type the received amount on a row to see matches and mismatches."],
+      "-",
+      ["🔄 Sync Dashboard (Light)", "syncDashboard",
+        "Copies every " + S.REGISTRATION + " row into " + S.FINANCE + ", keeping Status, Verifier, Pay Ref and Email Sent, and corrects the Payment Status column in " + S.REGISTRATION + "."],
+      ["🧱 Rebuild Dashboard (Full + QA)", "rebuildFinanceDashboardFull",
+        "Rewrites the whole " + S.FINANCE + " sheet from " + S.REGISTRATION + " (admin columns are kept), then runs the QA check."],
+      ["✅ Validate Dashboard (QA Only)", "validateFinanceDashboard",
+        "Checks " + S.FINANCE + " against " + S.REGISTRATION + " and lists problems in the Finance QA Report sheet. Changes nothing."],
+      "-",
+      ["🧹 Cleanup Orphaned Rows", "cleanupOrphanedFinanceRows",
+        "Deletes " + S.FINANCE + " rows whose email no longer exists in " + S.REGISTRATION + " (asks first)."]
+    ] },
 
-    // ===== COUPON SYSTEM =====
-    .addSubMenu(ui.createMenu("🎫 Coupon System")
-      .addSubMenu(ui.createMenu("🎟️ Promo Codes")
-        .addItem("➕ Generate New Promo Codes", "openCouponGenerator"))
-      .addSubMenu(ui.createMenu("🎖️ Member Ambassador")
-        .addItem("➕ Generate Member Codes", "openMemberCodeGenerator")
-        .addItem("📊 View Member Stats", "viewMemberCodeStats")
-        .addItem("📋 Export Compensation Report", "exportMemberCompensationReport"))
-      .addSeparator()
-      .addItem("🔄 Migrate Coupon Sheet (Add Type/Owner)", "migrateCouponSheet"))
+    { menu: "📧 Email Management", items: [
+      ["📢 Announcement Center", "openAnnouncementCenter",
+        "Write an announcement and send it now or at a scheduled time to a filtered list of participants. Shows the daily email quota and can retry failures."],
+      "-",
+      ["📊 Email Status Dashboard", "showEmailDashboard",
+        "Sent / error / pending counts for every email type, and who needs attention."],
+      ["✅ Quick Verify AR Emails", "quickVerifyOREmails",
+        "Quick check that every PAID participant has received the Acknowledgement Receipt."],
+      "-",
+      { menu: "👁️ Preview Emails", items: [
+        ["📝 Registration Confirmation", "previewConfirmedEmail", "Preview the Registration Received email with sample data."],
+        ["🧾 Acknowledgement Receipt", "previewReceipt", "Preview the receipt email with sample data."],
+        ["🎉 Referral Credit Notification", "previewReferralCredit", "Preview the email a referrer gets when a referral pays."],
+        ["📋 Referral Removal Notification", "previewReferralRemoval", "Preview the email a referrer gets when a referral's payment is reversed."]
+      ] },
+      "-",
+      { menu: "📤 Bulk Operations", items: [
+        ["🔄 Resend All Failed/Error Emails", "resendAllFailedEmails",
+          "Resends the receipt to every PAID participant whose receipt failed or was never sent."],
+        ["📨 Resend All Pending AR Emails", "resendAllPendingOREmails",
+          "Sends the receipt to every PAID participant who does not have one yet."],
+        ["🔗 Resend All Pending Referral Notifs", "resendAllPendingReferralNotifications",
+          "Notifies referrers who have paid referrals they were not told about."]
+      ] },
+      { menu: "📌 Selected Row", items: [
+        ["📧 Resend Email", "resendSelectedRowEmailMenu",
+          "Resend the Registration, Receipt or Referral email to the participant on the selected row."],
+        ["🔗 Resend Referral Notification", "resendSelectedRowReferralNotification",
+          "Resend the referral notification to the referrer on the selected row."],
+        "-",
+        ["🔍 Check Email Status", "checkSelectedRowEmailStatus",
+          "Shows which emails were sent to the selected participant, and when."],
+        ["🗑️ Clear Email Tracking", "clearSelectedRowEmailTracking",
+          "Forgets the send history of the selected participant so emails can be sent again."]
+      ] },
+      "-",
+      ["📊 View Rate Limit Status", "viewRateLimitStatus", "Emails sent this hour against the hourly cap."],
+      ["🔄 Reset Rate Limiter", "resetRateLimiter", "Clears the hourly email counter."]
+    ] },
 
-    // ===== COMPETITION SHEET GENERATOR =====
-    .addSubMenu(ui.createMenu("📋 Competition Tools")
-      .addItem("📊 Generate Competition Sheets", "generateCompetitionSheets"))
+    { menu: "🔧 System Tools", items: [
+      ["🎛️ Open System Dashboard", "openSystemDashboard",
+        "Live health view (sheets, triggers, form link, email cap, counts) with test runners and one-click fixes."],
+      "-",
+      ["🚑 Run Health Check", "runHealthCheck", "Quick check that the sheets and the two triggers exist."],
+      ["🧪 Run Quick Self-Test", "runQuickSelfTest", "Tests pricing, email and proof-link validation, and the rate limiter."],
+      ["🩺 Full System Health Check", "runSystemHealthCheck", "Detailed report on configuration, sheets, columns, services and data."],
+      "-",
+      ["🔄 Smart Migration (Fix Old Data)", "runSmartMigration",
+        "Processes " + S.REGISTRATION + " rows that never got a Gen ID and fills in missing email subjects."],
+      ["⚡ Force Reprocess Selected Row", "forceReprocess",
+        "Re-runs registration processing (pricing, coupon, referral, Finance row) for the selected participant."],
+      "-",
+      ["📧 Test Email Threading (New Email)", "testEmailThreading",
+        "Sends two test emails to an address you type, to confirm they arrive as one conversation."],
+      ["📧 Test ALL Emails Threading (Selected Row)", "testThreadingExistingRegistration",
+        "Sends all four email types to the selected participant's own address. These are real emails, so use a test row."],
+      "-",
+      ["🔐 Test Logo Permissions", "testLogoPermissions", "Loads the two logo images to confirm the script is allowed to read them."],
+      ["⚙️ Create/Update Triggers", "createTriggers",
+        "Installs the two required triggers (on form submit and on edit). Run this once after pasting the code."]
+    ] },
 
-    .addToUi();
+    { menu: "⚙️ Column Configuration", items: [
+      ["🔍 Check & Fix Columns + Data", "checkAndFixColumns",
+        "Checks the " + S.REGISTRATION + " sheet for missing system columns and offers to add them at the end. Existing columns are not changed."],
+      ["🔎 Auto-Detect Column Mapping", "autoDetectColumnMapping",
+        "Reads the Registration headers and prints a COLS.REG block you can paste into the configuration."],
+      "-",
+      ["🧪 Test Column Access", "testColumnAccess",
+        "Reads the first data row to confirm Email, Name and Gen ID are where the configuration says."],
+      ["📋 Show All Column Headers", "showColumnMapping",
+        "Lists every Registration column next to the configuration key that points at it."]
+    ] },
+
+    { menu: "🗑️ Data Management", items: [
+      ["🔍 Diagnose Form Connection", "diagnoseFormConnection",
+        "Shows which sheets the Registration form and the Submission form are writing to."],
+      ["📍 Where is Form Writing?", "showFormDestination", "Lists every sheet that currently receives form responses."],
+      "-",
+      ["❌ Delete Selected Row", "deleteSelectedRow",
+        "Deletes the selected registration, its Finance row, its email history and its form response."],
+      ["❌ Delete Selected Rows (Range)", "deleteSelectedRows",
+        "The same for several selected rows (asks you to type DELETE)."],
+      "-",
+      ["🧹 Clear ALL Registration Data", "clearAllRegistrationData",
+        "Deletes every " + S.REGISTRATION + " row and all email history (asks you to type CLEAR ALL)."],
+      ["🧹 Clear ALL Finance Data", "clearAllFinanceData",
+        "Deletes every " + S.FINANCE + " row (asks you to type CLEAR ALL)."],
+      ["🔄 Clear Form Responses (Auto)", "clearAllFormResponses",
+        "Deletes the responses stored inside the Registration form so the same emails can submit again. Sheet data is not touched."],
+      "-",
+      ["🔧 Repair Form Link", "repairFormLink",
+        "Moves rows from stray 'Form Responses' sheets into " + S.REGISTRATION + " and removes those sheets."],
+      ["🔗 Force Re-link Form", "forceRelinkForm",
+        "Unlinks and re-links the Registration form to this spreadsheet. Google then writes to a NEW sheet that you must rename."],
+      "-",
+      ["💣 FULL SYSTEM RESET", "fullSystemReset",
+        "Deletes all rows of " + S.REGISTRATION + " and " + S.FINANCE + ", stray response sheets, the Registration form's responses and all email history (asks you to type RESET EVERYTHING). Submissions and settings are not touched."],
+      "-",
+      ["📋 Troubleshooting Guide", "showFormResponseClearingGuide",
+        "Explains why someone cannot fill in the form again after their row was deleted, and how to clear the form's stored responses."]
+    ] },
+
+    { menu: "🔗 Merge / Grouping System", items: [
+      ["🔗 Open Merge Interface", "openCombinedRegistrationMerge",
+        "Combine registrations that pay together into one group with one total. Also lists existing groups."],
+      "-",
+      ["🎨 Add Visual Group Indicators", "addMergeGroupIndicators", "Colours and outlines each merge group on both sheets."],
+      ["🧹 Remove Visual Indicators", "removeMergeGroupIndicators", "Removes those colours and outlines."],
+      ["📐 Rearrange Merged Rows (Contiguous)", "rearrangeMergedRows",
+        "Moves each group's members directly below their primary payer on both sheets."],
+      "-",
+      ["🔁 Reapply All Merges", "reapplyAllMergeGroups",
+        "Re-applies every group's totals, colours and row order. Use after a Sync or Rebuild."],
+      ["📧 Send Group Receipt (Paid)", "promptSendGroupReceipt",
+        "Sends every member of a group their receipt and marks them PAID."],
+      ["📧 Send Group Received (Pending)", "promptSendGroupRegReceived",
+        "Sends every member of a group the Registration Received email."],
+      "-",
+      ["🔓 Unmerge Group (by ID)", "promptUnmergeGroup", "Dissolves a group and restores each member's own amounts."]
+    ] },
+
+    { menu: "✏️ Manual Editor System", items: [
+      ["✏️ Open Manual Editor (Live CRUD)", "openManualResponseEditor",
+        "Find a participant and edit name, email, competitions, amount, status or payment details, with a preview of the change. Changing the status here behaves exactly like editing " + S.FINANCE + "."]
+    ] },
+
+    { menu: "🔒 Submission & Depersonalization", items: [
+      ["📋 Submission Dashboard", "openSubmissionDashboard",
+        "Every submission with its status. Reprocess, flag, scan for personal details, resend the acknowledgement, edit entries."],
+      "-",
+      { menu: "🔄 Processing", items: [
+        ["🔄 Reprocess All Pending", "reprocessAllPendingSubmissions",
+          "Processes every submission that is not yet PROCESSED or FLAGGED."],
+        ["⚡ Reprocess Selected Row", "reprocessSelectedSubmission", "Processes the selected submission again."]
+      ] },
+      { menu: "📨 Emails", items: [
+        ["📨 Resend All Unsent Confirmations", "resendAllPendingSubmissionConfirmations",
+          "Sends the acknowledgement to every processed submission that has not received one."],
+        ["📧 Resend Confirmation (Selected)", "resendSubmissionConfirmation",
+          "Shows the acknowledgement for the selected submission, then sends it when you confirm."],
+        "-",
+        ["👁️ Preview Submission Email", "previewSubmissionAcknowledgement",
+          "Preview the acknowledgement for a competition you choose, with sample data."]
+      ] },
+      { menu: "🔍 Audit & Integrity", items: [
+        ["🔍 Audit Participant Numbers", "auditParticipantNumbers",
+          "Finds participant numbers that have no matching entry data and can remove them."],
+        ["🔧 Fix Duplicate Participant Numbers", "fixDuplicateParticipantNumbers",
+          "When two rows share a number, gives the later row a new one and renames its anonymized files."],
+        ["🔗 Audit & Sync Drive Files", "auditAndSyncDriveFiles",
+          "Renames anonymized Drive files whose names do not match the row's participant number."]
+      ] },
+      { menu: "🚩 Flagging & PII", items: [
+        ["🚩 Flag Selected Submission", "flagSubmission", "Marks the selected submission FLAGGED with a reason, and can email a correction request."],
+        ["✅ Unflag Selected Submission", "unflagSubmission", "Clears the flag and sets the submission back to PROCESSED."],
+        ["📨 Send Correction Request", "sendCorrectionRequest", "Emails the participant asking them to fix and resubmit."],
+        "-",
+        ["🔍 Scan Selected for PII", "scanSubmissionForPii",
+          "Reads the selected entry's documents and reports any name, school or adviser found inside."]
+      ] },
+      { menu: "⚙️ Configuration", items: [
+        ["⚙️ Configure Anon Folders", "configureAnonFolders",
+          "Creates the Drive folders that hold the anonymized copies. Do this once, before submissions open."],
+        ["📦 Migrate Files to New Folders", "migrateAnonFiles",
+          "Moves existing anonymized files into the currently configured folders."]
+      ] },
+      "-",
+      ["🧪 Test Depersonalization System", "runDepersonalizationTestSuite",
+        "Runs the submission pipeline on a temporary test row and removes it afterwards. Sends no email."]
+    ] },
+
+    { menu: "🎫 Coupon System", items: [
+      { menu: "🎟️ Promo Codes", items: [
+        ["➕ Generate New Promo Codes", "openCouponGenerator",
+          "Creates promo codes in the " + S.COUPONS + " sheet. It asks how many, their value, a prefix, the maximum uses and how many days they stay valid."]
+      ] },
+      { menu: "🎖️ Member Ambassador", items: [
+        ["➕ Generate Member Codes", "openMemberCodeGenerator", "Creates one personal code per member name."],
+        ["📊 View Member Stats", "viewMemberCodeStats", "Totals for member and promo codes, with the estimated compensation."],
+        ["📋 Export Compensation Report", "exportMemberCompensationReport",
+          "Writes the Member Compensation Report sheet with each member's uses and amount due."]
+      ] },
+      "-",
+      ["🔄 Migrate Coupon Sheet (Add Type/Owner)", "migrateCouponSheet",
+        "Adds the Type and Owner columns to an older " + S.COUPONS + " sheet."]
+    ] },
+
+    { menu: "📋 Competition Tools", items: [
+      ["📊 Generate Competition Sheets", "generateCompetitionSheets",
+        "Builds one sheet per competition from the submissions: participant number, entrant details and file links."]
+    ] }
+  ];
+}
+
+/**
+ * Add the entries of a menu definition to a Sheets menu (recursively for sub-menus).
+ */
+function buildMenuFromDefinition_(ui, menu, items) {
+  for (var i = 0; i < items.length; i++) {
+    var entry = items[i];
+    if (entry === "-") {
+      menu.addSeparator();
+    } else if (entry && entry.menu) {
+      menu.addSubMenu(buildMenuFromDefinition_(ui, ui.createMenu(entry.menu), entry.items || []));
+    } else if (entry && entry.length >= 2) {
+      menu.addItem(entry[0], entry[1]);
+    }
+  }
+  return menu;
+}
+
+/**
+ * Flat list of every menu item with the path that leads to it.
+ * @returns {Array<{path:string,label:string,fn:string,desc:string}>}
+ */
+function flattenAdminMenu_(items, parentPath) {
+  var out = [];
+  items = items || getAdminMenuDefinition_();
+  parentPath = parentPath || ADMIN_MENU_TITLE;
+  for (var i = 0; i < items.length; i++) {
+    var entry = items[i];
+    if (entry === "-" || !entry) continue;
+    if (entry.menu) {
+      out = out.concat(flattenAdminMenu_(entry.items || [], parentPath + " → " + entry.menu));
+    } else {
+      out.push({ path: parentPath, label: entry[0], fn: entry[1], desc: entry[2] || "" });
+    }
+  }
+  return out;
 }
 
 // ============================================================================
-// PART 23: SUBMISSION & DEPERSONALIZATION ADMIN TOOLS (V23)
+// ADMIN CENTER DESIGN SYSTEM - ONE LOOK FOR EVERY DIALOG
+// ============================================================================
+// Every dialog is passed through withGuideLink_(), which adds:
+//   1. the BASE layer below (same font, dark surfaces, form controls, tables, scrollbars and
+//      focus rings everywhere) - written with :where() so a dialog's own rules still win;
+//   2. the "Guide" link to the matching page of the System Guide.
+// Dialogs built with buildAdminDialog_() also get the page shell (title bar with the gold
+// brand line) and the ui-* components (cards, stats, tables, buttons, fields, badges...).
+//
+// The palette (also used by the theme of the larger dialogs and by the guide):
+//   page #0d1117 · panel #161b22 · raised #1c2330 · lines #21262d / #30363d
+//   text #e6edf3 · secondary #c9d1d9 · muted #8b949e
+//   accent blue #58a6ff / #1f6feb · green #3fb950 · amber #e3b341 · red #ff7b72 · gold #f5c518
+// ============================================================================
+
+var ADMIN_UI_FONT = '"Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif';
+
+/** Defaults shared by every dialog. Zero specificity (:where), so dialog styles override them. */
+function getAdminBaseCss_() {
+  return [
+    ':root { color-scheme: dark; }',
+    ':where(*, *::before, *::after) { box-sizing: border-box; }',
+    // the thin gold line at the top of every dialog echoes the header of the emails
+    'html body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 3px; background: #f5c518; z-index: 2147483001; pointer-events: none; }',
+    ':where(html, body) { margin: 0; }',
+    ':where(body) { background: #0d1117; color: #e6edf3; font-size: 13px; line-height: 1.55; }',
+    'html body { font-family: ' + ADMIN_UI_FONT + '; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }',
+    ':where(button, input, select, textarea) { font-family: inherit; font-size: inherit; }',
+    ':where(a) { color: #58a6ff; }',
+    ':where(hr) { border: 0; border-top: 1px solid #21262d; }',
+    // form controls
+    ':where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), select, textarea) {' +
+      ' background-color: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; padding: 7px 10px; }',
+    ':where(input, select, textarea)::placeholder { color: #6e7681; }',
+    ':where(input, select, textarea):focus { outline: none; border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(56,139,253,0.25); }',
+    ':where(input[type="checkbox"], input[type="radio"]) { accent-color: #1f6feb; }',
+    ':where(select option) { background: #161b22; color: #e6edf3; }',
+    ':where(button) { cursor: pointer; border-radius: 8px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; padding: 7px 12px; }',
+    ':where(button:disabled) { opacity: 0.5; cursor: not-allowed; }',
+    'button, .btn, [onclick] { transition: background-color .15s ease, border-color .15s ease, opacity .15s ease, transform .05s ease; }',
+    // code
+    ':where(code, pre, kbd) { font-family: "JetBrains Mono", "SF Mono", Consolas, "Courier New", monospace; }',
+    ':where(code) { background: rgba(110,118,129,0.2); color: #79c0ff; padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }',
+    // the same scrollbars, selection and keyboard focus everywhere
+    '::-webkit-scrollbar { width: 8px; height: 8px; }',
+    '::-webkit-scrollbar-track { background: transparent; }',
+    '::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }',
+    '::-webkit-scrollbar-thumb:hover { background: #484f58; }',
+    '::selection { background: rgba(56,139,253,0.35); color: #ffffff; }',
+    ':focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }',
+    '@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }',
+    // An email shown inside a dialog sits on white "paper" and keeps its own look:
+    // nothing of the dark theme (text colour, links, box model) reaches inside it.
+    '.email-paper, .ui-paper { background: #ffffff; color: #1f2328; text-align: left; border-radius: 8px; overflow: hidden; }',
+    ':where(.email-paper, .ui-paper) :where(*, *::before, *::after) { box-sizing: content-box; }',
+    ':where(.email-paper, .ui-paper) :where(a) { color: #0b57d0; }',
+    ':where(.email-paper, .ui-paper) :where(code) { background: transparent; color: inherit; padding: 0; }',
+    ':where(.email-paper, .ui-paper) :where(hr) { border: 1px inset; }'
+  ].join('\n');
+}
+
+/** Page shell and components for dialogs built with buildAdminDialog_(). */
+function getAdminUiCss_() {
+  return [
+    '*, *::before, *::after { box-sizing: border-box; }',
+    'html, body { margin: 0; padding: 0; }',
+    '.ui-app { display: flex; flex-direction: column; min-height: 100vh; }',
+    // title bar
+    '.ui-top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 14px;' +
+      ' padding: 15px 20px 13px; background: rgba(22,27,34,0.96); border-bottom: 1px solid #21262d; }',
+    '.ui-title { display: flex; align-items: center; gap: 12px; min-width: 0; }',
+    '.ui-icon { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px;' +
+      ' border-radius: 9px; background: rgba(56,139,253,0.14); border: 1px solid rgba(56,139,253,0.3); }',
+    '.ui-title h1 { margin: 0; font-size: 15.5px; font-weight: 700; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+    '.ui-title p { margin: 1px 0 0; font-size: 12px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+    '.ui-actions { display: flex; gap: 8px; flex-shrink: 0; }',
+    '.ui-main { flex: 1; padding: 18px 20px 46px; }',
+    '.ui-main > :first-child { margin-top: 0; }',
+
+    '.ui-card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 16px; margin-bottom: 14px; }',
+    '.ui-card-title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #8b949e; }',
+    '.ui-card-title .count { margin-left: auto; font-weight: 600; letter-spacing: 0; text-transform: none; color: #c9d1d9; }',
+    '.ui-lead { font-size: 13px; color: #c9d1d9; margin: 0 0 14px; }',
+    '.ui-muted { color: #8b949e; }',
+    '.ui-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }',
+    '.ui-grid.two { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }',
+
+    '.ui-stat { background: #0d1117; border: 1px solid #21262d; border-radius: 9px; padding: 11px 13px; }',
+    '.ui-stat .n { font-size: 22px; font-weight: 700; line-height: 1.15; color: #e6edf3; font-variant-numeric: tabular-nums; }',
+    '.ui-stat .l { margin-top: 2px; font-size: 11px; color: #8b949e; }',
+    '.ui-stat.ok .n { color: #3fb950; } .ui-stat.warn .n { color: #e3b341; } .ui-stat.bad .n { color: #ff7b72; } .ui-stat.info .n { color: #58a6ff; }',
+    '.ui-stat.zero .n { color: #6e7681; }',
+
+    '.ui-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }',
+    '.ui-table th { padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; color: #8b949e; border-bottom: 1px solid #30363d; white-space: nowrap; }',
+    '.ui-table td { padding: 8px 10px; border-bottom: 1px solid #21262d; color: #c9d1d9; vertical-align: top; }',
+    '.ui-table tr:last-child td { border-bottom: 0; }',
+    '.ui-table tbody tr:hover td { background: rgba(177,186,196,0.05); }',
+    '.ui-table td.num, .ui-table th.num { text-align: right; font-variant-numeric: tabular-nums; }',
+    '.ui-table tr.new td { background: rgba(46,160,67,0.12); }',
+    '.ui-scroll { max-height: 320px; overflow: auto; border: 1px solid #21262d; border-radius: 9px; }',
+    '.ui-scroll .ui-table th { position: sticky; top: 0; background: #161b22; }',
+
+    '.ui-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 14px; border-radius: 8px; border: 1px solid #30363d;' +
+      ' background: #21262d; color: #c9d1d9; font-size: 12.5px; font-weight: 600; line-height: 1.2; cursor: pointer; text-decoration: none; }',
+    '.ui-btn:hover { background: #30363d; border-color: #484f58; color: #e6edf3; }',
+    '.ui-btn:active { transform: translateY(1px); }',
+    '.ui-btn.primary { background: #1f6feb; border-color: #388bfd; color: #ffffff; }',
+    '.ui-btn.primary:hover { background: #388bfd; }',
+    '.ui-btn.success { background: #238636; border-color: #2ea043; color: #ffffff; }',
+    '.ui-btn.success:hover { background: #2ea043; }',
+    '.ui-btn.danger { background: rgba(248,81,73,0.12); border-color: rgba(248,81,73,0.4); color: #ff7b72; }',
+    '.ui-btn.danger:hover { background: rgba(248,81,73,0.22); }',
+    '.ui-btn.lg { padding: 11px 18px; font-size: 13.5px; }',
+    '.ui-btn.block { display: flex; width: 100%; justify-content: flex-start; text-align: left; }',
+    '.ui-btn:disabled, .ui-btn[disabled] { opacity: 0.45; cursor: not-allowed; }',
+    '.ui-btn .sub { margin-left: auto; font-weight: 500; font-size: 11.5px; opacity: 0.8; }',
+    '.ui-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }',
+    '.ui-bar.sticky { position: sticky; bottom: 0; margin: 16px -20px -46px; padding: 12px 20px; background: rgba(13,17,23,0.94); border-top: 1px solid #21262d; }',
+
+    '.ui-field { margin-bottom: 13px; }',
+    '.ui-field > label { display: block; margin-bottom: 5px; font-size: 11.5px; font-weight: 600; color: #c9d1d9; }',
+    '.ui-field input:not([type="checkbox"]):not([type="radio"]), .ui-field select, .ui-field textarea, .ui-input { width: 100%; padding: 8px 10px; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; font-size: 13px; }',
+    '.ui-field textarea { min-height: 120px; resize: vertical; line-height: 1.5; }',
+    '.ui-hint { margin-top: 5px; font-size: 11.5px; color: #8b949e; }',
+    '.ui-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }',
+
+    '.ui-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; white-space: nowrap; }',
+    '.ui-badge.ok { background: rgba(46,160,67,0.15); border-color: rgba(46,160,67,0.4); color: #3fb950; }',
+    '.ui-badge.warn { background: rgba(210,153,34,0.15); border-color: rgba(210,153,34,0.4); color: #e3b341; }',
+    '.ui-badge.bad { background: rgba(248,81,73,0.15); border-color: rgba(248,81,73,0.4); color: #ff7b72; }',
+    '.ui-badge.info { background: rgba(56,139,253,0.15); border-color: rgba(56,139,253,0.4); color: #58a6ff; }',
+
+    '.ui-callout { display: flex; gap: 11px; padding: 12px 14px; margin-bottom: 14px; border-radius: 9px; font-size: 12.5px; line-height: 1.6;' +
+      ' background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.3); color: #c9d1d9; }',
+    '.ui-callout .i { flex-shrink: 0; font-size: 15px; line-height: 1.4; }',
+    '.ui-callout b, .ui-callout strong { color: #e6edf3; }',
+    '.ui-callout.ok { background: rgba(46,160,67,0.1); border-color: rgba(46,160,67,0.35); }',
+    '.ui-callout.warn { background: rgba(210,153,34,0.1); border-color: rgba(210,153,34,0.35); }',
+    '.ui-callout.bad { background: rgba(248,81,73,0.1); border-color: rgba(248,81,73,0.35); }',
+
+    '.ui-kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 12.5px; }',
+    '.ui-kv dt { color: #8b949e; white-space: nowrap; }',
+    '.ui-kv dd { margin: 0; color: #e6edf3; word-break: break-word; }',
+    '.ui-list { list-style: none; margin: 0; padding: 0; }',
+    '.ui-list li { display: flex; align-items: flex-start; gap: 11px; padding: 10px 0; border-bottom: 1px solid #21262d; font-size: 12.5px; }',
+    '.ui-list li:last-child { border-bottom: 0; }',
+    '.ui-list .grow { flex: 1; min-width: 0; }',
+    '.ui-list .t { color: #e6edf3; font-weight: 600; }',
+    '.ui-list .d { color: #8b949e; font-size: 12px; margin-top: 1px; }',
+    '.ui-step { display: flex; gap: 12px; margin-bottom: 11px; align-items: flex-start; font-size: 12.5px; color: #c9d1d9; }',
+    '.ui-step .n { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1f6feb; color: #ffffff; font-size: 11.5px; font-weight: 700; }',
+    '.ui-code { margin: 0; padding: 13px 15px; background: #010409; border: 1px solid #21262d; border-radius: 9px; color: #7ee787; font-size: 11.5px; line-height: 1.6; white-space: pre; overflow: auto; max-height: 300px; }',
+    '.ui-empty { padding: 26px 16px; text-align: center; color: #8b949e; font-size: 12.5px; }',
+    '.ui-main div.warning, .ui-main div.success { padding: 12px 14px; margin-bottom: 14px; border-radius: 9px; font-size: 12.5px; line-height: 1.6; color: #c9d1d9; }',
+    '.ui-main div.warning { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.35); }',
+    '.ui-main div.success { background: rgba(46,160,67,0.1); border: 1px solid rgba(46,160,67,0.35); }',
+    '.ui-divider { height: 1px; background: #21262d; margin: 14px 0; border: 0; }',
+    '.ui-paper { border-radius: 10px; border: 1px solid #30363d; box-shadow: 0 8px 28px rgba(1,4,9,0.5); }',
+    '.ui-mailbar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: #161b22; border: 1px solid #30363d; border-bottom: 0; border-radius: 10px 10px 0 0; font-size: 12px; color: #8b949e; }',
+    '.ui-mailbar + .ui-paper { border-radius: 0 0 10px 10px; }',
+    '.ui-mailbar .dots { display: flex; gap: 5px; } .ui-mailbar .dots i { width: 9px; height: 9px; border-radius: 50%; background: #30363d; display: block; }',
+    '.ui-mailbar b { color: #c9d1d9; font-weight: 600; }'
+  ].join('\n');
+}
+
+/**
+ * A complete dialog page in the shared design.
+ * @param {Object} o
+ * @param {string} o.title      heading in the title bar
+ * @param {string=} o.subtitle  one line under the heading
+ * @param {string=} o.icon      emoji shown in the title bar
+ * @param {string} o.body       HTML of the page content
+ * @param {string=} o.actions   HTML of buttons for the right side of the title bar
+ * @param {string=} o.script    JavaScript for the page (without the script tags)
+ * @param {string=} o.css       extra CSS for this dialog only
+ */
+function buildAdminDialog_(o) {
+  var esc = Utils.escapeHtml;
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_top">' +
+    '<style>' + getAdminUiCss_() + (o.css ? '\n' + o.css : '') + '</style></head><body>' +
+    '<div class="ui-app">' +
+    '<header class="ui-top"><div class="ui-title">' +
+    (o.icon ? '<div class="ui-icon">' + o.icon + '</div>' : '') +
+    '<div style="min-width:0;"><h1>' + esc(o.title || "") + '</h1>' + (o.subtitle ? '<p>' + esc(o.subtitle) + '</p>' : '') + '</div></div>' +
+    (o.actions ? '<div class="ui-actions">' + o.actions + '</div>' : '') +
+    '</header>' +
+    '<main class="ui-main">' + (o.body || "") + '</main>' +
+    '</div>' +
+    (o.script ? '<script>\n' + o.script + '\n<\/script>' : '') +
+    '</body></html>';
+}
+
+/** Small HTML builders for the shared components. Text arguments are escaped; *Html ones are not. */
+function uiStat_(value, label, tone) {
+  var zero = (value === 0 || value === "0");
+  return '<div class="ui-stat ' + (zero ? 'zero' : (tone || '')) + '"><div class="n">' + Utils.escapeHtml(String(value)) + '</div><div class="l">' + Utils.escapeHtml(label) + '</div></div>';
+}
+function uiBadge_(text, tone) {
+  return '<span class="ui-badge ' + (tone || '') + '">' + Utils.escapeHtml(text) + '</span>';
+}
+function uiCard_(title, bodyHtml, countHtml) {
+  return '<section class="ui-card">' + (title ? '<h2 class="ui-card-title">' + Utils.escapeHtml(title) + (countHtml ? '<span class="count">' + countHtml + '</span>' : '') + '</h2>' : '') + bodyHtml + '</section>';
+}
+function uiCallout_(tone, icon, bodyHtml) {
+  return '<div class="ui-callout ' + (tone || '') + '"><div class="i">' + icon + '</div><div>' + bodyHtml + '</div></div>';
+}
+function uiTable_(headers, rows, emptyText) {
+  if (!rows || !rows.length) return '<div class="ui-empty">' + Utils.escapeHtml(emptyText || "Nothing to show.") + '</div>';
+  var out = ['<table class="ui-table"><thead><tr>'];
+  headers.forEach(function (h) { out.push('<th>' + Utils.escapeHtml(h) + '</th>'); });
+  out.push('</tr></thead><tbody>');
+  rows.forEach(function (r) {
+    out.push('<tr>');
+    r.forEach(function (c) { out.push('<td>' + (c === null || c === undefined ? '' : c) + '</td>'); });
+    out.push('</tr>');
+  });
+  out.push('</tbody></table>');
+  return out.join('');
+}
+
+/**
+ * Finishes a dialog: adds the shared base layer (so every dialog has the same font, dark
+ * surfaces, form controls, scrollbars and focus rings) and, when a guide page is given, the
+ * small "Guide" link that opens the System Guide on the page about that tool.
+ * @param {string} html      the dialog's HTML
+ * @param {string=} guideTab page of the guide: start, daily, prices, register, pay, email,
+ *                           submit, groups, codes, menu, sheets or help. Empty = no link.
+ */
+function withGuideLink_(html, guideTab) {
+  var text = String(html);
+  var base = '<style id="admin-base">' + getAdminBaseCss_() + '</style>';
+
+  // Some dialogs were written without a charset tag; make sure symbols and the peso sign
+  // are always read as UTF-8. The base layer goes first so the dialog's own styles win.
+  var headAt = text.search(/<head[^>]*>/i);
+  var headBits = (/<meta[^>]+charset/i.test(text) ? '' : '<meta charset="utf-8">') + base;
+  if (headAt >= 0) {
+    var headEnd = text.indexOf(">", headAt) + 1;
+    text = text.slice(0, headEnd) + headBits + text.slice(headEnd);
+  } else {
+    text = headBits + text;
+  }
+
+  var tab = String(guideTab || "").replace(/[^a-z]/g, "");
+  if (!tab) return text;
+  var link =
+    '<div style="position:fixed;left:10px;bottom:8px;z-index:2147483000;font-family:Arial,sans-serif;">' +
+    '<a href="#" title="Open the System Guide on the page about this tool" ' +
+    'onclick="if(confirm(\'Open the System Guide? This window will close.\')){google.script.run.showSystemIntroduction(\'' + tab + '\');}return false;" ' +
+    'style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(22,27,34,0.92);color:#c9d1d9;font-size:11px;line-height:1.4;text-decoration:none;border:1px solid #30363d;">' +
+    '&#x2753; Guide</a></div>';
+  var at = text.lastIndexOf("</body>");
+  return at >= 0 ? text.slice(0, at) + link + text.slice(at) : text + link;
+}
+
+/**
+ * The inner part of an email (a whole HTML document) made safe to show inside a dialog:
+ * its html / head / body tags are dropped and any style rule aimed at "body" is aimed at
+ * the white preview sheet instead, so the email cannot restyle the dialog around it.
+ */
+function emailHtmlForEmbedding_(html) {
+  var text = String(html || "");
+  var styles = (text.match(/<style[\s\S]*?<\/style>/gi) || []).join("")
+    .replace(/(^|[},\s>])(?:html\s+)?body(?=[\s,{])/gi, "$1.ui-paper");
+  var bodyMatch = /<body[^>]*>([\s\S]*)<\/body>/i.exec(text);
+  var inner = bodyMatch
+    ? bodyMatch[1]
+    : text.replace(/<!DOCTYPE[^>]*>/i, "").replace(/<\/?html[^>]*>/gi, "").replace(/<head[\s\S]*?<\/head>/i, "").replace(/<style[\s\S]*?<\/style>/gi, "");
+  return styles + inner;
+}
+
+/**
+ * A dialog that shows one email the way the recipient will see it, framed like a mail window.
+ * @param {string} title      what is being previewed
+ * @param {string} emailHtml  the email's HTML
+ * @param {string=} note      what to tell the admin above the preview
+ */
+function buildEmailPreviewDialog_(title, emailHtml, note) {
+  var esc = Utils.escapeHtml;
+  var body =
+    uiCallout_("", "&#x1F441;&#xFE0F;", "<b>Preview only.</b> " + esc(note || "It uses sample data. No email was sent.")) +
+    '<div style="max-width:720px;margin:0 auto;">' +
+    '<div class="ui-mailbar"><span class="dots"><i></i><i></i><i></i></span><span>From <b>' + esc(SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME || "") + '</b></span></div>' +
+    '<div class="ui-paper">' + emailHtmlForEmbedding_(emailHtml) + '</div>' +
+    '</div>';
+  return buildAdminDialog_({
+    icon: "&#x2709;&#xFE0F;",
+    title: title,
+    subtitle: "How the recipient will see it",
+    actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+    body: body
+  });
+}
+
+// The global object, captured so that a function can be looked up by its name
+var GLOBAL_SCOPE_ = this;
+
+/** true when a top-level function with this name exists (menu items are checked with this). */
+function isGlobalFunction_(name) {
+  try { return typeof GLOBAL_SCOPE_[name] === "function"; } catch (e) { return false; }
+}
+
+/**
+ * Where a tool is in the menu right now, as text:
+ *   getMenuPathText_("syncDashboard") -> "Admin Center > Finance Operations > Sync Dashboard (Light)"
+ * Alerts and dialogs use this instead of a typed path, so they stay right when the menu changes.
+ */
+function getMenuPathText_(functionName) {
+  try {
+    var items = flattenAdminMenu_();
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].fn === functionName) return items[i].path + " → " + items[i].label;
+    }
+  } catch (e) {}
+  return functionName;
+}
+
+// ============================================================================
+// ACTIVE onOpen() - builds the menu from getAdminMenuDefinition_()
+// ============================================================================
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  buildMenuFromDefinition_(ui, ui.createMenu(ADMIN_MENU_TITLE), getAdminMenuDefinition_()).addToUi();
+}
+
+// ============================================================================
+// PART 23: SUBMISSION & DEPERSONALIZATION ADMIN TOOLS
 // ============================================================================
 
 /**
  * Open the Submission Dashboard - shows all submissions with depersonalization status.
  */
 function openSubmissionDashboard() {
-  var html = HtmlService.createHtmlOutput(getSubmissionDashboardHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getSubmissionDashboardHtml_(), "submit"))
     .setWidth(1100)
     .setHeight(650)
     .setTitle("Submission & Depersonalization Dashboard");
@@ -22712,7 +19925,7 @@ function getSubmissionDashboardData() {
     var r = allData[i];
     var rowIndex = i + 2;
     var email = String(r[S.EMAIL - 1] || "").trim();
-    var rawCompType = String(r[S.COMPETITION_TYPE - 1] || "").trim();
+    var rawCompType = getSubmissionCompetitionTypes_(r).join(", ");
     var partNum = sysCols["SYS_PARTICIPANT_NUM"] ? String(r[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
     var status = sysCols["SYS_SUB_STATUS"] ? String(r[sysCols["SYS_SUB_STATUS"] - 1] || "").trim() : "";
     var deperson = sysCols["SYS_DEPERSONALIZED"] ? String(r[sysCols["SYS_DEPERSONALIZED"] - 1] || "").trim() : "";
@@ -22720,7 +19933,7 @@ function getSubmissionDashboardData() {
     var confSent = sysCols["SYS_CONFIRMATION_SENT"] ? String(r[sysCols["SYS_CONFIRMATION_SENT"] - 1] || "").trim() : "";
     var timestamp = String(r[S.TIMESTAMP - 1] || "");
 
-    // V23.1: Parse multiple competitions from column E
+    // Parse multiple competitions from column E
     var compTypes = rawCompType.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
     var compDisplay = compTypes.length > 0 ? compTypes[0] : rawCompType;
     if (compTypes.length > 1) compDisplay += " (+" + (compTypes.length - 1) + ")";
@@ -22851,13 +20064,13 @@ function resendSubmissionConfirmation() {
 
   var S = SYSTEM_CONFIG.COLS.SUB;
   var email = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var partNumRaw = sysCols["SYS_PARTICIPANT_NUM"] ? String(rowVals[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
   var genId = sysCols["SYS_MATCHED_GEN_ID"] ? String(rowVals[sysCols["SYS_MATCHED_GEN_ID"] - 1] || "").trim() : "";
 
   if (!partNumRaw) { ui.alert("❌ No participant number assigned. Please reprocess this row first."); return; }
 
-  // V23.1: Parse multiple competition types and participant numbers
+  // Parse multiple competition types and participant numbers
   var competitionTypes = rawCompType.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
   var participantNums = partNumRaw.split(/\s*,\s*/).filter(function(p) { return p.length > 0; });
 
@@ -22884,7 +20097,7 @@ function resendSubmissionConfirmation() {
         }
       }
       if (!compMap) { errors.push("Unknown: " + compType); continue; }
-      var partNum = numByPrefix[SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[compMap.key]] || participantNums[ci] || participantNums[0] || "";
+      var partNum = pickParticipantNumFor_(compMap.key, participantNums, competitionTypes.length);
       if (!partNum) { errors.push("No number for: " + compType); continue; }
       var participantName = "";
       if (compMap.nameCol) { var nc = S[compMap.nameCol]; if (nc) participantName = String(rowVals[nc - 1] || "").trim(); }
@@ -22912,37 +20125,37 @@ function resendSubmissionConfirmation() {
     for (var tp = 0; tp < previews.length; tp++) {
       var isAct = tp === 0;
       tabStrip += "<button class='etab' onclick='showTab(" + tp + ")' style='background:" + (isAct ? "#1d4ed8" : "#334155") + ";color:" + (isAct ? "#fff" : "#94a3b8") + ";'>" + previews[tp].partNum + "</button>";
-      tabPanels += "<div id='epanel-" + tp + "' style='display:" + (isAct ? "block" : "none") + ";'><iframe srcdoc='" + previews[tp].htmlBody.replace(/'/g, "&#39;") + "' style='width:100%;height:370px;border:none;background:#fff;'><\/iframe><\/div>";
+      tabPanels += "<div id='epanel-" + tp + "' style='display:" + (isAct ? "block" : "none") + ";'><iframe srcdoc='" + previews[tp].htmlBody.replace(/'/g, "&#39;") + "' style='width:100%;height:370px;border:none;background:#ffffff;'><\/iframe><\/div>";
     }
     var compSummary = previews.length === 1
-      ? "<div class='lbl' style='margin-top:6px;'>Subject<\/div><div class='val' style='font-size:12px;color:#94a3b8;'>" + previews[0].subject + "<\/div>"
-      : "<div class='lbl' style='margin-top:6px;'>Competitions<\/div><div class='val' style='font-size:12px;color:#94a3b8;'>" + previews.map(function(p){return p.partNum+" ("+p.compType+")";}).join(" | ") + "<\/div>";
+      ? "<div class='lbl' style='margin-top:6px;'>Subject<\/div><div class='val' style='font-size:12px;color:#8b949e;'>" + previews[0].subject + "<\/div>"
+      : "<div class='lbl' style='margin-top:6px;'>Competitions<\/div><div class='val' style='font-size:12px;color:#8b949e;'>" + previews.map(function(p){return p.partNum+" ("+p.compType+")";}).join(" | ") + "<\/div>";
 
     var dlgHtml = "<!DOCTYPE html><html><head><meta charset='UTF-8'><style>" +
-      "body{margin:0;font-family:'Google Sans',Arial,sans-serif;background:#0f172a;color:#f1f5f9;}" +
-      ".header{padding:14px 18px;background:#1e293b;border-bottom:1px solid rgba(255,255,255,0.08);}" +
-      ".lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;}" +
-      ".val{font-size:13px;color:#e2e8f0;}" +
+      "body{margin:0;font-family:'Google Sans',Arial,sans-serif;background:#0d1117;color:#e6edf3;}" +
+      ".header{padding:14px 18px;background:#161b22;border-bottom:1px solid rgba(255,255,255,0.08);}" +
+      ".lbl{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;}" +
+      ".val{font-size:13px;color:#e6edf3;}" +
       ".tabs{display:flex;gap:6px;padding:10px 16px 0;}" +
       ".etab{padding:5px 12px;border:none;border-radius:6px 6px 0 0;cursor:pointer;font-size:12px;font-weight:600;}" +
       ".preview-box{padding:0 16px 10px;}" +
-      ".footer{padding:12px 16px;background:#1e293b;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;}" +
+      ".footer{padding:12px 16px;background:#161b22;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;}" +
       ".btn{padding:8px 18px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;}" +
       "<\/style><\/head><body>" +
       "<div class='header'><div class='lbl'>To<\/div><div class='val'>" + email + "<\/div>" + compSummary + "<\/div>" +
       (previews.length > 1 ? "<div class='tabs'>" + tabStrip + "<\/div>" : "") +
       "<div class='preview-box' style='margin-top:8px;'>" + tabPanels + "<\/div>" +
-      "<div class='footer'><span style='font-size:11px;color:#64748b;'>" + previews.length + " email(s) will be sent<\/span>" +
+      "<div class='footer'><span style='font-size:11px;color:#8b949e;'>" + previews.length + " email(s) will be sent<\/span>" +
       "<div style='display:flex;gap:8px;'>" +
-      "<button class='btn' style='background:#334155;color:#e2e8f0;' onclick='google.script.host.close()'>&#10005; Cancel<\/button>" +
-      "<button class='btn' id='sendBtn' style='background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;' onclick='doSend()'>\u2709\ufe0f Confirm &amp; Send<\/button>" +
+      "<button class='btn' style='background:#21262d;color:#e6edf3;' onclick='google.script.host.close()'>&#10005; Cancel<\/button>" +
+      "<button class='btn' id='sendBtn' style='background:linear-gradient(135deg,#1f6feb,#1f6feb);color:#fff;' onclick='doSend()'>\u2709\ufe0f Confirm &amp; Send<\/button>" +
       "<\/div><\/div>" +
       "<script>function showTab(i){document.querySelectorAll('[id^=epanel-]').forEach(function(el){el.style.display='none';});document.getElementById('epanel-'+i).style.display='block';document.querySelectorAll('.etab').forEach(function(b,idx){b.style.background=idx===i?'#1d4ed8':'#334155';b.style.color=idx===i?'#fff':'#94a3b8';});}" +
       "function doSend(){var b=document.getElementById('sendBtn');b.disabled=true;b.textContent='Sending...';google.script.run.withSuccessHandler(function(){google.script.host.close();}).withFailureHandler(function(e){b.disabled=false;b.textContent='\u2709\ufe0f Confirm & Send';alert('Failed: '+e.message);}).confirmAndSendSubmissionEmail(" + row + ");}" +
       "<\/script><\/body><\/html>";
 
     SpreadsheetApp.getUi().showModalDialog(
-      HtmlService.createHtmlOutput(dlgHtml).setWidth(760).setHeight(530),
+      HtmlService.createHtmlOutput(withGuideLink_(dlgHtml, "submit")).setWidth(760).setHeight(530),
       "\uD83D\uDCE7 Email Preview — " + email + " (Row " + row + ")"
     );
   } catch (e) {
@@ -22965,7 +20178,7 @@ function confirmAndSendSubmissionEmail(rowIndex) {
   var S = SYSTEM_CONFIG.COLS.SUB;
   var email     = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
   if (!email) throw new Error("No email for row " + rowIndex);
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var partNumRaw  = sysCols["SYS_PARTICIPANT_NUM"] ? String(rowVals[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
   var genId       = sysCols["SYS_MATCHED_GEN_ID"]  ? String(rowVals[sysCols["SYS_MATCHED_GEN_ID"]  - 1] || "").trim() : "";
   if (!partNumRaw) throw new Error("No participant number on row " + rowIndex + ". Reprocess first.");
@@ -22989,7 +20202,7 @@ function confirmAndSendSubmissionEmail(rowIndex) {
       }
     }
     if (!compMap) continue;
-    var partNum = numByPrefix[SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[compMap.key]] || participantNums[ci] || participantNums[0] || "";
+    var partNum = pickParticipantNumFor_(compMap.key, participantNums, competitionTypes.length);
     if (!partNum) continue;
     var participantName = "";
     if (compMap.nameCol) { var nc = S[compMap.nameCol]; if (nc) participantName = String(rowVals[nc - 1] || "").trim(); }
@@ -23002,7 +20215,7 @@ function confirmAndSendSubmissionEmail(rowIndex) {
     MailApp.sendEmail({ to: email, subject: emailSubject, htmlBody: buildSubmissionConfirmationHtml_(result),
       inlineImages: inlineImages, name: SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME });
     emailsSent++;
-    if (ci < competitionTypes.length - 1) Utilities.sleep(1500);
+    if (ci < competitionTypes.length - 1) pauseBetweenEmails_();
   }
   if (sysCols["SYS_CONFIRMATION_SENT"] && emailsSent > 0) {
     subSheet.getRange(rowIndex, sysCols["SYS_CONFIRMATION_SENT"]).setValue("YES");
@@ -23059,7 +20272,7 @@ function resendAllPendingSubmissionConfirmations() {
     var email = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
     if (!email) { skipped++; continue; }
 
-    var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+    var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
     var genId = sysCols["SYS_MATCHED_GEN_ID"] ? String(rowVals[sysCols["SYS_MATCHED_GEN_ID"] - 1] || "").trim() : "";
 
     var competitionTypes = rawCompType.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
@@ -23088,7 +20301,7 @@ function resendAllPendingSubmissionConfirmations() {
         }
         if (!compMap) continue;
 
-        var partNum = numByPrefix[SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[compMap.key]] || participantNums[ci] || participantNums[0] || "";
+        var partNum = pickParticipantNumFor_(compMap.key, participantNums, competitionTypes.length);
         if (!partNum) continue;
 
         var participantName = "";
@@ -23134,7 +20347,7 @@ function resendAllPendingSubmissionConfirmations() {
     }
 
     // Rate limiting between participants
-    if (i < allData.length - 1) Utilities.sleep(1500);
+    if (i < allData.length - 1) pauseBetweenEmails_();
   }
 
   ui.alert(
@@ -23160,7 +20373,7 @@ function fixDuplicateParticipantNumbers() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // ── Find Submission Form ───────────────────────────────────────────────
-  var subSheet = ss.getSheetByName("Submission Form");
+  var subSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.SUBMISSIONS);
   if (!subSheet) { ui.alert("❌ Submission Form sheet not found."); return; }
 
   var lastRow = subSheet.getLastRow();
@@ -23326,7 +20539,7 @@ function fixDuplicateParticipantNumbers() {
     if (resend === ui.Button.YES) {
       var sent = 0;
       for (var r = 0; r < affectedRows.length; r++) {
-        try { dashResendConfirmation(affectedRows[r]); sent++; if (r < affectedRows.length - 1) Utilities.sleep(1500); }
+        try { dashResendConfirmation(affectedRows[r]); sent++; if (r < affectedRows.length - 1) pauseBetweenEmails_(); }
         catch (e) { AuditLogService.error("FIX_DUP_EMAIL", "Row " + affectedRows[r] + ": " + e); }
       }
       ui.alert("✅ Done", summary + "\n\nEmails sent: " + sent + "/" + affectedRows.length, ui.ButtonSet.OK);
@@ -23350,7 +20563,7 @@ function auditAndSyncDriveFiles() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // ── Locate Submission Form ───────────────────────────────────────────────
-  var subSheet = ss.getSheetByName("Submission Form");
+  var subSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.SUBMISSIONS);
   if (!subSheet) { ui.alert("❌ Submission Form sheet not found."); return; }
 
   var lastRow = subSheet.getLastRow();
@@ -23540,12 +20753,8 @@ function configureAnonFolders() {
 
     // Create competition subfolders
     var prefixes = SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES;
-    var folderNames = {
-      SPEECH: "[" + prefixes.SPEECH + "] Speech Competition",
-      ESSAY: "[" + prefixes.ESSAY + "] Essay Writing Competition",
-      PHOTO: "[" + prefixes.PHOTO + "] Mobile Phone Photography Competition",
-      FILM: "[" + prefixes.FILM + "] Short Film Competition"
-    };
+    var folderNames = {};
+    getCompetitions_().forEach(function (c) { folderNames[c.key] = "[" + c.prefix + "] " + c.submissionName; });
 
     var created = {};
     var compKeys = Object.keys(folderNames);
@@ -23600,7 +20809,7 @@ function migrateAnonFiles() {
   }
 
   if (missingFolders.length > 0) {
-    ui.alert("❌ Missing Folders", "No folder configured for: " + missingFolders.join(", ") + "\n\nRun 'Configure Anon Folders' first.", ui.ButtonSet.OK);
+    ui.alert("❌ Missing Folders", "No folder configured for: " + missingFolders.join(", ") + "\n\nRun " + getMenuPathText_("configureAnonFolders") + " first.", ui.ButtonSet.OK);
     return;
   }
 
@@ -23679,6 +20888,16 @@ function migrateAnonFiles() {
 
     try {
       var file = DriveApp.getFileById(fileId);
+
+      // An anonymized file's name starts with its participant number ("SP-0001_video.mp4"),
+      // which identifies its competition reliably. Matching files to competitions by their
+      // position in the list misfiled competitions that have two files (Speech, Photo).
+      var nameKey = prefixToKey[String(file.getName()).split("-")[0]];
+      if (nameKey && currentFolders[nameKey]) {
+        compKey = nameKey;
+        targetFolderId = currentFolders[nameKey];
+      }
+
       var parents = file.getParents();
       var alreadyInTarget = false;
 
@@ -23839,7 +21058,7 @@ function getSubmissionEntryDetails(rowIndex) {
   var S = SYSTEM_CONFIG.COLS.SUB;
   
   var email = String(rowVals[S.EMAIL - 1] || "").trim();
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var compTypes = rawCompType.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
   
   var partNumsRaw = sysCols["SYS_PARTICIPANT_NUM"] ? String(rowVals[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
@@ -23921,7 +21140,7 @@ function removeSubmissionEntry(rowIndex, competitionName) {
   var S = SYSTEM_CONFIG.COLS.SUB;
   
   // 1. Validate multiple entries exist
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var compTypes = rawCompType.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
   if (compTypes.length <= 1) {
     throw new Error("Cannot remove the only remaining entry.");
@@ -24077,7 +21296,7 @@ function sendCorrectionRequestEmail_(subSheet, sysCols, row, rowVals, reason) {
   var S = SYSTEM_CONFIG.COLS.SUB;
   var email = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
   var partNum = sysCols["SYS_PARTICIPANT_NUM"] ? String(rowVals[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var esc = Utils.escapeHtml;
 
   // Get participant name from first competition
@@ -24190,7 +21409,7 @@ function scanSubmissionForPii() {
 
   var S = SYSTEM_CONFIG.COLS.SUB;
   var email = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var compMap = SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP;
 
   // Determine competitions to scan
@@ -24321,64 +21540,64 @@ function getSubmissionDashboardHtml_() {
   h.push('<!DOCTYPE html><html><head><meta charset="utf-8">');
   h.push('<style>');
   h.push('* { box-sizing: border-box; margin: 0; padding: 0; }');
-  h.push('body { font-family: "Segoe UI", Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 16px; }');
+  h.push('body { font-family: "Segoe UI", Arial, sans-serif; background: #0d1117; color: #e6edf3; padding: 16px; }');
   h.push('.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }');
-  h.push('.header h1 { font-size: 20px; color: #f1f5f9; }');
-  h.push('.header .subtitle { color: #94a3b8; font-size: 12px; }');
+  h.push('.header h1 { font-size: 20px; color: #e6edf3; }');
+  h.push('.header .subtitle { color: #8b949e; font-size: 12px; }');
   h.push('.stats { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }');
-  h.push('.stat-card { background: #1e293b; border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 100px; flex: 1; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }');
-  h.push('.stat-card:hover { border-color: #475569; } .stat-card.active { border-color: #3b82f6; }');
+  h.push('.stat-card { background: #161b22; border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 100px; flex: 1; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }');
+  h.push('.stat-card:hover { border-color: #484f58; } .stat-card.active { border-color: #388bfd; }');
   h.push('.stat-card .num { font-size: 24px; font-weight: bold; }');
-  h.push('.stat-card .label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }');
-  h.push('.st-total .num{color:#60a5fa;} .st-proc .num{color:#34d399;} .st-pend .num{color:#fbbf24;} .st-flag .num{color:#f97316;} .st-err .num{color:#f87171;}');
+  h.push('.stat-card .label { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }');
+  h.push('.st-total .num{color:#58a6ff;} .st-proc .num{color:#3fb950;} .st-pend .num{color:#e3b341;} .st-flag .num{color:#e3b341;} .st-err .num{color:#ff7b72;}');
   h.push('.toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }');
-  h.push('.toolbar input,.toolbar select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 7px 10px; font-size: 12px; }');
+  h.push('.toolbar input,.toolbar select { background: #161b22; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 7px 10px; font-size: 12px; }');
   h.push('.toolbar input { flex: 1; min-width: 180px; }');
   h.push('.btn { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; }');
-  h.push('.btn-blue{background:#3b82f6;color:#fff;} .btn-blue:hover{background:#2563eb;}');
-  h.push('.btn-green{background:#059669;color:#fff;} .btn-green:hover{background:#047857;}');
+  h.push('.btn-blue{background:#1f6feb;color:#fff;} .btn-blue:hover{background:#1f6feb;}');
+  h.push('.btn-green{background:#238636;color:#fff;} .btn-green:hover{background:rgba(46,160,67,0.15);}');
   h.push('table { width: 100%; border-collapse: collapse; font-size: 12px; }');
-  h.push('th { background: #1e293b; padding: 8px 6px; text-align: left; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; position: sticky; top: 0; z-index: 1; }');
-  h.push('td { padding: 7px 6px; border-bottom: 1px solid #1e293b; vertical-align: middle; }');
-  h.push('tr:hover { background: #1e293b; }');
+  h.push('th { background: #161b22; padding: 8px 6px; text-align: left; color: #8b949e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; position: sticky; top: 0; z-index: 1; }');
+  h.push('td { padding: 7px 6px; border-bottom: 1px solid #21262d; vertical-align: middle; }');
+  h.push('tr:hover { background: #161b22; }');
   h.push('.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;white-space:nowrap;}');
-  h.push('.b-proc{background:#064e3b;color:#34d399;} .b-pend{background:#78350f;color:#fbbf24;} .b-flag{background:#7c2d12;color:#f97316;} .b-err{background:#7f1d1d;color:#f87171;} .b-unp{background:#1e293b;color:#94a3b8;}');
-  h.push('.table-wrap { max-height: 400px; overflow-y: auto; border-radius: 8px; border: 1px solid #334155; }');
+  h.push('.b-proc{background:rgba(46,160,67,0.15);color:#3fb950;} .b-pend{background:rgba(210,153,34,0.15);color:#e3b341;} .b-flag{background:rgba(210,153,34,0.15);color:#e3b341;} .b-err{background:#da3633;color:#ff7b72;} .b-unp{background:#161b22;color:#8b949e;}');
+  h.push('.table-wrap { max-height: 400px; overflow-y: auto; border-radius: 8px; border: 1px solid #30363d; }');
   h.push('.act-wrap{position:relative;display:inline-block;}');
-  h.push('.act-btn{background:none;border:1px solid #475569;color:#94a3b8;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:13px;} .act-btn:hover{background:#334155;color:#e2e8f0;}');
-  h.push('.act-menu{display:none;position:absolute;right:0;top:100%;background:#1e293b;border:1px solid #475569;border-radius:8px;min-width:210px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);overflow:hidden;}');
+  h.push('.act-btn{background:none;border:1px solid #484f58;color:#8b949e;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:13px;} .act-btn:hover{background:#21262d;color:#e6edf3;}');
+  h.push('.act-menu{display:none;position:absolute;right:0;top:100%;background:#161b22;border:1px solid #484f58;border-radius:8px;min-width:210px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);overflow:hidden;}');
   h.push('.act-menu.show{display:block;}');
-  h.push('.act-item{display:block;width:100%;text-align:left;background:none;border:none;color:#e2e8f0;padding:9px 14px;font-size:12px;cursor:pointer;} .act-item:hover{background:#334155;}');
-  h.push('.act-sep{border-top:1px solid #334155;margin:2px 0;}');
+  h.push('.act-item{display:block;width:100%;text-align:left;background:none;border:none;color:#e6edf3;padding:9px 14px;font-size:12px;cursor:pointer;} .act-item:hover{background:#21262d;}');
+  h.push('.act-sep{border-top:1px solid #30363d;margin:2px 0;}');
   h.push('.toast{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;animation:slideIn .3s ease;box-shadow:0 4px 16px rgba(0,0,0,.3);}');
-  h.push('.toast-ok{background:#059669;color:#fff;} .toast-err{background:#dc2626;color:#fff;} .toast-info{background:#3b82f6;color:#fff;}');
+  h.push('.toast-ok{background:#238636;color:#fff;} .toast-err{background:#da3633;color:#fff;} .toast-info{background:#1f6feb;color:#fff;}');
   h.push('@keyframes slideIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}');
   h.push('.flag-tip{position:relative;cursor:help;} .flag-tip:hover .flag-detail{display:block;}');
-  h.push('.flag-detail{display:none;position:absolute;bottom:100%;left:0;background:#1e293b;border:1px solid #f97316;border-radius:6px;padding:8px 12px;font-size:11px;color:#f97316;min-width:200px;max-width:300px;z-index:50;margin-bottom:4px;white-space:normal;line-height:1.4;}');
+  h.push('.flag-detail{display:none;position:absolute;bottom:100%;left:0;background:#161b22;border:1px solid #bb8009;border-radius:6px;padding:8px 12px;font-size:11px;color:#e3b341;min-width:200px;max-width:300px;z-index:50;margin-bottom:4px;white-space:normal;line-height:1.4;}');
   
   // Entry Editor Modal CSS
   h.push('.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}');
   h.push('.modal-overlay.show{display:flex;}');
-  h.push('.modal-content{background:#0f172a;border:1px solid #334155;border-radius:12px;width:95%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.8);}');
-  h.push('.modal-header{padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;}');
-  h.push('.modal-header h2{font-size:16px;color:#f8fafc;margin:0;}');
-  h.push('.modal-close{background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;} .modal-close:hover{color:#f1f5f9;}');
+  h.push('.modal-content{background:#0d1117;border:1px solid #30363d;border-radius:12px;width:95%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.8);}');
+  h.push('.modal-header{padding:16px 20px;border-bottom:1px solid #21262d;display:flex;justify-content:space-between;align-items:center;}');
+  h.push('.modal-header h2{font-size:16px;color:#ffffff;margin:0;}');
+  h.push('.modal-close{background:none;border:none;color:#8b949e;font-size:24px;cursor:pointer;line-height:1;} .modal-close:hover{color:#e6edf3;}');
   h.push('.modal-body{padding:20px;overflow-y:auto;flex:1;}');
-  h.push('.entry-card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:12px;}');
+  h.push('.entry-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;margin-bottom:12px;}');
   h.push('.entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}');
-  h.push('.entry-comp{font-weight:600;color:#f8fafc;font-size:14px;}');
-  h.push('.entry-pnum{background:#0ea5e9;color:#0f172a;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;}');
-  h.push('.entry-meta{font-size:12px;color:#94a3b8;margin-bottom:4px;}');
-  h.push('.entry-files{margin-top:12px;padding-top:12px;border-top:1px solid #334155;display:flex;gap:8px;}');
-  h.push('.file-link{display:inline-block;background:#334155;color:#f1f5f9;text-decoration:none;padding:4px 10px;border-radius:4px;font-size:11px;} .file-link:hover{background:#475569;}');
-  h.push('.btn-remove{background:#ef4444;color:#fff;}.btn-remove:hover{background:#dc2626;}.btn-remove:disabled{background:#7f1d1d;color:#fca5a5;cursor:not-allowed;}');
+  h.push('.entry-comp{font-weight:600;color:#ffffff;font-size:14px;}');
+  h.push('.entry-pnum{background:#1f6feb;color:#e6edf3;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;}');
+  h.push('.entry-meta{font-size:12px;color:#8b949e;margin-bottom:4px;}');
+  h.push('.entry-files{margin-top:12px;padding-top:12px;border-top:1px solid #30363d;display:flex;gap:8px;}');
+  h.push('.file-link{display:inline-block;background:#21262d;color:#e6edf3;text-decoration:none;padding:4px 10px;border-radius:4px;font-size:11px;} .file-link:hover{background:#30363d;}');
+  h.push('.btn-remove{background:#da3633;color:#fff;}.btn-remove:hover{background:#da3633;}.btn-remove:disabled{background:#da3633;color:#ffa198;cursor:not-allowed;}');
   
   h.push('</style></head><body>');
 
   h.push('<div class="header"><div><h1>\uD83D\uDD12 Submission & Depersonalization</h1><div class="subtitle">Process, flag, scan, and communicate \u2014 all in one place</div></div>');
   h.push('<div><button class="btn btn-blue" onclick="refreshData()">\uD83D\uDD04 Refresh</button></div></div>');
 
-  h.push('<div class="stats" id="stats"><div class="stat-card"><div class="num" style="color:#94a3b8;">\u23F3</div><div class="label">Loading...</div></div></div>');
+  h.push('<div class="stats" id="stats"><div class="stat-card"><div class="num" style="color:#8b949e;">\u23F3</div><div class="label">Loading...</div></div></div>');
 
   h.push('<div class="toolbar">');
   h.push('<input type="text" id="search" placeholder="\uD83D\uDD0D Search name, email, participant #..." oninput="filterTable()">');
@@ -24389,7 +21608,7 @@ function getSubmissionDashboardHtml_() {
 
   h.push('<div class="table-wrap"><table><thead><tr>');
   h.push('<th>#</th><th>Participant #</th><th>Name / Email</th><th>Competition</th><th>Status</th><th>Deperson.</th><th>Gen ID</th><th>Confirm</th><th>Actions</th>');
-  h.push('</tr></thead><tbody id="tbody"><tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">Loading submissions...</td></tr></tbody></table></div>');
+  h.push('</tr></thead><tbody id="tbody"><tr><td colspan="9" style="text-align:center;padding:40px;color:#8b949e;">Loading submissions...</td></tr></tbody></table></div>');
 
   // Entry Editor Modal HTML
   h.push('<div id="editorModal" class="modal-overlay">');
@@ -24415,31 +21634,31 @@ function getSubmissionDashboardHtml_() {
 
   h.push('function loadData(){');
   h.push('  google.script.run.withSuccessHandler(function(d){');
-  h.push('    if(d.error){document.getElementById("tbody").innerHTML="<tr><td colspan=9 style=text-align:center;padding:40px;color:#f87171>"+d.error+"</td></tr>";return;}');
+  h.push('    if(d.error){document.getElementById("tbody").innerHTML="<tr><td colspan=9 style=text-align:center;padding:40px;color:#ff7b72>"+d.error+"</td></tr>";return;}');
   h.push('    allData=d.submissions||[];cachedStats=d.stats||{};renderStats(cachedStats);filterTable();');
   h.push('  }).getSubmissionDashboardData();');
   h.push('}');
 
   h.push('function renderStats(s){');
   h.push('  var st=document.getElementById("filterStatus").value,o="";');
-  h.push('  o+="<div class=\'stat-card st-total"+(st===""?" active":"")+"\'  onclick=\'statFilter(\"\")\'><div class=\'num\'>"+(s.total||0)+"</div><div class=\'label\'>Total</div></div>";');
-  h.push('  o+="<div class=\'stat-card st-proc"+(st==="PROCESSED"?" active":"")+"\'  onclick=\'statFilter(\"PROCESSED\")\'><div class=\'num\'>"+(s.processed||0)+"</div><div class=\'label\'>Processed</div></div>";');
-  h.push('  o+="<div class=\'stat-card st-pend"+(st==="PENDING"?" active":"")+"\'  onclick=\'statFilter(\"PENDING\")\'><div class=\'num\'>"+(s.pending||0)+"</div><div class=\'label\'>Pending</div></div>";');
-  h.push('  o+="<div class=\'stat-card st-flag"+(st==="FLAGGED"?" active":"")+"\'  onclick=\'statFilter(\"FLAGGED\")\'><div class=\'num\'>"+(s.flagged||0)+"</div><div class=\'label\'>Flagged</div></div>";');
-  h.push('  o+="<div class=\'stat-card st-err"+(st==="ERROR"?" active":"")+"\'  onclick=\'statFilter(\"ERROR\")\'><div class=\'num\'>"+(s.errors||0)+"</div><div class=\'label\'>Errors</div></div>";');
+  h.push('  o+="<div class=\'stat-card st-total"+(st===""?" active":"")+"\'  onclick=\'statFilter(\\"\\")\'><div class=\'num\'>"+(s.total||0)+"</div><div class=\'label\'>Total</div></div>";');
+  h.push('  o+="<div class=\'stat-card st-proc"+(st==="PROCESSED"?" active":"")+"\'  onclick=\'statFilter(\\"PROCESSED\\")\'><div class=\'num\'>"+(s.processed||0)+"</div><div class=\'label\'>Processed</div></div>";');
+  h.push('  o+="<div class=\'stat-card st-pend"+(st==="PENDING"?" active":"")+"\'  onclick=\'statFilter(\\"PENDING\\")\'><div class=\'num\'>"+(s.pending||0)+"</div><div class=\'label\'>Pending</div></div>";');
+  h.push('  o+="<div class=\'stat-card st-flag"+(st==="FLAGGED"?" active":"")+"\'  onclick=\'statFilter(\\"FLAGGED\\")\'><div class=\'num\'>"+(s.flagged||0)+"</div><div class=\'label\'>Flagged</div></div>";');
+  h.push('  o+="<div class=\'stat-card st-err"+(st==="ERROR"?" active":"")+"\'  onclick=\'statFilter(\\"ERROR\\")\'><div class=\'num\'>"+(s.errors||0)+"</div><div class=\'label\'>Errors</div></div>";');
   h.push('  document.getElementById("stats").innerHTML=o;');
   h.push('}');
   h.push('function statFilter(v){document.getElementById("filterStatus").value=v;filterTable();renderStats(cachedStats);}');
 
   h.push('function renderTable(data){');
-  h.push('  if(!data.length){document.getElementById("tbody").innerHTML="<tr><td colspan=9 style=text-align:center;padding:40px;color:#94a3b8;>No submissions match</td></tr>";return;}');
+  h.push('  if(!data.length){document.getElementById("tbody").innerHTML="<tr><td colspan=9 style=text-align:center;padding:40px;color:#8b949e;>No submissions match</td></tr>";return;}');
   h.push('  var rows="";');
   h.push('  for(var i=0;i<data.length;i++){');
   h.push('    var d=data[i];');
   h.push('    rows+="<tr>";');
   h.push('    rows+="<td>"+d.row+"</td>";');
-  h.push('    rows+="<td style=font-weight:bold;color:#60a5fa;>"+esc(d.participantNum||"-")+"</td>";');
-  h.push('    rows+="<td><div style=font-weight:500;>"+esc(d.name||"-")+"</div><div style=font-size:10px;color:#64748b;>"+esc(d.email)+"</div></td>";');
+  h.push('    rows+="<td style=font-weight:bold;color:#58a6ff;>"+esc(d.participantNum||"-")+"</td>";');
+  h.push('    rows+="<td><div style=font-weight:500;>"+esc(d.name||"-")+"</div><div style=font-size:10px;color:#8b949e;>"+esc(d.email)+"</div></td>";');
   h.push('    rows+="<td>"+esc(d.competition)+"</td>";');
   h.push('    var sh="<span class=\'badge "+bc(d.status)+"\'>"+d.status+"</span>";');
   h.push('    if(d.status==="FLAGGED"&&d.flagReason){sh="<div class=\'flag-tip\'>"+sh+"<div class=\'flag-detail\'><b>Reason:</b> "+esc(d.flagReason)+(d.flagDate?"<br><b>Date:</b> "+esc(d.flagDate):"")+"</div></div>";}');
@@ -24450,7 +21669,7 @@ function getSubmissionDashboardHtml_() {
   h.push('    rows+="<td><div class=\'act-wrap\'><button class=\'act-btn\' onclick=\'toggleMenu("+d.row+")\'>&#8942;</button>";');
   h.push('    rows+="<div class=\'act-menu\' id=\'menu-"+d.row+"\'>";');
   h.push('    if((d.competitionCount||1)>1){');
-  h.push('      rows+="<button class=\'act-item\' style=\'color:#38bdf8;\' onclick=\'openEditor("+d.row+")\'>✏️ Edit Entries</button>";');
+  h.push('      rows+="<button class=\'act-item\' style=\'color:#58a6ff;\' onclick=\'openEditor("+d.row+")\'>✏️ Edit Entries</button>";');
   h.push('      rows+="<div class=\'act-sep\'></div>";');
   h.push('    }');
   h.push('    rows+="<button class=\'act-item\' onclick=\'doReprocess("+d.row+")\'>&#128260; Reprocess</button>";');
@@ -24491,18 +21710,18 @@ function getSubmissionDashboardHtml_() {
   h.push('      ov.id="email-preview-overlay";');
   h.push('      ov.style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;";');
   h.push('      ov.innerHTML=');
-  h.push('        "<div style=\'background:#1e293b;border-radius:12px;width:90%;max-width:820px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.6);\'>"');
-  h.push('        +"<div style=\'padding:16px 20px;background:#0f172a;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.1);\'>"');
-  h.push('        +"<div><div style=\'color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;\'>Email Preview</div>"');
-  h.push('        +"<div style=\'color:#f1f5f9;font-weight:600;margin-top:2px;\'>To: "+prev.recipient+"</div>"');
-  h.push('        +"<div style=\'color:#94a3b8;font-size:12px;margin-top:2px;\'>Subject: "+prev.subject+"</div></div>"');
-  h.push('        +"<button onclick=\'document.getElementById(\\"email-preview-overlay\\").remove()\' style=\'background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1;\'>&times;</button></div>"');
+  h.push('        "<div style=\'background:#161b22;border-radius:12px;width:90%;max-width:820px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.6);\'>"');
+  h.push('        +"<div style=\'padding:16px 20px;background:#0d1117;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.1);\'>"');
+  h.push('        +"<div><div style=\'color:#8b949e;font-size:11px;text-transform:uppercase;letter-spacing:1px;\'>Email Preview</div>"');
+  h.push('        +"<div style=\'color:#e6edf3;font-weight:600;margin-top:2px;\'>To: "+prev.recipient+"</div>"');
+  h.push('        +"<div style=\'color:#8b949e;font-size:12px;margin-top:2px;\'>Subject: "+prev.subject+"</div></div>"');
+  h.push('        +"<button onclick=\'document.getElementById(\\"email-preview-overlay\\").remove()\' style=\'background:none;border:none;color:#8b949e;font-size:22px;cursor:pointer;line-height:1;\'>&times;</button></div>"');
   h.push('        +"<div style=\'flex:1;overflow:auto;padding:0;\'>"');
-  h.push('        +"<iframe id=\'email-preview-iframe\' srcdoc=\'\' style=\'width:100%;height:600px;border:none;background:#fff;\'></iframe>"');
+  h.push('        +"<iframe id=\'email-preview-iframe\' srcdoc=\'\' style=\'width:100%;height:600px;border:none;background:#ffffff;\'></iframe>"');
   h.push('        +"</div>"');
-  h.push('        +"<div style=\'padding:14px 20px;background:#0f172a;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid rgba(255,255,255,0.1);\'>"');
-  h.push('        +"<button onclick=\'document.getElementById(\\"email-preview-overlay\\").remove()\' style=\'padding:9px 20px;background:#334155;color:#f1f5f9;border:none;border-radius:7px;cursor:pointer;font-size:13px;\'>✕ Cancel</button>"');
-  h.push('        +"<button id=\'confirm-send-btn\' onclick=\'confirmSendEmail("+r+")\' style=\'padding:9px 22px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600;font-size:13px;\'>✉️ Confirm &amp; Send</button>"');
+  h.push('        +"<div style=\'padding:14px 20px;background:#0d1117;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid rgba(255,255,255,0.1);\'>"');
+  h.push('        +"<button onclick=\'document.getElementById(\\"email-preview-overlay\\").remove()\' style=\'padding:9px 20px;background:#21262d;color:#e6edf3;border:none;border-radius:7px;cursor:pointer;font-size:13px;\'>✕ Cancel</button>"');
+  h.push('        +"<button id=\'confirm-send-btn\' onclick=\'confirmSendEmail("+r+")\' style=\'padding:9px 22px;background:linear-gradient(135deg,#1f6feb,#1f6feb);color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600;font-size:13px;\'>✉️ Confirm &amp; Send</button>"');
   h.push('        +"</div></div>";');
   h.push('      document.body.appendChild(ov);');
   h.push('      // Load email HTML into the iframe via srcdoc');
@@ -24551,9 +21770,9 @@ function getSubmissionDashboardHtml_() {
 
   // Entry Editor Functions
   h.push('function openEditor(r){closeMenus();document.getElementById("editorModal").classList.add("show");');
-  h.push('  document.getElementById("editorBody").innerHTML="<div style=\'text-align:center;color:#94a3b8;padding:40px;\'><br><br>Loading entries for row "+r+"...<br><br></div>";');
+  h.push('  document.getElementById("editorBody").innerHTML="<div style=\'text-align:center;color:#8b949e;padding:40px;\'><br><br>Loading entries for row "+r+"...<br><br></div>";');
   h.push('  google.script.run.withSuccessHandler(function(res){renderEditor(r,res.data);}).withFailureHandler(function(e){');
-  h.push('    document.getElementById("editorBody").innerHTML="<div style=\'color:#f87171;padding:20px;\'>Error: "+e.message+"</div>";');
+  h.push('    document.getElementById("editorBody").innerHTML="<div style=\'color:#ff7b72;padding:20px;\'>Error: "+e.message+"</div>";');
   h.push('  }).getSubmissionEntryDetails(r);}');
   h.push('function closeEditor(){document.getElementById("editorModal").classList.remove("show");}');
   
@@ -24572,9 +21791,9 @@ function getSubmissionDashboardHtml_() {
   h.push('      h+="<div class=\'entry-files\' style=\'margin:0;padding:0;border:none;\'>";');
   h.push('      for(var f=0;f<e.files.length;f++) h+="<a href=\'"+esc(e.files[f])+"\' target=\'_blank\' class=\'file-link\'>File "+(f+1)+"</a>";');
   h.push('      h+="</div>";');
-  h.push('    }else{ h+="<div style=\'font-size:11px;color:#64748b;\'>No files</div>"; }');
+  h.push('    }else{ h+="<div style=\'font-size:11px;color:#8b949e;\'>No files</div>"; }');
   h.push('    if(e.canRemove){');
-  h.push('      h+="<button class=\'btn btn-remove\' onclick=\'confirmRemoveEntry("+r+",\""+escape(e.competition)+"\")\'>🗑️ Remove Entry</button>";');
+  h.push('      h+="<button class=\'btn btn-remove\' onclick=\'confirmRemoveEntry("+r+",\\""+escape(e.competition)+"\\")\'>🗑️ Remove Entry</button>";');
   h.push('    }else{');
   h.push('      h+="<button class=\'btn btn-remove\' disabled title=\'Cannot remove the last or only entry\'>🗑️ Remove Entry</button>";');
   h.push('    }');
@@ -24586,7 +21805,7 @@ function getSubmissionDashboardHtml_() {
   h.push('function confirmRemoveEntry(r,compRaw){');
   h.push('  var comp=unescape(compRaw);');
   h.push('  if(!confirm("⚠️ REMOVE ENTRY CAUTION\\n\\nAre you sure you want to remove the \\""+comp+"\\" entry from Row "+r+"?\\n\\nThis will:\\n1. Erase all submitted data for this competition\\n2. Disable the participant number\\n3. Send the anonymized files to the trash\\n\\nThis action CANNOT BE UNDONE.")) return;');
-  h.push('  document.getElementById("editorBody").innerHTML="<div style=\'text-align:center;color:#fbbf24;padding:40px;\'><br><br>🗑️ Removing "+esc(comp)+" entry...<br><br></div>";');
+  h.push('  document.getElementById("editorBody").innerHTML="<div style=\'text-align:center;color:#e3b341;padding:40px;\'><br><br>🗑️ Removing "+esc(comp)+" entry...<br><br></div>";');
   h.push('  google.script.run.withSuccessHandler(function(res){');
   h.push('    toast("✅ "+esc(res.removedCompetition)+" removed!","ok");');
   h.push('    if(res.remainingEntries>1){ openEditor(r); }else{ closeEditor(); }');
@@ -24607,7 +21826,8 @@ function getSubmissionDashboardHtml_() {
   h.push('function refreshData(){loadData();}');
   h.push('loadData();');
   h.push('</script></body></html>');
-  return h.join('');
+  // One push per line: the client script contains // comments, so lines must stay separate
+  return h.join('\n');
 }
 
 /**
@@ -24663,7 +21883,7 @@ function dashScanPii(rowIndex) {
   var rowVals = subSheet.getRange(rowIndex, 1, 1, width).getValues()[0];
 
   var S = SYSTEM_CONFIG.COLS.SUB;
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var compMap = SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP;
   var compTypes = rawCompType.split(/\s*,\s*/).filter(function(c) { return c.length > 0; });
   var detectedComps = DepersonalizationService.detectCompetitionsFromData(rowVals);
@@ -24736,7 +21956,7 @@ function dashResendConfirmation(rowIndex) {
   var email = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
   if (!email) throw new Error("No email found for row " + rowIndex);
 
-  var rawCompType  = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType  = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var partNumRaw   = sysCols["SYS_PARTICIPANT_NUM"] ? String(rowVals[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
   var genId        = sysCols["SYS_MATCHED_GEN_ID"]  ? String(rowVals[sysCols["SYS_MATCHED_GEN_ID"]  - 1] || "").trim() : "";
 
@@ -24770,7 +21990,7 @@ function dashResendConfirmation(rowIndex) {
     }
     if (!compMap) continue;
 
-    var partNum = numByPrefix[SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[compMap.key]] || participantNums[ci] || participantNums[0] || "";
+    var partNum = pickParticipantNumFor_(compMap.key, participantNums, competitionTypes.length);
     if (!partNum) continue;
 
     var participantName = "";
@@ -24831,7 +22051,7 @@ function dashGetResendPreview(rowIndex) {
   var email      = Utils.normalizeEmail(rowVals[S.EMAIL - 1]);
   if (!email) throw new Error("No email found for row " + rowIndex);
 
-  var rawCompType = String(rowVals[S.COMPETITION_TYPE - 1] || "").trim();
+  var rawCompType = getSubmissionCompetitionTypes_(rowVals).join(", ");
   var partNumRaw  = sysCols["SYS_PARTICIPANT_NUM"] ? String(rowVals[sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
   var genId       = sysCols["SYS_MATCHED_GEN_ID"]  ? String(rowVals[sysCols["SYS_MATCHED_GEN_ID"]  - 1] || "").trim() : "";
 
@@ -24863,7 +22083,7 @@ function dashGetResendPreview(rowIndex) {
     }
     if (!compMap) continue;
 
-    var partNum = numByPrefix[SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[compMap.key]] || participantNums[ci] || participantNums[0] || "";
+    var partNum = pickParticipantNumFor_(compMap.key, participantNums, competitionTypes.length);
     if (!partNum) continue;
     previewPartNums.push(partNum);
 
@@ -24908,7 +22128,7 @@ function dashGetResendPreview(rowIndex) {
 }
 
 // ============================================================================
-// PART 24: SUBMISSION EMAIL PREVIEW / SIMULATOR (V23)
+// PART 24: SUBMISSION EMAIL PREVIEW / SIMULATOR
 // ============================================================================
 
 /**
@@ -24918,114 +22138,72 @@ function dashGetResendPreview(rowIndex) {
 function previewSubmissionAcknowledgement() {
   var ui = SpreadsheetApp.getUi();
 
-  // Let user choose which competition to preview
+  // The competitions, their Submission-form names and their number prefixes come from the settings
+  var comps = getCompetitions_();
+  var allChoice = String(comps.length + 1);
   var response = ui.prompt(
     "👁️ Preview Submission Acknowledgement Email",
     "Choose a competition type to preview:\n\n" +
-    "1 — Speech Competition\n" +
-    "2 — Essay Writing Competition\n" +
-    "3 — Mobile Phone Photography Competition\n" +
-    "4 — Short Film Competition\n" +
-    "5 — All (show all 4 side by side)\n\n" +
-    "Enter a number (1-5):",
+    comps.map(function (c, i) { return (i + 1) + " — " + c.submissionName; }).join("\n") + "\n" +
+    allChoice + " — All (" + comps.length + " previews, one after another)\n\n" +
+    "Enter a number (1-" + allChoice + "):",
     ui.ButtonSet.OK_CANCEL
   );
 
   if (response.getSelectedButton() !== ui.Button.OK) return;
   var choice = response.getResponseText().trim();
 
-  // Sample data for each competition type
-  var sampleData = {
-    "1": {
+  // Invented entrants. The first competition that has a title shows what a FLAGGED entry looks like.
+  var samplePeople = [
+    { participantName: "Maria Clara Reyes", email: "maria.clara@test.com", region: "National Capital Region (NCR)", school: "Ateneo de Manila University",
+      adviser: "Prof. Jose Rizal", facebook: "https://facebook.com/maria.clara", contact: "09987654321", entryTitle: "Mga Kwento ng Bayan: Maria Clara's Reflection", number: 19 },
+    { participantName: "Juan Dela Cruz", email: "juan.delacruz@test.com", region: "Region IV-A (CALABARZON)", school: "University of the Philippines Los Baños",
+      adviser: "Dr. Maria Santos", facebook: "https://facebook.com/juan.delacruz", contact: "09123456789", entryTitle: "Tinig ng Kabataan", number: 42 },
+    { participantName: "Andres Bonifacio Jr.", email: "andres.b@test.com", region: "Region III (Central Luzon)", school: "Central Luzon State University",
+      adviser: "Ms. Gabriela Silang", facebook: "https://facebook.com/andres.b", contact: "09111222333", entryTitle: "Pagsibol: Isang Tanawin ng Pag-asa", number: 7 },
+    { participantName: "Luna, Diego, Isabela Rodriguez", email: "team.luna@test.com", region: "Region VII (Central Visayas)", school: "University of San Carlos",
+      adviser: "Dir. Lino Brocka Jr.", facebook: "https://facebook.com/team.luna", contact: "09444555666", entryTitle: "Liwanag sa Dilim: Isang Maikling Pelikula", number: 3 }
+  ];
+  var flaggedShown = false;
+  var sampleData = {};
+  comps.forEach(function (c, i) {
+    var person = samplePeople[i % samplePeople.length];
+    var fileCols = (c.map && c.map.fileCols) || [];
+    var hasTitle = !!(c.map && c.map.titleCol);
+    var flagged = hasTitle && !flaggedShown && i === 0;
+    if (flagged) flaggedShown = true;
+    sampleData[String(i + 1)] = {
       success: true,
-      participantNum: "SP-0042",
-      competitionType: "Speech Competition",
-      competitionKey: "SPEECH",
-      matchedGenId: "HNS-2026-0123",
-      participantName: "Juan Dela Cruz",
-      email: "juan.delacruz@test.com",
-      status: "PROCESSED",
-      piiResult: { flagged: false, matches: [] },
-      fileResults: [{ name: "speech_video.mp4", anonId: "anon_001" }, { name: "speech_written.pdf", anonId: "anon_002" }],
-      fileCount: 2,
-      region: "Region IV-A (CALABARZON)",
-      school: "University of the Philippines Los Baños",
-      adviser: "Dr. Maria Santos",
-      facebook: "https://facebook.com/juan.delacruz",
-      contact: "09123456789",
-      entryTitle: "",
-      paymentStatus: "PAID"
-    },
-    "2": {
-      success: true,
-      participantNum: "EW-0019",
-      competitionType: "Essay Writing Competition",
-      competitionKey: "ESSAY",
-      matchedGenId: "HNS-2026-0456",
-      participantName: "Maria Clara Reyes",
-      email: "maria.clara@test.com",
-      status: "FLAGGED",
-      piiResult: { flagged: true, matches: ["Name found in title: Maria Clara"] },
-      fileResults: [{ name: "essay_final.pdf", anonId: "anon_003" }],
-      fileCount: 1,
-      region: "National Capital Region (NCR)",
-      school: "Ateneo de Manila University",
-      adviser: "Prof. Jose Rizal",
-      facebook: "https://facebook.com/maria.clara",
-      contact: "09987654321",
-      entryTitle: "Ang Mga Kwento sa Likod ng Soksay: Maria Clara's Reflection",
-      paymentStatus: "PAID"
-    },
-    "3": {
-      success: true,
-      participantNum: "MP-0007",
-      competitionType: "Mobile Phone Photography Competition",
-      competitionKey: "PHOTO",
-      matchedGenId: "HNS-2026-0789",
-      participantName: "Andres Bonifacio Jr.",
-      email: "andres.b@test.com",
-      status: "PROCESSED",
-      piiResult: { flagged: false, matches: [] },
-      fileResults: [{ name: "photograph.jpg", anonId: "anon_004" }, { name: "explanation.pdf", anonId: "anon_005" }],
-      fileCount: 2,
-      region: "Region III (Central Luzon)",
-      school: "Central Luzon State University",
-      adviser: "Ms. Gabriela Silang",
-      facebook: "https://facebook.com/andres.b",
-      contact: "09111222333",
-      entryTitle: "Pagsibol: Isang Tanawin ng Pag-asa",
-      paymentStatus: "PAID"
-    },
-    "4": {
-      success: true,
-      participantNum: "SF-0003",
-      competitionType: "Short Film Competition",
-      competitionKey: "FILM",
-      matchedGenId: "HNS-2026-1011",
-      participantName: "Luna, Diego, Isabela Rodriguez",
-      email: "team.luna@test.com",
-      status: "PROCESSED",
-      piiResult: { flagged: false, matches: [] },
-      fileResults: [{ name: "short_film_final.mp4", anonId: "anon_006" }],
-      fileCount: 1,
-      region: "Region VII (Central Visayas)",
-      school: "University of San Carlos",
-      adviser: "Dir. Lino Brocka Jr.",
-      facebook: "https://facebook.com/team.luna",
-      contact: "09444555666",
-      entryTitle: "Liwanag sa Dilim: Isang Maikling Pelikula",
-      paymentStatus: "PAID"
-    }
-  };
+      participantNum: sampleParticipantNumber_(c.key, person.number),
+      competitionType: c.submissionName,
+      competitionKey: c.key,
+      matchedGenId: "REF-SAMPLE0" + (i + 1),
+      participantName: person.participantName,
+      email: person.email,
+      status: flagged ? "FLAGGED" : "PROCESSED",
+      piiResult: flagged
+        ? { flagged: true, matches: ["Name found in title: " + person.participantName.split(" ").slice(0, 2).join(" ")] }
+        : { flagged: false, matches: [] },
+      fileResults: fileCols.map(function (col, f) { return { name: String(col).toLowerCase(), anonId: "anon_" + (i + 1) + "_" + (f + 1) }; }),
+      fileCount: fileCols.length,
+      region: person.region,
+      school: person.school,
+      adviser: person.adviser,
+      facebook: person.facebook,
+      contact: person.contact,
+      entryTitle: hasTitle ? person.entryTitle : "",
+      paymentStatus: SYSTEM_CONFIG.ADMIN.TRIGGER_WORD
+    };
+  });
 
   // Determine which previews to generate
   var previewKeys = [];
-  if (choice === "5") {
-    previewKeys = ["1", "2", "3", "4"];
+  if (choice === allChoice) {
+    previewKeys = Object.keys(sampleData);
   } else if (sampleData[choice]) {
     previewKeys = [choice];
   } else {
-    ui.alert("Invalid choice. Please enter a number from 1 to 5.");
+    ui.alert("Invalid choice. Please enter a number from 1 to " + allChoice + ".");
     return;
   }
 
@@ -25033,24 +22211,24 @@ function previewSubmissionAcknowledgement() {
   var wrapperHtml = [];
   wrapperHtml.push('<!DOCTYPE html><html><head><meta charset="utf-8">');
   wrapperHtml.push('<style>');
-  wrapperHtml.push('body { margin: 0; padding: 20px; background: #1a1a2e; font-family: Arial, sans-serif; }');
-  wrapperHtml.push('.preview-header { text-align: center; color: #FFD700; margin-bottom: 20px; }');
+  wrapperHtml.push('body { margin: 0; padding: 20px; background: #0d1117; font-family: Arial, sans-serif; }');
+  wrapperHtml.push('.preview-header { text-align: center; color: #e3b341; margin-bottom: 20px; }');
   wrapperHtml.push('.preview-header h1 { margin: 0 0 5px; font-size: 22px; }');
-  wrapperHtml.push('.preview-header p { margin: 0; color: #9CA3AF; font-size: 13px; }');
+  wrapperHtml.push('.preview-header p { margin: 0; color: #8b949e; font-size: 13px; }');
   wrapperHtml.push('.preview-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; margin: 10px 5px; }');
-  wrapperHtml.push('.badge-normal { background: #065F46; color: #6EE7B7; }');
-  wrapperHtml.push('.badge-flagged { background: #92400E; color: #FCD34D; }');
-  wrapperHtml.push('.preview-label { color: #93C5FD; font-size: 14px; font-weight: bold; margin: 30px 0 10px; padding: 8px 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 4px solid #FFD700; }');
-  wrapperHtml.push('.email-frame { border: 2px solid #333; border-radius: 12px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }');
-  wrapperHtml.push('.email-toolbar { background: #2d2d44; padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #444; }');
+  wrapperHtml.push('.badge-normal { background: rgba(46,160,67,0.15); color: #3fb950; }');
+  wrapperHtml.push('.badge-flagged { background: #9e6a03; color: #e3b341; }');
+  wrapperHtml.push('.preview-label { color: #58a6ff; font-size: 14px; font-weight: bold; margin: 30px 0 10px; padding: 8px 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 4px solid #bb8009; }');
+  wrapperHtml.push('.email-frame { border: 2px solid #21262d; border-radius: 12px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }');
+  wrapperHtml.push('.email-toolbar { background: #21262d; padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #30363d; }');
   wrapperHtml.push('.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }');
-  wrapperHtml.push('.dot-red { background: #FF5F57; }');
-  wrapperHtml.push('.dot-yellow { background: #FFBD2E; }');
-  wrapperHtml.push('.dot-green { background: #28C840; }');
-  wrapperHtml.push('.toolbar-text { color: #9CA3AF; font-size: 12px; flex: 1; text-align: center; }');
-  wrapperHtml.push('.email-content-frame { background: #f2f2f2; }');
-  wrapperHtml.push('.sim-info { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px 16px; margin: 15px 0; font-size: 12px; color: #9CA3AF; }');
-  wrapperHtml.push('.sim-info b { color: #60a5fa; }');
+  wrapperHtml.push('.dot-red { background: #da3633; }');
+  wrapperHtml.push('.dot-yellow { background: #9e6a03; }');
+  wrapperHtml.push('.dot-green { background: #238636; }');
+  wrapperHtml.push('.toolbar-text { color: #8b949e; font-size: 12px; flex: 1; text-align: center; }');
+  wrapperHtml.push('.email-content-frame { background: #ffffff; }');
+  wrapperHtml.push('.sim-info { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px 16px; margin: 15px 0; font-size: 12px; color: #8b949e; }');
+  wrapperHtml.push('.sim-info b { color: #58a6ff; }');
   wrapperHtml.push('</style></head><body>');
 
   wrapperHtml.push('<div class="preview-header">');
@@ -25089,20 +22267,20 @@ function previewSubmissionAcknowledgement() {
     wrapperHtml.push('<span class="dot dot-green"></span>');
     wrapperHtml.push('<span class="toolbar-text">Subject: ' + SYSTEM_CONFIG.META.NAME + ': Submission Acknowledgement [' + data.participantNum + ']</span>');
     wrapperHtml.push('</div>');
-    wrapperHtml.push('<div class="email-content-frame">');
+    wrapperHtml.push('<div class="email-content-frame email-paper">');
     // Replace cid: images with placeholder text for preview
     var previewEmail = emailHtml
-      .replace(/src="cid:uplb_logo"/g, 'src="" alt="[UPLB Logo]" style="background:#4a5568;padding:8px;border-radius:50%;"')
-      .replace(/src="cid:husay_logo"/g, 'src="" alt="[Husay Logo]" style="background:#4a5568;padding:8px;border-radius:50%;"');
+      .replace(/src="cid:uplb_logo"/g, 'src="" alt="[Organisation logo]" style="background:#30363d;padding:8px;border-radius:50%;"')
+      .replace(/src="cid:husay_logo"/g, 'src="" alt="[Event logo]" style="background:#30363d;padding:8px;border-radius:50%;"');
     wrapperHtml.push(previewEmail);
     wrapperHtml.push('</div></div>');
   }
 
   // Footer info
-  wrapperHtml.push('<div style="text-align:center;color:#6B7280;font-size:11px;margin-top:20px;padding-bottom:20px;">This preview was generated on ' + new Date().toLocaleString() + '<br>No emails were sent. This is for visual testing only.</div>');
+  wrapperHtml.push('<div style="text-align:center;color:#8b949e;font-size:11px;margin-top:20px;padding-bottom:20px;">This preview was generated on ' + new Date().toLocaleString() + '<br>No emails were sent. This is for visual testing only.</div>');
   wrapperHtml.push('</body></html>');
 
-  var htmlOutput = HtmlService.createHtmlOutput(wrapperHtml.join(''))
+  var htmlOutput = HtmlService.createHtmlOutput(withGuideLink_(wrapperHtml.join(''), "submit"))
     .setWidth(900)
     .setHeight(700)
     .setTitle('Submission Acknowledgement Email Preview');
@@ -25111,14 +22289,14 @@ function previewSubmissionAcknowledgement() {
 
 
 // ============================================================================
-// PART 25: ANNOUNCEMENT EMAIL SYSTEM (V23.3)
+// PART 25: ANNOUNCEMENT EMAIL SYSTEM
 // ============================================================================
 
 /**
  * Open the Announcement Email Center modal dialog.
  */
 function openAnnouncementCenter() {
-  var html = HtmlService.createHtmlOutput(getAnnouncementCenterHtml_())
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getAnnouncementCenterHtml_(), "email"))
     .setWidth(1000)
     .setHeight(750)
     .setTitle('Announcement Email Center');
@@ -25132,9 +22310,36 @@ function openAnnouncementCenter() {
  */
 function getAnnouncementRecipients(filters) {
   try {
+    filters = filters || {};
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var source = filters.source || "form1";
     var recipientMap = {}; // keyed by email to deduplicate
+
+    // Payment filter sent by the dialog: "" (any), PAID, PENDING or FREE
+    // (older saved drafts may hold "all" / "paid" / "unpaid").
+    var payFilter = String(filters.paymentStatus || "").trim().toLowerCase();
+    if (payFilter === "all") payFilter = "";
+    if (payFilter === "unpaid") payFilter = "pending";
+    var paidLookup = payFilter ? getPaidEmailLookup_() : null;
+    function passesPayFilter_(addr, fallbackStatus) {
+      if (!payFilter) return true;
+      var isPaid = paidLookup.isPaid(addr, fallbackStatus);
+      var isFree = paidLookup.isFree(addr);
+      if (payFilter === "paid") return isPaid;
+      if (payFilter === "pending") return !isPaid && !isFree;
+      if (payFilter === "free") return isFree;
+      return true;
+    }
+
+    // Submission filter sent by the dialog: "" (any), "submitted" (has a submission) or "none".
+    // Any other value is matched against the submission's status (PROCESSED, FLAGGED...).
+    var subFilter = String(filters.submissionStatus || "").trim().toLowerCase();
+    if (subFilter === "all") subFilter = "";
+    var submittedEmails = (subFilter === "submitted" || subFilter === "none") ? getSubmittedEmailSet_() : null;
+    function passesSubFilter_(addr) {
+      if (!submittedEmails) return true;
+      return subFilter === "submitted" ? !!submittedEmails[addr] : !submittedEmails[addr];
+    }
 
     // ----- Form 1 (Registration) -----
     if (source === "form1" || source === "both") {
@@ -25152,11 +22357,9 @@ function getAnnouncementRecipients(filters) {
           var school = String(regData[i][R.SCHOOL - 1] || "").trim();
           var region = String(regData[i][R.REGION - 1] || "").trim();
 
-          // Payment filter
-          if (filters.paymentStatus && filters.paymentStatus !== "all") {
-            if (filters.paymentStatus === "paid" && payStatus !== "PAID") continue;
-            if (filters.paymentStatus === "unpaid" && payStatus === "PAID") continue;
-          }
+          // Payment + submission filters
+          if (!passesPayFilter_(email, payStatus)) continue;
+          if (!passesSubFilter_(email)) continue;
           // Competition filter
           if (filters.competitions && filters.competitions.length > 0) {
             var compUpper = comp.toUpperCase();
@@ -25196,12 +22399,12 @@ function getAnnouncementRecipients(filters) {
 
           var sPartNum = sysCols["SYS_PARTICIPANT_NUM"] ? String(subData[j][sysCols["SYS_PARTICIPANT_NUM"] - 1] || "").trim() : "";
           var sStatus = sysCols["SYS_SUB_STATUS"] ? String(subData[j][sysCols["SYS_SUB_STATUS"] - 1] || "").trim().toUpperCase() : "";
-          var sComp = String(subData[j][S.COMPETITION_TYPE - 1] || "").trim();
+          var sComp = getSubmissionCompetitionTypes_(subData[j]).join(", ");
 
-          // Submission status filter
-          if (filters.submissionStatus && filters.submissionStatus !== "all") {
-            if (sStatus !== filters.submissionStatus.toUpperCase()) continue;
-          }
+          // Payment + submission filters
+          if (!passesPayFilter_(sEmail, "")) continue;
+          if (!passesSubFilter_(sEmail)) continue;
+          if (subFilter && !submittedEmails && sStatus !== subFilter.toUpperCase()) continue;
           // Competition filter
           if (filters.competitions && filters.competitions.length > 0) {
             var sCompUpper = sComp.toUpperCase();
@@ -25312,12 +22515,12 @@ function buildAnnouncementHtml_(category, subject, body, recipientData) {
   h.push('<div style="background-color:' + BLUE + ';padding:16px 10px;text-align:center;border-bottom:6px solid ' + GOLD + ';">');
   h.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;max-width:600px;">');
   h.push('<tr>');
-  h.push('<td width="20%" align="center" valign="middle" style="padding:0 5px;"><img src="cid:uplb_logo" alt="UPLB Sociology Society" style="max-width:70px;height:auto;display:block;margin:0 auto;"></td>');
+  h.push('<td width="20%" align="center" valign="middle" style="padding:0 5px;"><img src="cid:uplb_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:70px;height:auto;display:block;margin:0 auto;"></td>');
   h.push('<td width="60%" align="center" valign="middle" style="padding:0 5px;">');
-  h.push('<div style="color:' + GOLD + ';font-family:Times New Roman,serif;font-size:24px;letter-spacing:2px;font-weight:800;">HUSAY NG SOKSAY</div>');
-  h.push('<div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">UPLB SOCIOLOGY SOCIETY</div>');
+  h.push('<div style="color:' + GOLD + ';font-family:Times New Roman,serif;font-size:24px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</div>');
+  h.push('<div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</div>');
   h.push('</td>');
-  h.push('<td width="20%" align="center" valign="middle" style="padding:0 5px;"><img src="cid:husay_logo" alt="Husay ng Soksay" style="max-width:70px;height:auto;display:block;margin:0 auto;"></td>');
+  h.push('<td width="20%" align="center" valign="middle" style="padding:0 5px;"><img src="cid:husay_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + '" data-logo="event" style="max-width:70px;height:auto;display:block;margin:0 auto;"></td>');
   h.push('</tr></table></div>');
   h.push('</td></tr>');
 
@@ -25365,11 +22568,11 @@ function previewAnnouncementEmail(config) {
   try {
     var sampleRecipient = {
       name: config.sampleName || "Juan Dela Cruz",
-      genId: "REF-SAMPLE1",
-      competition: config.sampleCompetition || "Speech Competition",
+      genId: "REF-SAMPLE01",
+      competition: config.sampleCompetition || (getCompetitions_()[0] || {}).registrationName || "",
       school: "University of the Philippines Los Baños",
       region: "Region IV-A (CALABARZON)",
-      participantNum: "SP-0001",
+      participantNum: sampleParticipantNumber_((getCompetitions_()[0] || {}).key, 1),
       _signoff: config.signoff || ""
     };
     var html = buildAnnouncementHtml_(config.category, config.subject, config.body, sampleRecipient);
@@ -25409,8 +22612,10 @@ function sendAnnouncementBatch(config) {
           try {
             var threadInfo = EmailThreadService.getThreadInfo(r.genId);
             if (threadInfo && threadInfo.threadId) {
-              EmailThreadService.sendReplyEmail(r.email, config.subject, emailHtml, inlineImages, threadInfo.threadId, threadInfo.messageId, senderName);
-              threaded = true;
+              // sendReplyEmail reports failure in its result instead of throwing; only count
+              // the email as sent when it really went out, otherwise use the direct send below
+              var annReply = EmailThreadService.sendReplyEmail(r.email, config.subject, emailHtml, inlineImages, threadInfo.threadId, threadInfo.messageId, senderName);
+              threaded = !!(annReply && annReply.success);
             }
           } catch (te) { /* fallback to direct send */ }
         }
@@ -25422,7 +22627,7 @@ function sendAnnouncementBatch(config) {
         sent++;
 
         // Rate limiting
-        if (i < recipients.length - 1) Utilities.sleep(1500);
+        if (i < recipients.length - 1) pauseBetweenEmails_();
       } catch (sendErr) {
         failed++;
         failedRecipients.push(r);
@@ -25537,8 +22742,9 @@ function scheduleAnnouncementRetry() {
 /**
  * Process the scheduled queue — called by time trigger.
  */
-function processScheduledAnnouncementQueue() {
+function processScheduledAnnouncementQueue(e) {
   try {
+    deleteFiredTrigger_(e);
     var queueData = getFailedAnnouncementRecipients();
     if (!queueData.found || !queueData.data) {
       AuditLogService.info("ANNOUNCE_QUEUE_EMPTY", "No queued announcements to process.");
@@ -25622,21 +22828,74 @@ function scheduleAnnouncementSend(config) {
 }
 
 /**
- * Process a scheduled announcement — called by time trigger.
- * Retrieves the oldest pending scheduled send, re-fetches recipients, and sends.
+ * Delete the one-off clock trigger that just fired (they are not removed automatically and
+ * count toward the project's trigger limit).
  */
-function processScheduledAnnouncement() {
+function deleteFiredTrigger_(e) {
   try {
+    if (!e || !e.triggerUid) return;
+    var triggers = ScriptApp.getProjectTriggers();
+    for (var t = 0; t < triggers.length; t++) {
+      if (triggers[t].getUniqueId() === e.triggerUid) {
+        ScriptApp.deleteTrigger(triggers[t]);
+        return;
+      }
+    }
+  } catch (err) {
+    Logger.log("deleteFiredTrigger_: " + err);
+  }
+}
+
+/**
+ * Process scheduled announcements - called by time trigger.
+ * Sends only the announcements whose scheduled time has arrived. (It used to send the
+ * oldest-created draft regardless of its time, so a later-created/earlier-dated send, or the
+ * leftover trigger of a cancelled send, made a different announcement go out early.)
+ */
+function processScheduledAnnouncement(e) {
+  try {
+    deleteFiredTrigger_(e);
+
     var props = PropertiesService.getScriptProperties();
     var raw = props.getProperty("ANNOUNCEMENT_SCHEDULED_SENDS");
     if (!raw) { AuditLogService.info("ANNOUNCE_SCHED_EMPTY", "No scheduled sends to process."); return; }
     var scheduled = JSON.parse(raw);
     if (scheduled.length === 0) { AuditLogService.info("ANNOUNCE_SCHED_EMPTY", "No scheduled sends to process."); return; }
 
-    // Take the first (oldest) scheduled send
-    var draft = scheduled.shift();
-    props.setProperty("ANNOUNCEMENT_SCHEDULED_SENDS", JSON.stringify(scheduled));
+    // Split into due and not-yet-due (clock triggers may fire a little early or late)
+    var cutoff = new Date().getTime() + 2 * 60 * 1000;
+    var due = [];
+    var pending = [];
+    for (var s = 0; s < scheduled.length; s++) {
+      var dueAt = new Date(scheduled[s].sendAt).getTime();
+      if (isNaN(dueAt) || dueAt <= cutoff) due.push(scheduled[s]);
+      else pending.push(scheduled[s]);
+    }
 
+    if (due.length === 0) {
+      AuditLogService.info("ANNOUNCE_SCHED_NOT_DUE", "Trigger fired but no announcement is due yet (" + pending.length + " still scheduled).");
+      return;
+    }
+
+    due.sort(function (x, y) { return new Date(x.sendAt).getTime() - new Date(y.sendAt).getTime(); });
+
+    // Remove the due ones from storage before sending so a second trigger cannot resend them
+    props.setProperty("ANNOUNCEMENT_SCHEDULED_SENDS", JSON.stringify(pending));
+
+    for (var d = 0; d < due.length; d++) {
+      sendScheduledAnnouncementDraft_(due[d], props);
+    }
+  } catch (err) {
+    AuditLogService.error("ANNOUNCE_SCHED_ERROR", "Scheduled announcement processing failed: " + err);
+  }
+}
+
+/**
+ * Send one scheduled announcement draft. If the daily quota is too low it is put back
+ * and retried in 6 hours.
+ */
+function sendScheduledAnnouncementDraft_(draft, props) {
+  try {
     AuditLogService.info("ANNOUNCE_SCHED_START", "Processing scheduled announcement: " + draft.subject + " (ID: " + draft.id + ")");
 
     // Re-fetch recipients using the saved filters
@@ -25651,11 +22910,18 @@ function processScheduledAnnouncement() {
     // Check quota
     var quota = MailApp.getRemainingDailyQuota();
     if (quota < recipients.length) {
-      AuditLogService.warn("ANNOUNCE_SCHED_QUOTA", "Need " + recipients.length + " sends but only " + quota + " remaining. Re-scheduling.");
-      // Put it back and re-schedule for later
-      scheduled.unshift(draft);
-      props.setProperty("ANNOUNCEMENT_SCHEDULED_SENDS", JSON.stringify(scheduled));
-      scheduleAnnouncementRetry();
+      AuditLogService.warn("ANNOUNCE_SCHED_QUOTA", "Need " + recipients.length + " sends but only " + quota + " remaining. Re-scheduling in 6 hours.");
+      // Put it back with a new time and create a trigger for THIS handler
+      var retryMs = 6 * 60 * 60 * 1000;
+      draft.sendAt = new Date(new Date().getTime() + retryMs).toISOString();
+      var current = [];
+      try {
+        var rawNow = props.getProperty("ANNOUNCEMENT_SCHEDULED_SENDS");
+        if (rawNow) current = JSON.parse(rawNow);
+      } catch (parseErr) {}
+      current.push(draft);
+      props.setProperty("ANNOUNCEMENT_SCHEDULED_SENDS", JSON.stringify(current));
+      ScriptApp.newTrigger("processScheduledAnnouncement").timeBased().after(retryMs).create();
       return;
     }
 
@@ -25685,7 +22951,7 @@ function processScheduledAnnouncement() {
       }
     }
 
-    AuditLogService.info("ANNOUNCE_SCHED_DONE", "Scheduled send complete: " + totalSent + " sent, " + totalFailed + " failed."); 
+    AuditLogService.info("ANNOUNCE_SCHED_DONE", "Scheduled send complete: " + totalSent + " sent, " + totalFailed + " failed.");
 
     // Save failures for retry if needed
     if (failedRecipients.length > 0) {
@@ -25698,7 +22964,7 @@ function processScheduledAnnouncement() {
       });
     }
   } catch (e) {
-    AuditLogService.error("ANNOUNCE_SCHED_ERROR", "Scheduled announcement processing failed: " + e);
+    AuditLogService.error("ANNOUNCE_SCHED_ERROR", "Scheduled announcement '" + (draft && draft.subject) + "' failed: " + e);
   }
 }
 
@@ -25808,104 +23074,104 @@ function getAnnouncementCenterHtml_() {
   var css = [
     '<style>',
     '* { margin:0; padding:0; box-sizing:border-box; }',
-    'body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:#0f172a; color:#e2e8f0; padding:0; overflow-x:hidden; }',
+    'body { font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:#0d1117; color:#e6edf3; padding:0; overflow-x:hidden; }',
     '.container { max-width:900px; margin:0 auto; padding:20px; }',
-    'h2 { color:#a5b4fc; font-size:14px; text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }',
-    '.section { background:rgba(30,41,59,0.8); border:1px solid rgba(99,102,241,0.2); border-radius:16px; padding:20px; margin-bottom:16px; backdrop-filter:blur(20px); }',
+    'h2 { color:#79c0ff; font-size:14px; text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }',
+    '.section { background:rgba(30,41,59,0.8); border:1px solid rgba(56,139,253,0.2); border-radius:16px; padding:20px; margin-bottom:16px; backdrop-filter:blur(20px); }',
 
     // Category buttons
     '.cat-row { display:flex; gap:8px; flex-wrap:wrap; }',
     '.cat-btn { padding:10px 18px; border-radius:12px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s; border:2px solid transparent; text-align:center; flex:1; min-width:120px; }',
     '.cat-btn:hover { transform:translateY(-2px); }',
-    '.cat-btn.active { border-color:#fff; box-shadow:0 4px 15px rgba(99,102,241,0.4); }',
-    '.cat-general { background:linear-gradient(135deg,#6366f1,#818cf8); }',
-    '.cat-reminder { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#1e293b; }',
-    '.cat-competition { background:linear-gradient(135deg,#10b981,#34d399); color:#1e293b; }',
-    '.cat-payment { background:linear-gradient(135deg,#ef4444,#f87171); }',
-    '.cat-custom { background:linear-gradient(135deg,#8b5cf6,#a78bfa); }',
+    '.cat-btn.active { border-color:#30363d; box-shadow:0 4px 15px rgba(56,139,253,0.4); }',
+    '.cat-general { background:linear-gradient(135deg,#1f6feb,#1f6feb); }',
+    '.cat-reminder { background:linear-gradient(135deg,#9e6a03,#9e6a03); color:#e6edf3; }',
+    '.cat-competition { background:linear-gradient(135deg,#238636,#238636); color:#e6edf3; }',
+    '.cat-payment { background:linear-gradient(135deg,#da3633,#da3633); }',
+    '.cat-custom { background:linear-gradient(135deg,#8957e5,#8957e5); }',
 
     // Quota hero card
-    '.quota-hero { background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%); border:1px solid rgba(99,102,241,0.3); border-radius:16px; padding:20px 24px; margin-bottom:16px; display:flex; align-items:center; gap:20px; }',
+    '.quota-hero { background:linear-gradient(135deg,#161b22 0%,#0d1117 100%); border:1px solid rgba(56,139,253,0.3); border-radius:16px; padding:20px 24px; margin-bottom:16px; display:flex; align-items:center; gap:20px; }',
     '.quota-num { font-size:48px; font-weight:800; line-height:1; min-width:80px; text-align:center; }',
     '.quota-info { flex:1; }',
-    '.quota-label { font-size:13px; color:#94a3b8; margin-bottom:6px; }',
-    '.quota-bar-track { height:8px; background:rgba(99,102,241,0.15); border-radius:4px; overflow:hidden; }',
+    '.quota-label { font-size:13px; color:#8b949e; margin-bottom:6px; }',
+    '.quota-bar-track { height:8px; background:rgba(56,139,253,0.15); border-radius:4px; overflow:hidden; }',
     '.quota-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }',
-    '.quota-detail { font-size:11px; color:#64748b; margin-top:4px; }',
+    '.quota-detail { font-size:11px; color:#8b949e; margin-top:4px; }',
 
     // Step 2 redesigned filters
     '.filter-pills { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }',
     '.filter-pill { display:flex; flex-direction:column; flex:1; min-width:160px; }',
-    '.filter-pill label { font-size:11px; color:#64748b; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; font-weight:600; }',
-    '.filter-pill select { width:100%; padding:8px 12px; background:#1e293b; border:1px solid rgba(99,102,241,0.25); border-radius:10px; color:#e2e8f0; font-size:13px; outline:none; transition:border 0.2s; appearance:auto; }',
-    '.filter-pill select:focus { border-color:#6366f1; }',
+    '.filter-pill label { font-size:11px; color:#8b949e; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; font-weight:600; }',
+    '.filter-pill select { width:100%; padding:8px 12px; background:#161b22; border:1px solid rgba(56,139,253,0.25); border-radius:10px; color:#e6edf3; font-size:13px; outline:none; transition:border 0.2s; appearance:auto; }',
+    '.filter-pill select:focus { border-color:#388bfd; }',
     '.comp-pills { display:flex; flex-wrap:wrap; gap:6px; padding:4px 0; }',
     '.comp-pill { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.2s; user-select:none; }',
-    '.comp-pill.active { background:rgba(99,102,241,0.25); border:1px solid rgba(99,102,241,0.5); color:#a5b4fc; }',
-    '.comp-pill.inactive { background:rgba(100,116,139,0.1); border:1px solid rgba(100,116,139,0.2); color:#64748b; }',
+    '.comp-pill.active { background:rgba(56,139,253,0.25); border:1px solid rgba(56,139,253,0.5); color:#79c0ff; }',
+    '.comp-pill.inactive { background:rgba(100,116,139,0.1); border:1px solid rgba(100,116,139,0.2); color:#8b949e; }',
     '.comp-pill:hover { transform:scale(1.03); }',
     '.comp-pill .dot { width:8px; height:8px; border-radius:50%; }',
-    '.comp-pill.active .dot { background:#818cf8; box-shadow:0 0 6px #818cf8; }',
-    '.comp-pill.inactive .dot { background:#475569; }',
+    '.comp-pill.active .dot { background:#1f6feb; box-shadow:0 0 6px rgba(56,139,253,0.3); }',
+    '.comp-pill.inactive .dot { background:#30363d; }',
 
     // Search / tags
-    '.search-section { margin-top:14px; padding-top:14px; border-top:1px solid rgba(99,102,241,0.1); }',
-    '.tag-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:4px; min-height:38px; padding:6px 10px; background:#1e293b; border:1px solid rgba(99,102,241,0.3); border-radius:10px; cursor:text; position:relative; }',
-    '.tag-wrap input { flex:1; min-width:120px; background:none; border:none; color:#e2e8f0; font-size:13px; outline:none; }',
-    '.suggestions { display:none; position:absolute; left:0; right:0; top:100%; background:#1e293b; border:1px solid rgba(99,102,241,0.3); border-radius:0 0 10px 10px; max-height:200px; overflow-y:auto; z-index:100; }',
+    '.search-section { margin-top:14px; padding-top:14px; border-top:1px solid rgba(56,139,253,0.1); }',
+    '.tag-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:4px; min-height:38px; padding:6px 10px; background:#161b22; border:1px solid rgba(56,139,253,0.3); border-radius:10px; cursor:text; position:relative; }',
+    '.tag-wrap input { flex:1; min-width:120px; background:none; border:none; color:#e6edf3; font-size:13px; outline:none; }',
+    '.suggestions { display:none; position:absolute; left:0; right:0; top:100%; background:#161b22; border:1px solid rgba(56,139,253,0.3); border-radius:0 0 10px 10px; max-height:200px; overflow-y:auto; z-index:100; }',
 
     // Recipient summary
-    '.recipient-summary { display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:12px 16px; background:rgba(99,102,241,0.08); border-radius:12px; border:1px solid rgba(99,102,241,0.15); }',
-    '.recipient-count { font-size:20px; font-weight:700; color:#a5b4fc; }',
-    '.recipient-label { font-size:12px; color:#94a3b8; }',
+    '.recipient-summary { display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:12px 16px; background:rgba(56,139,253,0.08); border-radius:12px; border:1px solid rgba(56,139,253,0.15); }',
+    '.recipient-count { font-size:20px; font-weight:700; color:#79c0ff; }',
+    '.recipient-label { font-size:12px; color:#8b949e; }',
 
     // Editor
     '.form-group { margin-bottom:14px; }',
-    '.form-group label { display:block; font-size:12px; color:#94a3b8; margin-bottom:4px; font-weight:600; }',
-    '.form-group input { width:100%; padding:10px 14px; background:#1e293b; border:1px solid rgba(99,102,241,0.3); border-radius:10px; color:#e2e8f0; font-size:13px; outline:none; transition:border 0.2s; }',
-    '.form-group input:focus { border-color:#6366f1; }',
-    '.toolbar { display:flex; gap:4px; flex-wrap:wrap; padding:8px; background:#1e293b; border-radius:10px 10px 0 0; border:1px solid rgba(99,102,241,0.2); border-bottom:none; }',
-    '.toolbar button { background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; transition:all 0.2s; }',
-    '.toolbar button:hover { background:rgba(99,102,241,0.4); }',
-    '.editor { min-height:200px; padding:14px; background:#1e293b; border:1px solid rgba(99,102,241,0.2); border-radius:0 0 10px 10px; color:#e2e8f0; font-size:13px; line-height:1.6; outline:none; overflow-y:auto; }',
-    '.editor:focus { border-color:#6366f1; }',
+    '.form-group label { display:block; font-size:12px; color:#8b949e; margin-bottom:4px; font-weight:600; }',
+    '.form-group input { width:100%; padding:10px 14px; background:#161b22; border:1px solid rgba(56,139,253,0.3); border-radius:10px; color:#e6edf3; font-size:13px; outline:none; transition:border 0.2s; }',
+    '.form-group input:focus { border-color:#388bfd; }',
+    '.toolbar { display:flex; gap:4px; flex-wrap:wrap; padding:8px; background:#161b22; border-radius:10px 10px 0 0; border:1px solid rgba(56,139,253,0.2); border-bottom:none; }',
+    '.toolbar button { background:rgba(56,139,253,0.2); border:1px solid rgba(56,139,253,0.3); color:#79c0ff; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; transition:all 0.2s; }',
+    '.toolbar button:hover { background:rgba(56,139,253,0.4); }',
+    '.editor { min-height:200px; padding:14px; background:#161b22; border:1px solid rgba(56,139,253,0.2); border-radius:0 0 10px 10px; color:#e6edf3; font-size:13px; line-height:1.6; outline:none; overflow-y:auto; }',
+    '.editor:focus { border-color:#388bfd; }',
     '.merge-tags { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }',
-    '.merge-tag { background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.3); padding:4px 10px; border-radius:6px; font-size:11px; color:#a5b4fc; cursor:pointer; transition:all 0.2s; }',
-    '.merge-tag:hover { background:rgba(99,102,241,0.4); }',
-    '.signoff-editor { min-height:80px; padding:10px; background:#1e293b; border:1px solid rgba(99,102,241,0.2); border-radius:10px; color:#e2e8f0; font-size:13px; outline:none; line-height:1.6; }',
-    '.signoff-editor:focus { border-color:#6366f1; }',
+    '.merge-tag { background:rgba(56,139,253,0.2); border:1px solid rgba(56,139,253,0.3); padding:4px 10px; border-radius:6px; font-size:11px; color:#79c0ff; cursor:pointer; transition:all 0.2s; }',
+    '.merge-tag:hover { background:rgba(56,139,253,0.4); }',
+    '.signoff-editor { min-height:80px; padding:10px; background:#161b22; border:1px solid rgba(56,139,253,0.2); border-radius:10px; color:#e6edf3; font-size:13px; outline:none; line-height:1.6; }',
+    '.signoff-editor:focus { border-color:#388bfd; }',
 
     // Buttons
     '.btn { padding:12px 24px; border:none; border-radius:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.3s; display:inline-flex; align-items:center; gap:8px; }',
     '.btn:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,0,0,0.3); }',
     '.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }',
-    '.btn-primary { background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff; }',
-    '.btn-secondary { background:#334155; color:#e2e8f0; }',
-    '.btn-schedule { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#1e293b; }',
+    '.btn-primary { background:linear-gradient(135deg,#1f6feb,#1f6feb); color:#fff; }',
+    '.btn-secondary { background:#21262d; color:#e6edf3; }',
+    '.btn-schedule { background:linear-gradient(135deg,#9e6a03,#9e6a03); color:#e6edf3; }',
 
     // Preview & progress
-    '#previewPane { display:none; margin-top:12px; background:#fff; border-radius:10px; max-height:400px; overflow-y:auto; }',
+    '#previewPane { display:none; margin-top:12px; background:#161b22; border-radius:10px; max-height:400px; overflow-y:auto; }',
     '.progress-wrap { display:none; margin:12px 0; }',
-    '.progress-track { background:#1e293b; border-radius:10px; height:8px; overflow:hidden; }',
-    '.progress-bar { height:100%; background:linear-gradient(90deg,#6366f1,#818cf8); border-radius:10px; transition:width 0.3s; width:0%; }',
+    '.progress-track { background:#161b22; border-radius:10px; height:8px; overflow:hidden; }',
+    '.progress-bar { height:100%; background:linear-gradient(90deg,#1f6feb,#1f6feb); border-radius:10px; transition:width 0.3s; width:0%; }',
     '.result-box { padding:14px; border-radius:10px; margin-top:10px; font-size:13px; }',
-    '.result-success { background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; }',
-    '.result-error { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; }',
+    '.result-success { background:rgba(46,160,67,0.15); border:1px solid rgba(46,160,67,0.3); color:#3fb950; }',
+    '.result-error { background:rgba(248,81,73,0.15); border:1px solid rgba(248,81,73,0.3); color:#ff7b72; }',
 
     // Retry banner
-    '.retry-banner { display:none; background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05)); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:14px; margin-bottom:16px; }',
+    '.retry-banner { display:none; background:linear-gradient(135deg,rgba(210,153,34,0.15),rgba(210,153,34,0.05)); border:1px solid rgba(210,153,34,0.3); border-radius:12px; padding:14px; margin-bottom:16px; }',
 
     // Schedule modal
     '.schedule-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:500; align-items:center; justify-content:center; }',
     '.schedule-overlay.show { display:flex; }',
-    '.schedule-modal { background:#1e293b; border:1px solid rgba(99,102,241,0.3); border-radius:16px; padding:24px; width:380px; max-width:90vw; }',
-    '.schedule-modal h3 { color:#a5b4fc; margin-bottom:16px; font-size:16px; }',
-    '.schedule-modal input[type=datetime-local] { width:100%; padding:10px; background:#0f172a; border:1px solid rgba(99,102,241,0.3); border-radius:10px; color:#e2e8f0; font-size:14px; margin-bottom:16px; }',
+    '.schedule-modal { background:#161b22; border:1px solid rgba(56,139,253,0.3); border-radius:16px; padding:24px; width:380px; max-width:90vw; }',
+    '.schedule-modal h3 { color:#79c0ff; margin-bottom:16px; font-size:16px; }',
+    '.schedule-modal input[type=datetime-local] { width:100%; padding:10px; background:#0d1117; border:1px solid rgba(56,139,253,0.3); border-radius:10px; color:#e6edf3; font-size:14px; margin-bottom:16px; }',
     '.schedule-actions { display:flex; gap:8px; justify-content:flex-end; }',
 
     // Scheduled sends list
     '.scheduled-list { margin-top:12px; }',
-    '.scheduled-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:10px; margin-bottom:6px; font-size:12px; }',
+    '.scheduled-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(210,153,34,0.08); border:1px solid rgba(210,153,34,0.2); border-radius:10px; margin-bottom:6px; font-size:12px; }',
     '</style>'
   ].join('\n');
 
@@ -25917,8 +23183,8 @@ function getAnnouncementCenterHtml_() {
     '<div class="retry-banner" id="retryBanner">',
     '  <div style="display:flex;justify-content:space-between;align-items:center">',
     '    <div>',
-    '      <div style="font-weight:700;color:#fbbf24">&#x26A0;&#xFE0F; Queued Failed Emails</div>',
-    '      <div style="font-size:12px;color:#94a3b8;margin-top:4px" id="retryInfo"></div>',
+    '      <div style="font-weight:700;color:#e3b341">&#x26A0;&#xFE0F; Queued Failed Emails</div>',
+    '      <div style="font-size:12px;color:#8b949e;margin-top:4px" id="retryInfo"></div>',
     '    </div>',
     '    <div style="display:flex;gap:6px">',
     '      <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="doRetryNow()">&#x1F504; Retry Now</button>',
@@ -25930,10 +23196,10 @@ function getAnnouncementCenterHtml_() {
 
     // ===== QUOTA HERO CARD =====
     '<div class="quota-hero" id="quotaHero">',
-    '  <div class="quota-num" id="quotaNum" style="color:#64748b">...</div>',
+    '  <div class="quota-num" id="quotaNum" style="color:#8b949e">...</div>',
     '  <div class="quota-info">',
     '    <div class="quota-label" id="quotaLabel">Checking email quota...</div>',
-    '    <div class="quota-bar-track"><div class="quota-bar-fill" id="quotaBarFill" style="width:0%;background:#334155"></div></div>',
+    '    <div class="quota-bar-track"><div class="quota-bar-fill" id="quotaBarFill" style="width:0%;background:#21262d"></div></div>',
     '    <div class="quota-detail" id="quotaDetail"></div>',
     '  </div>',
     '</div>',
@@ -25981,16 +23247,16 @@ function getAnnouncementCenterHtml_() {
     '    </div>',
     '  </div>',
 
-    '  <label style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;display:block">Competitions</label>',
-    '  <div class="comp-pills" id="compFilters"><span style="color:#64748b;font-size:12px">Loading...</span></div>',
+    '  <label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;display:block">Competitions</label>',
+    '  <div class="comp-pills" id="compFilters"><span style="color:#8b949e;font-size:12px">Loading...</span></div>',
 
     '  <div class="search-section">',
-    '    <label style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;display:block">Search Specific Recipients</label>',
+    '    <label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px;display:block">Search Specific Recipients</label>',
     '    <div class="tag-wrap" id="specificTagWrap" onclick="document.getElementById(\'specificInput\').focus()">',
     '      <input type="text" id="specificInput" placeholder="Type email or name, press Enter to add..." onkeydown="handleSpecificKey(event)" oninput="liveSearch(this.value)">',
     '    </div>',
     '    <div class="suggestions" id="specificSuggestions"></div>',
-    '    <div id="specificNote" style="font-size:11px;color:#818cf8;margin-top:4px"></div>',
+    '    <div id="specificNote" style="font-size:11px;color:#58a6ff;margin-top:4px"></div>',
     '  </div>',
 
     '  <div class="recipient-summary">',
@@ -26007,7 +23273,7 @@ function getAnnouncementCenterHtml_() {
     '  <h2>Step 3 &#x2014; Compose</h2>',
     '  <div class="form-group">',
     '    <label>Subject</label>',
-    '    <input type="text" id="emailSubject" value="Husay Ng Soksay: Important Announcement">',
+    '    <input type="text" id="emailSubject" value="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + ': Important Announcement">',
     '  </div>',
     '  <div class="form-group">',
     '    <label>Body</label>',
@@ -26032,9 +23298,9 @@ function getAnnouncementCenterHtml_() {
     '    <span class="merge-tag" onclick="insertMerge(\'{{GEN_ID}}\')">{{GEN_ID}}</span>',
     '  </div>',
     '  <div style="margin-top:10px">',
-    '    <label style="font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:4px;display:block">Sign-off</label>',
+    '    <label style="font-size:12px;color:#8b949e;font-weight:600;margin-bottom:4px;display:block">Sign-off</label>',
     '    <div contenteditable="true" class="signoff-editor" id="emailSignoff">',
-    '      <p>Para sa disiplina ng SokSay,<br>Dithiel Maron A. Fandi&#241;o<br>Event Co-Head, 4th Husay ng SokSay<br>UPLB SOCIOLOGY SOCIETY</p>',
+    '      <p>' + SYSTEM_CONFIG.ADMIN.ANNOUNCEMENT.DEFAULT_SIGNOFF_HTML + '</p>',
     '    </div>',
     '  </div>',
     '</div>',
@@ -26051,7 +23317,7 @@ function getAnnouncementCenterHtml_() {
     '  <div id="previewPane"></div>',
     '  <div class="progress-wrap" id="progressWrap">',
     '    <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>',
-    '    <div style="font-size:12px;color:#94a3b8;margin-top:6px" id="progressText"></div>',
+    '    <div style="font-size:12px;color:#8b949e;margin-top:6px" id="progressText"></div>',
     '  </div>',
     '  <div id="resultBox"></div>',
     '</div>',
@@ -26062,7 +23328,7 @@ function getAnnouncementCenterHtml_() {
     '<div class="schedule-overlay" id="scheduleOverlay">',
     '  <div class="schedule-modal">',
     '    <h3>&#x23F0; Schedule Send</h3>',
-    '    <p style="font-size:12px;color:#94a3b8;margin-bottom:12px">Recipients will be re-fetched at send time (new registrations included). Timing accuracy: &#177;15 min.</p>',
+    '    <p style="font-size:12px;color:#8b949e;margin-bottom:12px">Recipients will be re-fetched at send time (new registrations included). Timing accuracy: &#177;15 min.</p>',
     '    <input type="datetime-local" id="scheduleDateTime">',
     '    <div class="schedule-actions">',
     '      <button class="btn btn-secondary" style="padding:8px 16px;font-size:13px" onclick="closeScheduleModal()">Cancel</button>',
@@ -26083,7 +23349,8 @@ function getAnnouncementCenterHtml_() {
     '  selectedCategory = cat;',
     '  var btns = document.querySelectorAll(".cat-btn"); for(var i=0;i<btns.length;i++) btns[i].classList.remove("active");',
     '  el.classList.add("active");',
-    '  var subjects = { general:"Husay Ng Soksay: Important Announcement", reminder:"Husay Ng Soksay: Deadline Reminder", competition:"Husay Ng Soksay: Competition Update", payment:"Husay Ng Soksay: Payment Notice", custom:"" };',
+    '  var EVENT_NAME = ' + JSON.stringify(SYSTEM_CONFIG.META.NAME) + ';',
+    '  var subjects = { general: EVENT_NAME + ": Important Announcement", reminder: EVENT_NAME + ": Deadline Reminder", competition: EVENT_NAME + ": Competition Update", payment: EVENT_NAME + ": Payment Notice", custom:"" };',
     '  if(subjects[cat] !== undefined) document.getElementById("emailSubject").value = subjects[cat];',
     '}',
     '',
@@ -26097,13 +23364,13 @@ function getAnnouncementCenterHtml_() {
     '  renderCompPills(opts.competitions);',
     '  updateCount();',
     '}).withFailureHandler(function(err) {',
-    '  document.getElementById("compFilters").innerHTML = "<span style=\'color:#f87171;font-size:12px;\'>Error: " + err + "</span>";',
+    '  document.getElementById("compFilters").innerHTML = "<span style=\'color:#ff7b72;font-size:12px;\'>Error: " + err + "</span>";',
     '}).getAnnouncementFilterOptions();',
     '',
     'function renderCompPills(comps) {',
     '  var wrap = document.getElementById("compFilters");',
     '  wrap.innerHTML = "";',
-    '  if(!comps || comps.length === 0) { wrap.innerHTML = "<span style=\'color:#64748b;font-size:12px;\'>No competitions found</span>"; return; }',
+    '  if(!comps || comps.length === 0) { wrap.innerHTML = "<span style=\'color:#8b949e;font-size:12px;\'>No competitions found</span>"; return; }',
     '  comps.forEach(function(c) {',
     '    var pill = document.createElement("div");',
     '    pill.className = "comp-pill active";',
@@ -26141,10 +23408,10 @@ function getAnnouncementCenterHtml_() {
     '  specificTags.forEach(function(tag, idx) {',
     '    var chip = document.createElement("span");',
     '    chip.className = "spec-tag";',
-    '    chip.setAttribute("style","display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);border-radius:20px;padding:2px 10px;font-size:12px;color:#a5b4fc;");',
+    '    chip.setAttribute("style","display:inline-flex;align-items:center;gap:4px;background:rgba(56,139,253,0.2);border:1px solid rgba(56,139,253,0.4);border-radius:20px;padding:2px 10px;font-size:12px;color:#79c0ff;");',
     '    var txt = document.createTextNode(tag + " ");',
     '    var btn = document.createElement("button");',
-    '    btn.setAttribute("style","background:none;border:none;color:#818cf8;cursor:pointer;font-size:14px;line-height:1;padding:0;");',
+    '    btn.setAttribute("style","background:none;border:none;color:#58a6ff;cursor:pointer;font-size:14px;line-height:1;padding:0;");',
     '    btn.textContent = "\\u00d7";',
     '    btn.dataset.idx = idx;',
     '    btn.addEventListener("click", function(e){ e.stopPropagation(); specificTags.splice(Number(this.dataset.idx),1); renderTags(); });',
@@ -26184,9 +23451,9 @@ function getAnnouncementCenterHtml_() {
     '  while(box.firstChild) box.removeChild(box.firstChild);',
     '  matches.forEach(function(r) {',
     '    var d = document.createElement("div");',
-    '    d.setAttribute("style","padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(99,102,241,0.1);font-size:12px;");',
-    '    var es = document.createElement("span"); es.setAttribute("style","color:#e2e8f0;"); es.textContent = r.email || "";',
-    '    var is = document.createElement("span"); is.setAttribute("style","color:#64748b;margin-left:6px;"); is.textContent = (r.name||"") + (r.participantNum ? " \\u00b7 " + r.participantNum : "");',
+    '    d.setAttribute("style","padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(56,139,253,0.1);font-size:12px;");',
+    '    var es = document.createElement("span"); es.setAttribute("style","color:#e6edf3;"); es.textContent = r.email || "";',
+    '    var is = document.createElement("span"); is.setAttribute("style","color:#8b949e;margin-left:6px;"); is.textContent = (r.name||"") + (r.participantNum ? " \\u00b7 " + r.participantNum : "");',
     '    d.appendChild(es); d.appendChild(is);',
     '    d.dataset.email = r.email || "";',
     '    d.addEventListener("click", function(){ addTag(this.dataset.email); });',
@@ -26231,11 +23498,11 @@ function getAnnouncementCenterHtml_() {
     '  var cfg = { category: selectedCategory, subject: document.getElementById("emailSubject").value, body: document.getElementById("emailBody").innerHTML, signoff: document.getElementById("emailSignoff").innerHTML };',
     '  var pane = document.getElementById("previewPane");',
     '  pane.style.display = "block";',
-    '  pane.innerHTML = "<div style=\'padding:20px;text-align:center;color:#64748b;\'>Loading preview...</div>";',
+    '  pane.innerHTML = "<div style=\'padding:20px;text-align:center;color:#8b949e;\'>Loading preview...</div>";',
     '  google.script.run.withSuccessHandler(function(res) {',
-    '    if(res.success) { pane.innerHTML = res.html; } else { pane.innerHTML = "<div style=\'padding:20px;color:red;\'>Error: "+res.error+"</div>"; }',
+    '    if(res.success) { pane.innerHTML = "<div class=\\"email-paper\\">" + res.html + "</div>"; } else { pane.innerHTML = "<div style=\'padding:20px;color:#ff7b72;\'>Error: "+res.error+"</div>"; }',
     '  }).withFailureHandler(function(err) {',
-    '    pane.innerHTML = "<div style=\'padding:20px;color:red;\'>Error: "+err+"</div>";',
+    '    pane.innerHTML = "<div style=\'padding:20px;color:#ff7b72;\'>Error: "+err+"</div>";',
     '  }).previewAnnouncementEmail(cfg);',
     '}',
     '',
@@ -26275,8 +23542,8 @@ function getAnnouncementCenterHtml_() {
     '        } else {',
     '          var fh = "<div class=\'result-box result-error\'>\\u26A0\\uFE0F Sent: " + totalSent + " | Failed: " + totalFailed + "<br>" + allErrors.join("<br>") + "</div>";',
     '          fh += "<div style=\'margin-top:8px;display:flex;gap:8px;\'>";',
-    '          fh += "<button class=\'btn\' style=\'background:#b45309;color:#fff;padding:8px 16px;font-size:12px;\' onclick=\'doSaveAndSchedule()\'>\\u23F0 Save & Auto-Retry</button>";',
-    '          fh += "<button class=\'btn\' style=\'background:#334155;color:#e2e8f0;padding:8px 16px;font-size:12px;\' onclick=\'doSaveForManualRetry()\'>Save for Manual Retry</button>";',
+    '          fh += "<button class=\'btn\' style=\'background:#9e6a03;color:#fff;padding:8px 16px;font-size:12px;\' onclick=\'doSaveAndSchedule()\'>\\u23F0 Save & Auto-Retry</button>";',
+    '          fh += "<button class=\'btn\' style=\'background:#21262d;color:#e6edf3;padding:8px 16px;font-size:12px;\' onclick=\'doSaveForManualRetry()\'>Save for Manual Retry</button>";',
     '          fh += "</div>";',
     '          rb.innerHTML = fh;',
     '        }',
@@ -26420,10 +23687,10 @@ function getAnnouncementCenterHtml_() {
     '  google.script.run.withSuccessHandler(function(list) {',
     '    var el = document.getElementById("scheduledList");',
     '    if(!list || list.length === 0) { el.innerHTML = ""; return; }',
-    '    var h = "<div style=\'font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:600;margin-top:12px\'>\\u23F0 Scheduled Sends</div>";',
+    '    var h = "<div style=\'font-size:12px;color:#8b949e;margin-bottom:6px;font-weight:600;margin-top:12px\'>\\u23F0 Scheduled Sends</div>";',
     '    list.forEach(function(item) {',
     '      h += "<div class=\'scheduled-item\'>";',
-    '      h += "<div><strong>" + item.subject + "</strong><br><span style=\'color:#64748b\'>" + item.category + " \\u2022 ~" + item.recipientCount + " recipients \\u2022 " + new Date(item.sendAt).toLocaleString() + "</span></div>";',
+    '      h += "<div><strong>" + item.subject + "</strong><br><span style=\'color:#8b949e\'>" + item.category + " \\u2022 ~" + item.recipientCount + " recipients \\u2022 " + new Date(item.sendAt).toLocaleString() + "</span></div>";',
     '      h += "<button class=\'btn btn-secondary\' style=\'padding:4px 10px;font-size:11px\' onclick=\'cancelScheduled(&quot;" + item.id + "&quot;)\'>&#x274C; Cancel</button>";',
     '      h += "</div>";',
     '    });',
@@ -26449,7 +23716,7 @@ function getAnnouncementCenterHtml_() {
 
 
 // ============================================================================
-// PART 99: ULTIMATE ANALYTICS & FINANCE DASHBOARDS V2 (PREMIUM EDITION)
+// PART 99: ULTIMATE ANALYTICS & FINANCE DASHBOARDS (PREMIUM EDITION)
 // ============================================================================
 
 function dashboardLevenshtein_(a, b) {
@@ -26509,7 +23776,7 @@ function dashboardNormalizeRegion_(r) {
   return s.substring(0, 30);
 }
 
-/** Server API: Analytics Data â€” FIXED for column detection */
+/** Server API: Analytics Data — FIXED for column detection */
 function AdminDashboard_getAnalyticsData() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
@@ -26563,6 +23830,7 @@ function AdminDashboard_getAnalyticsData() {
     email: colMap.email !== undefined ? colMap.email : C.EMAIL - 1
   };
 
+  var paidLookup = getPaidEmailLookup_();
   var totalRegs = 0, schools = [], regions = [], grades = [], sexes = [], ages = [];
   var competitions = {}, dailyCounts = {}, calendarData = {}, statusCounts = { paid: 0, unpaid: 0 };
   var regsWithDate = [];
@@ -26604,8 +23872,7 @@ function AdminDashboard_getAnalyticsData() {
       if (ct) competitions[ct] = (competitions[ct] || 0) + 1;
     });
 
-    var status = String(row[ci.payStatus] || "").trim().toUpperCase();
-    if (status === "PAID") statusCounts.paid++;
+    if (paidLookup.isPaid(row[ci.email], row[ci.payStatus])) statusCounts.paid++;
     else statusCounts.unpaid++;
 
     regsWithDate.push({ date: dateKey, school: school, region: region, comp: comp });
@@ -26652,7 +23919,7 @@ function AdminDashboard_getAnalyticsData() {
   };
 }
 
-/** Server API: Finance Data â€” FIXED with auto-detect columns */
+/** Server API: Finance Data — FIXED with auto-detect columns */
 function AdminDashboard_getFinanceData() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
@@ -26710,6 +23977,7 @@ function AdminDashboard_getFinanceData() {
     mergeRole: colMap.mergeRole !== undefined ? colMap.mergeRole : -1
   };
 
+  var paidLookup = getPaidEmailLookup_();
   var totalRevenue = 0, paidRevenue = 0, pendingAmount = 0;
   var bundleDiscount = 0, couponDiscount = 0, refDiscount = 0, cashbackTotal = 0;
   var paidCount = 0, unpaidCount = 0;
@@ -26787,7 +24055,12 @@ function AdminDashboard_getFinanceData() {
     var couponD = Math.abs(Number(row[ci.couponDisc] || 0));
     var refD = Math.abs(Number(row[ci.refDisc] || 0));
     var cashback = Math.abs(Number(row[ci.cashback] || 0));
-    var status = String(row[ci.payStatus] || "").trim().toUpperCase();
+    // Paid = Finance status, or the group's primary payer for a merged member
+    var rawStatus = String(row[ci.payStatus] || "").trim().toUpperCase();
+    var rowIsPaid = paidLookup.isPaid(row[ci.email], rawStatus);
+    var status = rowIsPaid
+      ? SYSTEM_CONFIG.ADMIN.TRIGGER_WORD
+      : ((rawStatus && !Utils.isPaidStatus(rawStatus)) ? rawStatus : SYSTEM_CONFIG.ADMIN.NOT_YET_WORD);
     var payMode = String(row[ci.payMode] || "").trim() || "Unknown";
     var school = String(row[ci.school] || "").trim();
     var comp = String(row[ci.comp] || "");
@@ -26802,7 +24075,7 @@ function AdminDashboard_getFinanceData() {
     refDiscount += refD;
     cashbackTotal += cashback;
 
-    if (status === "PAID") { paidCount++; paidRevenue += totalFee; }
+    if (rowIsPaid) { paidCount++; paidRevenue += totalFee; }
     else { unpaidCount++; pendingAmount += totalFee; }
 
     payModes[payMode] = (payModes[payMode] || 0) + 1;
@@ -26870,32 +24143,33 @@ function AdminDashboard_getFinanceData() {
   };
 }
 
-/** Premium CSS â€” Glassmorphism dark-first design */
+/** Premium CSS — Glassmorphism dark-first design */
 function dashboardUltimateCss_() {
   return [
   '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");',
   '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }',
   ':root {',
-  '  --bg: #0b0f1a; --bg2: rgba(15,23,42,0.85); --bg3: rgba(30,41,59,0.7);',
-  '  --surface: rgba(30,41,59,0.5); --surface2: rgba(51,65,85,0.4);',
-  '  --glass: rgba(15,23,42,0.6); --glass-border: rgba(99,102,241,0.15);',
-  '  --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;',
-  '  --accent: #818cf8; --accent2: #6366f1; --accent3: #4f46e5;',
-  '  --green: #34d399; --green2: #10b981; --red: #f87171; --red2: #ef4444;',
-  '  --amber: #fbbf24; --amber2: #f59e0b; --cyan: #22d3ee; --pink: #f472b6;',
-  '  --purple: #a78bfa; --teal: #2dd4bf;',
-  '  --glow1: 0 0 40px rgba(99,102,241,0.15); --glow2: 0 0 60px rgba(99,102,241,0.1);',
-  '  --shadow: 0 8px 32px rgba(0,0,0,0.25);',
-  '  --radius: 16px; --radius-sm: 10px; --radius-xs: 6px;',
-  '  --gradient1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);',
-  '  --gradient2: linear-gradient(135deg, #10b981 0%, #34d399 100%);',
-  '  --gradient3: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);',
-  '  --gradient4: linear-gradient(135deg, #ef4444 0%, #f87171 100%);',
-  '  --gradient5: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);',
-  '  --gradient6: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);',
-  '  --mesh: radial-gradient(at 10% 20%, rgba(99,102,241,0.08) 0, transparent 50%),',
-  '          radial-gradient(at 80% 10%, rgba(139,92,246,0.06) 0, transparent 50%),',
-  '          radial-gradient(at 50% 90%, rgba(16,185,129,0.05) 0, transparent 50%);',
+  // the same palette as every other Admin Center dialog (see getAdminBaseCss_)
+  '  --bg: #0d1117; --bg2: rgba(22,27,34,0.92); --bg3: rgba(28,35,48,0.8);',
+  '  --surface: rgba(22,27,34,0.85); --surface2: rgba(48,54,61,0.5);',
+  '  --glass: rgba(22,27,34,0.8); --glass-border: rgba(240,246,252,0.1);',
+  '  --text: #e6edf3; --text2: #8b949e; --text3: #6e7681;',
+  '  --accent: #58a6ff; --accent2: #1f6feb; --accent3: #1158c7;',
+  '  --green: #3fb950; --green2: #2ea043; --red: #ff7b72; --red2: #f85149;',
+  '  --amber: #e3b341; --amber2: #d29922; --cyan: #39c5cf; --pink: #f778ba;',
+  '  --purple: #bc8cff; --teal: #2dd4bf;',
+  '  --glow1: 0 0 40px rgba(56,139,253,0.1); --glow2: 0 0 60px rgba(56,139,253,0.06);',
+  '  --shadow: 0 8px 28px rgba(1,4,9,0.45);',
+  '  --radius: 12px; --radius-sm: 9px; --radius-xs: 6px;',
+  '  --gradient1: linear-gradient(135deg, #1f6feb 0%, #388bfd 55%, #58a6ff 100%);',
+  '  --gradient2: linear-gradient(135deg, #238636 0%, #3fb950 100%);',
+  '  --gradient3: linear-gradient(135deg, #bb8009 0%, #e3b341 100%);',
+  '  --gradient4: linear-gradient(135deg, #da3633 0%, #ff7b72 100%);',
+  '  --gradient5: linear-gradient(135deg, #1f6feb 0%, #79c0ff 100%);',
+  '  --gradient6: linear-gradient(135deg, #bf4b8a 0%, #f778ba 100%);',
+  '  --mesh: radial-gradient(at 10% 20%, rgba(56,139,253,0.07) 0, transparent 50%),',
+  '          radial-gradient(at 80% 10%, rgba(163,113,247,0.04) 0, transparent 50%),',
+  '          radial-gradient(at 50% 90%, rgba(46,160,67,0.04) 0, transparent 50%);',
   '}',
   '[data-theme="light"] {',
   '  --bg: #f0f4ff; --bg2: rgba(255,255,255,0.9); --bg3: rgba(241,245,249,0.8);',
@@ -26912,7 +24186,7 @@ function dashboardUltimateCss_() {
   '  color: var(--text); line-height: 1.5; min-height: 100vh; overflow-x: hidden; }',
   'body { padding: 0; }',
 
-  /* â”€â”€â”€ Animated BG Orbs â”€â”€â”€ */
+  /* ─── Animated BG Orbs ─── */
   '.bg-orbs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }',
   '.bg-orbs span { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.15; animation: orbFloat 20s ease-in-out infinite; }',
   '.bg-orbs span:nth-child(1) { width: 400px; height: 400px; background: var(--accent); top: -10%; left: -5%; animation-delay: 0s; }',
@@ -26920,7 +24194,7 @@ function dashboardUltimateCss_() {
   '.bg-orbs span:nth-child(3) { width: 350px; height: 350px; background: var(--purple); bottom: -10%; left: 40%; animation-delay: -14s; }',
   '@keyframes orbFloat { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-40px) scale(1.1); } 66% { transform: translate(-20px,30px) scale(0.9); } }',
 
-  /* â”€â”€â”€ Header â”€â”€â”€ */
+  /* ─── Header ─── */
   '.dash-header { position: relative; z-index: 2; padding: 20px 28px; display: flex; justify-content: space-between; align-items: center; ',
   '  background: var(--glass); backdrop-filter: blur(20px) saturate(1.5); border-bottom: 1px solid var(--glass-border); }',
   '.dash-header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; background: var(--gradient1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }',
@@ -26931,7 +24205,7 @@ function dashboardUltimateCss_() {
   '.btn-accent { background: var(--gradient1); color: #fff; border: none; }',
   '.btn-accent:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(99,102,241,0.4); }',
 
-  /* â”€â”€â”€ Theme Toggle â”€â”€â”€ */
+  /* ─── Theme Toggle ─── */
   '.theme-switch { position: relative; width: 48px; height: 26px; }',
   '.theme-switch input { opacity: 0; width: 0; height: 0; }',
   '.theme-switch label { position: absolute; inset: 0; cursor: pointer; border-radius: 13px;',
@@ -26941,7 +24215,7 @@ function dashboardUltimateCss_() {
   '  box-shadow: 0 2px 8px rgba(99,102,241,0.4); }',
   '.theme-switch input:checked + label::after { transform: translateX(22px); background: var(--amber); box-shadow: 0 2px 8px rgba(245,158,11,0.4); }',
 
-  /* â”€â”€â”€ Date Filter â”€â”€â”€ */
+  /* ─── Date Filter ─── */
   '.date-select { padding: 7px 12px; border-radius: var(--radius-xs); background: var(--surface); border: 1px solid var(--glass-border);',
   '  color: var(--text); font-size: 12px; font-family: inherit; cursor: pointer; outline: none; }',
   '.date-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(99,102,241,0.2); }',
@@ -26949,7 +24223,7 @@ function dashboardUltimateCss_() {
   '#customDateRange input { padding: 5px 8px; border-radius: var(--radius-xs); background: var(--surface); border: 1px solid var(--glass-border);',
   '  color: var(--text); font-size: 11px; font-family: inherit; }',
 
-  /* â”€â”€â”€ Tabs â”€â”€â”€ */
+  /* ─── Tabs ─── */
   '.tab-bar { position: relative; z-index: 2; display: flex; gap: 2px; padding: 6px 28px; background: var(--glass);',
   '  backdrop-filter: blur(16px); border-bottom: 1px solid var(--glass-border); overflow-x: auto; }',
   '.tab-btn { padding: 10px 18px; border: none; background: transparent; color: var(--text3); font-size: 13px; font-weight: 500;',
@@ -26960,7 +24234,7 @@ function dashboardUltimateCss_() {
   '.tab-content.active { display: block; }',
   '@keyframes fadeSlide { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }',
 
-  /* â”€â”€â”€ KPI Grid â”€â”€â”€ */
+  /* ─── KPI Grid ─── */
   '.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }',
   '.kpi { position: relative; padding: 20px; border-radius: var(--radius); overflow: hidden;',
   '  background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--glass-border);',
@@ -26978,7 +24252,7 @@ function dashboardUltimateCss_() {
   '.badge.up { background: rgba(16,185,129,0.15); color: var(--green); } .badge.down { background: rgba(239,68,68,0.15); color: var(--red); }',
   '.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 6px; }',
 
-  /* â”€â”€â”€ Charts â”€â”€â”€ */
+  /* ─── Charts ─── */
   '.chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px; }',
   '.chart-row.full > * { grid-column: 1 / -1; }',
   '.chart-card { padding: 20px; border-radius: var(--radius); background: var(--glass); backdrop-filter: blur(12px);',
@@ -26988,13 +24262,13 @@ function dashboardUltimateCss_() {
   '.chart-card canvas:not(#chartCal) { width: 100% !important; max-height: 300px; display: block; }',
   '.chart-card canvas#chartCal { display: block; margin: 0 auto; }',
 
-  /* â”€â”€â”€ Gauge â”€â”€â”€ */
+  /* ─── Gauge ─── */
   '.gauge-wrap { display: flex; flex-direction: column; align-items: center; }',
   '.gauge-wrap canvas { max-width: 220px; max-height: 140px; }',
   '.gauge-label { font-size: 32px; font-weight: 800; margin-top: -10px; color: var(--accent); }',
   '.gauge-sub { font-size: 12px; color: var(--text3); }',
 
-  /* â”€â”€â”€ Tables â”€â”€â”€ */
+  /* ─── Tables ─── */
   '.table-wrap { border-radius: var(--radius); background: var(--glass); backdrop-filter: blur(12px);',
   '  border: 1px solid var(--glass-border); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px; }',
   '.table-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--glass-border); }',
@@ -27017,7 +24291,7 @@ function dashboardUltimateCss_() {
   '.pag button:hover:not(.active) { background: var(--surface2); }',
   '.status-paid { color: var(--green); font-weight: 600; } .status-unpaid { color: var(--red); font-weight: 600; }',
 
-  /* â”€â”€â”€ Discount Cards â”€â”€â”€ */
+  /* ─── Discount Cards ─── */
   '.disc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }',
   '.disc-card { padding: 20px; border-radius: var(--radius); background: var(--glass); backdrop-filter: blur(12px);',
   '  border: 1px solid var(--glass-border); text-align: center; transition: all .3s; }',
@@ -27028,7 +24302,7 @@ function dashboardUltimateCss_() {
   '.disc-bar { height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; margin-top: 8px; }',
   '.disc-fill { height: 100%; border-radius: 3px; transition: width 1.5s cubic-bezier(.4,0,.2,1); }',
 
-  /* â”€â”€â”€ Map â”€â”€â”€ */
+  /* ─── Map ─── */
   '.map-section { display: grid; grid-template-columns: 1fr 300px; gap: 20px; margin-bottom: 24px; }',
   '.map-card { padding: 20px; border-radius: var(--radius); background: var(--glass); backdrop-filter: blur(12px);',
   '  border: 1px solid var(--glass-border); }',
@@ -27046,31 +24320,31 @@ function dashboardUltimateCss_() {
   '.map-tt .tt-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }',
   '.map-tt .tt-count { color: var(--accent); font-weight: 600; }',
 
-  /* â”€â”€â”€ Group Expand â”€â”€â”€ */
+  /* ─── Group Expand ─── */
   '.grp-expand { padding: 8px 16px; background: var(--surface); border-radius: var(--radius-xs); margin: 4px 16px; font-size: 12px; }',
   '.grp-member { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(99,102,241,0.05); }',
 
-  /* â”€â”€â”€ Scrollbar â”€â”€â”€ */
+  /* ─── Scrollbar ─── */
   '::-webkit-scrollbar { width: 6px; height: 6px; }',
   '::-webkit-scrollbar-track { background: transparent; }',
   '::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }',
   '::-webkit-scrollbar-thumb:hover { background: var(--accent); }',
 
-  /* â”€â”€â”€ Print â”€â”€â”€ */
+  /* ─── Print ─── */
   '@media print { .dash-header, .tab-bar, .bg-orbs, .btn, .theme-switch, .date-select { display: none !important; }',
   '  body { background: #fff !important; color: #000 !important; }',
   '  .tab-content { display: block !important; page-break-inside: avoid; } }',
   ].join('\n');
 }
 
-/** Enhanced JS Utilities â€” Charts, Counters, Tables, Map */
+/** Enhanced JS Utilities — Charts, Counters, Tables, Map */
 function dashboardUltimateJs_() {
   return [
   '(function(){',
   '"use strict";',
   'var D=window.DASH={};',
 
-  /* â”€â”€â”€ Theme â”€â”€â”€ */
+  /* ─── Theme ─── */
   'D.theme=localStorage.getItem("dash_theme")||"dark";',
   'document.documentElement.setAttribute("data-theme",D.theme);',
   'D.toggleTheme=function(){',
@@ -27080,7 +24354,7 @@ function dashboardUltimateJs_() {
   '  if(D.rerender)setTimeout(D.rerender,50);',
   '};',
 
-  /* â”€â”€â”€ Tabs (re-render charts on tab switch) â”€â”€â”€ */
+  /* ─── Tabs (re-render charts on tab switch) ─── */
   'D.switchTab=function(id){',
   '  document.querySelectorAll(".tab-content").forEach(function(t){t.classList.remove("active");});',
   '  document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active");});',
@@ -27089,10 +24363,10 @@ function dashboardUltimateJs_() {
   '  if(D.rerender)setTimeout(D.rerender,100);',
   '};',
 
-  /* â”€â”€â”€ Escape HTML â”€â”€â”€ */
+  /* ─── Escape HTML ─── */
   'D.esc=function(s){var d=document.createElement("div");d.appendChild(document.createTextNode(s));return d.innerHTML;};',
 
-  /* â”€â”€â”€ Animated Counter â”€â”€â”€ */
+  /* ─── Animated Counter ─── */
   'D.animateValue=function(el,end,dur,pre,suf){',
   '  if(!el)return;pre=pre||"";suf=suf||"";dur=dur||1200;',
   '  var start=0,startTime=null;',
@@ -27120,7 +24394,7 @@ function dashboardUltimateJs_() {
   '  requestAnimationFrame(step);',
   '};',
 
-  /* â”€â”€â”€ Sparkline â”€â”€â”€ */
+  /* ─── Sparkline ─── */
   'D.sparkline=function(cId,vals,color){',
   '  var c=document.getElementById(cId);if(!c||!vals||vals.length<2)return;',
   '  var ctx=c.getContext("2d"),w=c.width,h=c.height;',
@@ -27136,7 +24410,7 @@ function dashboardUltimateJs_() {
   '  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fillStyle=g;ctx.fill();',
   '};',
 
-  /* â”€â”€â”€ Canvas Utils â”€â”€â”€ */
+  /* ─── Canvas Utils ─── */
   'function getThemeColor(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}',
   'function textColor(){return getThemeColor("--text")||"#f1f5f9";}',
   'function gridColor(){return getThemeColor("--glass-border")||"rgba(99,102,241,0.15)";}',
@@ -27150,7 +24424,7 @@ function dashboardUltimateJs_() {
   '  return {ctx:ctx,w:w,h:h};',
   '}',
 
-  /* â”€â”€â”€ Bar Chart (animated with rounded corners) â”€â”€â”€ */
+  /* ─── Bar Chart (animated with rounded corners) ─── */
   'D.barChart=function(id,labels,vals,colors,opts){',
   '  var s=setupCanvas(id);if(!s)return;',
   '  opts=opts||{};var ctx=s.ctx,w=s.w,h=s.h;',
@@ -27194,7 +24468,7 @@ function dashboardUltimateJs_() {
   '  });',
   '};',
 
-  /* â”€â”€â”€ Donut Chart (animated) â”€â”€â”€ */
+  /* ─── Donut Chart (animated) ─── */
   'D.donutChart=function(id,labels,vals,colors){',
   '  var s=setupCanvas(id,200);if(!s)return;',
   '  var ctx=s.ctx,w=s.w,h=s.h;',
@@ -27221,7 +24495,7 @@ function dashboardUltimateJs_() {
   '  ctx.font="11px Inter";ctx.fillStyle=getThemeColor("--text3");ctx.fillText("Total",cx,cy+12);',
   '};',
 
-  /* â”€â”€â”€ Line / Area Chart â”€â”€â”€ */
+  /* ─── Line / Area Chart ─── */
   'D.lineChart=function(id,labels,vals,color,fill){',
   '  var s=setupCanvas(id);if(!s)return;',
   '  var ctx=s.ctx,w=s.w,h=s.h;',
@@ -27262,7 +24536,7 @@ function dashboardUltimateJs_() {
   '    var dl=l.length>5?l.substring(5):l;ctx.fillText(dl,x,padT+ch+8);}});',
   '};',
 
-  /* â”€â”€â”€ Gauge Chart â”€â”€â”€ */
+  /* ─── Gauge Chart ─── */
   'D.gaugeChart=function(id,val,max,label){',
   '  var s=setupCanvas(id,160);if(!s)return;',
   '  var ctx=s.ctx,w=s.w,h=s.h;',
@@ -27290,7 +24564,7 @@ function dashboardUltimateJs_() {
   '  ctx.font=lfs+"px Inter";ctx.fillStyle=getThemeColor("--text3");ctx.fillText(label||"",cx,cy-r/3+(fs*0.75));',
   '};',
 
-  /* â”€â”€â”€ Calendar Heatmap â”€â”€â”€ */
+  /* ─── Calendar Heatmap ─── */
   'D.calendarHeatmap=function(id,data){',
   '  var c=document.getElementById(id);if(!c)return;',
   '  var ctx=c.getContext("2d");',
@@ -27323,7 +24597,7 @@ function dashboardUltimateJs_() {
   '  }',
   '};',
 
-  /* â”€â”€â”€ Tables â”€â”€â”€ */
+  /* ─── Tables ─── */
   'D.tables={};',
   'D.initTable=function(id,dataArr,cols,ps){',
   '  D.tables[id]={data:dataArr,filtered:dataArr.slice(),columns:cols,page:0,pageSize:ps||10,sortCol:null,sortAsc:true,search:""};',
@@ -27371,7 +24645,7 @@ function dashboardUltimateJs_() {
   '};',
   'D.goPage=function(id,p){var t=D.tables[id];if(t){t.page=p;D.renderTable(id);}};',
 
-  /* â”€â”€â”€ CSV Export â”€â”€â”€ */
+  /* ─── CSV Export ─── */
   'D.exportCSV=function(id,fn){',
   '  var t=D.tables[id];if(!t)return;',
   '  var csv=t.columns.map(function(c){return c.label;}).join(",")+String.fromCharCode(10);',
@@ -27383,7 +24657,7 @@ function dashboardUltimateJs_() {
   '};',
   'D.printDashboard=function(){window.print();};',
 
-  /* â”€â”€â”€ Date Filter â”€â”€â”€ */
+  /* ─── Date Filter ─── */
   'D.applyDateFilter=function(val){',
   '  var cdr=document.getElementById("customDateRange");',
   '  if(val==="custom"){if(cdr)cdr.style.display="flex";return;}',
@@ -27391,7 +24665,7 @@ function dashboardUltimateJs_() {
   '};',
   'D.setCustomDates=function(){};',
 
-  /* â”€â”€â”€ Map Init â”€â”€â”€ */
+  /* ─── Map Init ─── */
   'D.initMap=function(regionData){',
   '  if(!regionData)return;',
   '  var max=0;Object.values(regionData).forEach(function(v){if(v>max)max=v;});max=max||1;',
@@ -27627,7 +24901,7 @@ function AdminDashboard_showAnalytics() {
   h.push('setTimeout(renderCharts,300);');
   h.push('</script></body></html>');
 
-  var output = HtmlService.createHtmlOutput(h.join('\n'))
+  var output = HtmlService.createHtmlOutput(withGuideLink_(h.join('\n'), "daily"))
     .setWidth(1120).setHeight(780).setTitle('Analytics Command Center');
   SpreadsheetApp.getUi().showModalDialog(output, 'Analytics Command Center');
 }
@@ -27753,16 +25027,16 @@ function AdminDashboard_showFinance() {
   h.push('<div id="tab-discounts" class="tab-content">');
   h.push('<div class="disc-grid">');
   h.push('<div class="disc-card"><div class="disc-icon">&#x1F4E6;</div><div class="disc-label">Bundle Discounts</div>');
-  h.push('<div class="disc-val" id="dc-bundle" style="color:#818cf8;">&#x20B1;0</div>');
+  h.push('<div class="disc-val" id="dc-bundle" style="color:#58a6ff;">&#x20B1;0</div>');
   h.push('<div class="disc-bar"><div class="disc-fill" style="background:var(--gradient1);width:0%" id="dcbar-bundle"></div></div></div>');
   h.push('<div class="disc-card"><div class="disc-icon">&#x1F3AB;</div><div class="disc-label">Coupon Discounts</div>');
-  h.push('<div class="disc-val" id="dc-coupon" style="color:#34d399;">&#x20B1;0</div>');
+  h.push('<div class="disc-val" id="dc-coupon" style="color:#3fb950;">&#x20B1;0</div>');
   h.push('<div class="disc-bar"><div class="disc-fill" style="background:var(--gradient2);width:0%" id="dcbar-coupon"></div></div></div>');
   h.push('<div class="disc-card"><div class="disc-icon">&#x1F517;</div><div class="disc-label">Referral Discounts</div>');
-  h.push('<div class="disc-val" id="dc-ref" style="color:#fbbf24;">&#x20B1;0</div>');
+  h.push('<div class="disc-val" id="dc-ref" style="color:#e3b341;">&#x20B1;0</div>');
   h.push('<div class="disc-bar"><div class="disc-fill" style="background:var(--gradient3);width:0%" id="dcbar-ref"></div></div></div>');
   h.push('<div class="disc-card"><div class="disc-icon">&#x1F4B8;</div><div class="disc-label">Cashback Total</div>');
-  h.push('<div class="disc-val" id="dc-cash" style="color:#f87171;">&#x20B1;0</div>');
+  h.push('<div class="disc-val" id="dc-cash" style="color:#ff7b72;">&#x20B1;0</div>');
   h.push('<div class="disc-bar"><div class="disc-fill" style="background:var(--gradient4);width:0%" id="dcbar-cash"></div></div></div>');
   h.push('</div>');
   h.push('<div class="chart-card"><h3>&#x1F3F7; Discount Breakdown</h3><canvas id="chartDisc"></canvas></div>');
@@ -27855,7 +25129,7 @@ function AdminDashboard_showFinance() {
   h.push('  DASH.barChart("chartDisc",["Bundle","Coupon","Referral","Cashback"],[' + data.bundleDiscount + ',' + data.couponDiscount + ',' + data.refDiscount + ',' + data.cashbackTotal + '],["#818cf8","#34d399","#fbbf24","#f87171"]);');
   // Legend
   h.push('  var pl=document.getElementById("payLegend");');
-  h.push('  if(pl)pl.innerHTML="<div style=\\"display:flex;align-items:center;gap:8px;margin:6px 0\\"><div style=\\"width:12px;height:12px;border-radius:4px;background:#34d399;box-shadow:0 2px 8px #34d39960\\"></div>Paid <strong>(' + data.paidCount + ')</strong></div><div style=\\"display:flex;align-items:center;gap:8px;margin:6px 0\\"><div style=\\"width:12px;height:12px;border-radius:4px;background:#f87171;box-shadow:0 2px 8px #f8717160\\"></div>Unpaid <strong>(' + data.unpaidCount + ')</strong></div>";');
+  h.push('  if(pl)pl.innerHTML="<div style=\\"display:flex;align-items:center;gap:8px;margin:6px 0\\"><div style=\\"width:12px;height:12px;border-radius:4px;background:#238636;box-shadow:0 2px 8px #34d39960\\"></div>Paid <strong>(' + data.paidCount + ')</strong></div><div style=\\"display:flex;align-items:center;gap:8px;margin:6px 0\\"><div style=\\"width:12px;height:12px;border-radius:4px;background:#da3633;box-shadow:0 2px 8px #f8717160\\"></div>Unpaid <strong>(' + data.unpaidCount + ')</strong></div>";');
   h.push('}');
   h.push('DASH.rerender=renderCharts;');
 
@@ -27868,7 +25142,7 @@ function AdminDashboard_showFinance() {
   h.push('  {key:"genId",label:"Gen ID"},');
   h.push('  {key:"amount",label:"Amount",render:function(v){return "\\u20B1"+Number(v).toLocaleString();}},');
   h.push('  {key:"mode",label:"Mode"},');
-  h.push('  {key:"status",label:"Status",render:function(v){return v==="PAID"?"<span class=\\"status-paid\\">&#x2705; PAID</span>":"<span class=\\"status-unpaid\\">&#x23F3; "+DASH.esc(v)+"</span>";}},');
+  h.push('  {key:"status",label:"Status",render:function(v){return v===' + JSON.stringify(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) + '?"<span class=\\"status-paid\\">&#x2705; "+DASH.esc(v)+"</span>":"<span class=\\"status-unpaid\\">&#x23F3; "+DASH.esc(v)+"</span>";}},');
   h.push('  {key:"date",label:"Date"}');
   h.push(']);');
 
@@ -27900,7 +25174,7 @@ function AdminDashboard_showFinance() {
   h.push('setTimeout(renderCharts,300);');
   h.push('</script></body></html>');
 
-  var output = HtmlService.createHtmlOutput(h.join('\n'))
+  var output = HtmlService.createHtmlOutput(withGuideLink_(h.join('\n'), "pay"))
     .setWidth(1120).setHeight(780).setTitle('Finance Command Center');
   SpreadsheetApp.getUi().showModalDialog(output, 'Finance Command Center');
 }
@@ -27910,7 +25184,7 @@ function AdminDashboard_showFinance() {
 // ============================================================================
 // Creates separate sheets for each competition type by extracting
 // participant data from "Submission Form".
-// Target sheets: "Essay Writing", "Speech", "Mobile Phone Photography", "Short-Film"
+// Target sheets: the "sheet" names in SYSTEM_CONFIG.COMPETITIONS
 // ============================================================================
 
 /**
@@ -27979,9 +25253,9 @@ function generateCompetitionSheets() {
 
     var COMPETITION_SHEETS = [
       {
-        sheetName:  "Essay Writing",
-        matchValue: "Essay Writing Competition",
-        prefix:     SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES.ESSAY,
+        sheetName:  getCompetitionByKey_("ESSAY").sheetName,
+        matchValue: getCompetitionByKey_("ESSAY").submissionName,
+        prefix:     getCompetitionByKey_("ESSAY").prefix,
         nameCol:    COMP.ESSAY_NAME,
         regionCol:  COMP.ESSAY_REGION,
         schoolCol:  COMP.ESSAY_SCHOOL,
@@ -27993,9 +25267,9 @@ function generateCompetitionSheets() {
         linkLabels: ["Essay File", ""]
       },
       {
-        sheetName:  "Speech",
-        matchValue: "Speech Competition",
-        prefix:     SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES.SPEECH,
+        sheetName:  getCompetitionByKey_("SPEECH").sheetName,
+        matchValue: getCompetitionByKey_("SPEECH").submissionName,
+        prefix:     getCompetitionByKey_("SPEECH").prefix,
         nameCol:    COMP.SPEECH_NAME,
         regionCol:  COMP.SPEECH_REGION,
         schoolCol:  COMP.SPEECH_SCHOOL,
@@ -28007,9 +25281,9 @@ function generateCompetitionSheets() {
         linkLabels: ["Speech Video", "Written Copy"]
       },
       {
-        sheetName:  "Mobile Phone Photography",
-        matchValue: "Mobile Phone Photography Competition",
-        prefix:     SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES.PHOTO,
+        sheetName:  getCompetitionByKey_("PHOTO").sheetName,
+        matchValue: getCompetitionByKey_("PHOTO").submissionName,
+        prefix:     getCompetitionByKey_("PHOTO").prefix,
         nameCol:    COMP.PHOTO_NAME,
         regionCol:  COMP.PHOTO_REGION,
         schoolCol:  COMP.PHOTO_SCHOOL,
@@ -28021,9 +25295,9 @@ function generateCompetitionSheets() {
         linkLabels: ["Original Photo", "Photo + Explanation (A4)"]
       },
       {
-        sheetName:  "Short-Film",
-        matchValue: "Short Film Competition",
-        prefix:     SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES.FILM,
+        sheetName:  getCompetitionByKey_("FILM").sheetName,
+        matchValue: getCompetitionByKey_("FILM").submissionName,
+        prefix:     getCompetitionByKey_("FILM").prefix,
         nameCol:    COMP.FILM_MEMBERS,
         regionCol:  COMP.FILM_REGION,
         schoolCol:  COMP.FILM_SCHOOL,
@@ -28337,37 +25611,37 @@ function runSystemHealthCheck() {
   // 2. SHEET EXISTENCE
   // =========================================================================
   var sheetConfig = SYSTEM_CONFIG.SHEETS;
-  var sheetNames = {
-    "Registration (REGISTRATION)": sheetConfig.REGISTRATION,
-    "Submissions (SUBMISSIONS)": sheetConfig.SUBMISSIONS,
-    "Coupons (COUPONS)": sheetConfig.COUPONS,
-    "Finance (FINANCE)": sheetConfig.FINANCE,
-    "Logs (LOGS)": sheetConfig.LOGS
+  // Every sheet named in the settings. Some only exist once a feature has been used.
+  var optionalSheets = {
+    SUBMISSIONS: "needed before entries open: link the submission form and rename its response sheet to this name",
+    PARTICIPANT_DB: "created by " + getMenuPathText_("showSystemBuilder"),
+    LOGS: "created by itself the first time something is logged",
+    CASHBACK_REPORT: "created by " + getMenuPathText_("exportCashbackReport")
   };
-
-  for (var label in sheetNames) {
-    var name = sheetNames[label];
+  Object.keys(sheetConfig).forEach(function (sheetKey) {
+    var sheetName = sheetConfig[sheetKey];
     try {
-      var sheet = ss.getSheetByName(name);
-      if (sheet) {
-        var rowCount = sheet.getLastRow();
-        pass("Sheets", label + " — found \"" + name + "\" (" + rowCount + " rows)");
+      var foundSheet = ss.getSheetByName(sheetName);
+      if (foundSheet) {
+        pass("Sheets", sheetKey + " - found \"" + sheetName + "\" (" + Math.max(0, foundSheet.getLastRow() - 1) + " data rows)");
+      } else if (optionalSheets[sheetKey]) {
+        warn("Sheets", sheetKey + " - sheet \"" + sheetName + "\" not found (" + optionalSheets[sheetKey] + ")");
       } else {
-        fail("Sheets", label + " — sheet \"" + name + "\" NOT FOUND");
+        fail("Sheets", sheetKey + " - sheet \"" + sheetName + "\" NOT FOUND. Run " + getMenuPathText_("showSystemBuilder"));
       }
     } catch (e) {
-      fail("Sheets", label + " — error: " + e.message);
+      fail("Sheets", sheetKey + " - error: " + e.message);
     }
-  }
+  });
 
   // Check competition output sheets
-  var compSheets = ["Essay Writing", "Speech", "Mobile Phone Photography", "Short-Film"];
+  var compSheets = getCompetitions_().map(function (c) { return c.sheetName; });
   for (var i = 0; i < compSheets.length; i++) {
     var cs = ss.getSheetByName(compSheets[i]);
     if (cs) {
       pass("Sheets", "Competition sheet \"" + compSheets[i] + "\" exists (" + cs.getLastRow() + " rows)");
     } else {
-      warn("Sheets", "Competition sheet \"" + compSheets[i] + "\" not found (will be created on first run)");
+      warn("Sheets", "Competition sheet \"" + compSheets[i] + "\" not found (created by " + getMenuPathText_("generateCompetitionSheets") + ")");
     }
   }
 
@@ -28409,7 +25683,7 @@ function runSystemHealthCheck() {
       var sysChecks = {
         "SYS_PAID_AT": sysRegCols.SYS_PAID_AT,
         "SYS_VERIFIER": sysRegCols.SYS_VERIFIER,
-        "SYS_PROCESSED": sysRegCols.SYS_PROCESSED
+        "SYS_PROCESSED": SYSTEM_CONFIG.SYS_REG_COLS_END.SYS_PROCESSED
       };
       for (var sysName in sysChecks) {
         var sysIdx = sysChecks[sysName] - 1;
@@ -28529,7 +25803,6 @@ function runSystemHealthCheck() {
   }
 
   try {
-    MailApp.getRemainingDailyQuota();
     var quota = MailApp.getRemainingDailyQuota();
     pass("Services", "MailApp accessible (remaining daily quota: " + quota + ")");
   } catch (e) {
@@ -28585,52 +25858,135 @@ function runSystemHealthCheck() {
   }
 
   // =========================================================================
-  // 7. Build HTML Report
+  // 7. AUTOMATION, MENU AND CROSS-FEATURE CHECKS
   // =========================================================================
-  var html = [];
-  html.push("<html><head><style>");
-  html.push("body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; margin: 0; }");
-  html.push("h1 { color: #e94560; margin-bottom: 5px; }");
-  html.push(".summary { font-size: 18px; margin-bottom: 20px; padding: 15px; background: #16213e; border-radius: 10px; }");
-  html.push(".pass-count { color: #4caf50; font-weight: bold; }");
-  html.push(".fail-count { color: #f44336; font-weight: bold; }");
-  html.push(".warn-count { color: #ff9800; font-weight: bold; }");
-  html.push("table { width: 100%; border-collapse: collapse; margin-top: 10px; }");
-  html.push("th { background: #0f3460; padding: 10px; text-align: left; border-bottom: 2px solid #e94560; }");
-  html.push("td { padding: 8px 10px; border-bottom: 1px solid #333; }");
-  html.push("tr:hover { background: #16213e; }");
-  html.push(".status-PASS { color: #4caf50; font-weight: bold; }");
-  html.push(".status-FAIL { color: #f44336; font-weight: bold; }");
-  html.push(".status-WARN { color: #ff9800; font-weight: bold; }");
-  html.push(".cat { color: #a8a8ff; font-weight: 600; }");
-  html.push(".timestamp { color: #888; font-size: 12px; text-align: right; margin-top: 15px; }");
-  html.push("</style></head><body>");
-
-  html.push("<h1>System Health Check</h1>");
-  html.push("<div class='summary'>");
-  html.push("  <span class='pass-count'>PASS: " + passCount + "</span> &nbsp;|&nbsp; ");
-  html.push("  <span class='fail-count'>FAIL: " + failCount + "</span> &nbsp;|&nbsp; ");
-  html.push("  <span class='warn-count'>WARN: " + warnCount + "</span>");
-
-  if (failCount === 0) {
-    html.push("  <br><br>All critical checks passed! The system is healthy.");
-  } else {
-    html.push("  <br><br>There are <span class='fail-count'>" + failCount + " critical issues</span> that need attention.");
+  try {
+    var installedHandlers = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
+    ["onFormSubmit", "onEdit"].forEach(function (handler) {
+      if (installedHandlers.indexOf(handler) >= 0) {
+        pass("Automation", "Trigger " + handler + " is installed");
+      } else {
+        fail("Automation", "Trigger " + handler + " is NOT installed, so nothing runs by itself. Run " + getMenuPathText_("createTriggers"));
+      }
+    });
+  } catch (e) {
+    warn("Automation", "Triggers could not be read: " + e.message);
   }
-  html.push("</div>");
 
-  html.push("<table>");
-  html.push("<tr><th>Status</th><th>Category</th><th>Details</th></tr>");
-  for (var ri = 0; ri < results.length; ri++) {
-    var r = results[ri];
-    html.push("<tr>");
-    html.push("  <td class='status-" + r.status + "'>" + r.status + "</td>");
-    html.push("  <td class='cat'>" + r.cat + "</td>");
-    html.push("  <td>" + r.msg + "</td>");
-    html.push("</tr>");
+  try {
+    var rateNow = RateLimiter.getStatus();
+    if (rateNow.emailsSentThisHour >= rateNow.maxPerHour) {
+      warn("Automation", "Hourly email cap reached (" + rateNow.emailsSentThisHour + "/" + rateNow.maxPerHour + "). New emails are marked SKIPPED until it resets.");
+    } else {
+      pass("Automation", "Hourly email cap: " + rateNow.emailsSentThisHour + " of " + rateNow.maxPerHour + " used");
+    }
+  } catch (e) {
+    warn("Automation", "Rate limiter could not be read: " + e.message);
   }
-  html.push("</table>");
 
+  try {
+    var compList = getCompetitions_();
+    var compProblems = [];
+    var seenPrefix = {}, seenReg = {};
+    compList.forEach(function (c) {
+      if (!c.registrationNames.length) compProblems.push(c.key + " has no registration name");
+      c.registrationNames.forEach(function (n) {
+        seenReg[n] = true;
+        if (SYSTEM_CONFIG.PRICING.SINGLE[n] == null) compProblems.push("\"" + n + "\" has no price in PRICING.SINGLE");
+      });
+      if (!c.map) compProblems.push(c.key + ": \"" + c.submissionName + "\" is not in SUBMISSION_COMPETITION_MAP");
+      else if (c.map.key !== c.key) compProblems.push(c.key + ": SUBMISSION_COMPETITION_MAP says key " + c.map.key);
+      if (!SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES[c.key]) compProblems.push(c.key + " has no number prefix");
+      else if (seenPrefix[c.prefix]) compProblems.push("prefix " + c.prefix + " is used twice");
+      seenPrefix[c.prefix] = true;
+    });
+    Object.keys(SYSTEM_CONFIG.PRICING.SINGLE).forEach(function (n) {
+      if (!seenReg[n]) compProblems.push("\"" + n + "\" is priced but not in COMPETITIONS");
+    });
+    PricingEngine.aliasTargets().forEach(function (n) {
+      if (SYSTEM_CONFIG.PRICING.SINGLE[n] == null) compProblems.push("the spelling table points at \"" + n + "\", which has no price");
+    });
+    if (compProblems.length === 0) {
+      pass("Config", "Competition list, prices, submission map and number prefixes agree (" + compList.length + " competitions)");
+    } else {
+      fail("Config", "Competition settings disagree: " + compProblems.join("; "));
+    }
+  } catch (e) {
+    warn("Config", "Competition list check failed: " + e.message);
+  }
+
+  try {
+    var menuItems = flattenAdminMenu_();
+    var brokenItems = menuItems.filter(function (item) { return !isGlobalFunction_(item.fn); });
+    if (brokenItems.length === 0) {
+      pass("Menu", "All " + menuItems.length + " menu items point to an existing function");
+    } else {
+      fail("Menu", "Menu items without a function: " + brokenItems.map(function (item) { return item.label + " (" + item.fn + ")"; }).join(", "));
+    }
+  } catch (e) {
+    warn("Menu", "Menu check failed: " + e.message);
+  }
+
+  try {
+    var finSheetHc = ss.getSheetByName(sheetConfig.FINANCE);
+    if (finSheetHc && finSheetHc.getLastColumn() > 0) {
+      var finHeaderMapHc = ColumnManager.headerMap(finSheetHc);
+      var finAliasesHc = SYSTEM_CONFIG.FINANCE_HEADERS.ALIASES || {};
+      var finPresentHc = {};
+      Object.keys(finHeaderMapHc).forEach(function (h) { finPresentHc[finAliasesHc[h] || h] = true; });
+      var finMissingHc = SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED.filter(function (h) { return !finPresentHc[h]; });
+      if (finMissingHc.length === 0) {
+        pass("Columns", "Finance sheet has all " + SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED.length + " required headers");
+      } else {
+        fail("Columns", "Finance sheet is missing: " + finMissingHc.join(", ") + ". They are added again by " + getMenuPathText_("syncDashboard"));
+      }
+    }
+  } catch (e) {
+    warn("Columns", "Finance header check failed: " + e.message);
+  }
+
+  try {
+    var foldersMissingHc = Object.keys(SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES).filter(function (k) { return !getAnonFolderId_(k); });
+    if (foldersMissingHc.length === 0) {
+      pass("Submissions", "Anonymized folders are set for every competition");
+    } else {
+      warn("Submissions", "No anonymized folder for: " + foldersMissingHc.join(", ") + ". Run " + getMenuPathText_("configureAnonFolders") + " before entries open");
+    }
+  } catch (e) {
+    warn("Submissions", "Folder check failed: " + e.message);
+  }
+
+  try {
+    var regSheetHc = ss.getSheetByName(sheetConfig.REGISTRATION);
+    if (regSheetHc && regSheetHc.getLastRow() > 1 && regSheetHc.getLastColumn() >= SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS) {
+      var paidLookupHc = getPaidEmailLookup_();
+      var regValsHc = regSheetHc.getRange(2, 1, regSheetHc.getLastRow() - 1, regSheetHc.getLastColumn()).getValues();
+      var disagreeHc = 0, noGenIdHc = 0;
+      for (var hx = 0; hx < regValsHc.length; hx++) {
+        var emailHc = String(regValsHc[hx][SYSTEM_CONFIG.COLS.REG.EMAIL - 1] || "").trim();
+        if (!emailHc) continue;
+        if (!String(regValsHc[hx][SYSTEM_CONFIG.COLS.REG.GEN_ID - 1] || "").trim()) noGenIdHc++;
+        if (paidLookupHc.isPaid(emailHc, "") !== Utils.isPaidStatus(regValsHc[hx][SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS - 1])) disagreeHc++;
+      }
+      if (disagreeHc === 0) {
+        pass("Data", "Payment Status in " + sheetConfig.REGISTRATION + " agrees with " + sheetConfig.FINANCE + " (" + paidLookupHc.paid + " of " + paidLookupHc.total + " paid)");
+      } else {
+        warn("Data", disagreeHc + " registration row(s) show a Payment Status that differs from " + sheetConfig.FINANCE + ". Run " + getMenuPathText_("syncDashboard"));
+      }
+      if (noGenIdHc === 0) {
+        pass("Data", "Every registration has a Gen ID");
+      } else {
+        warn("Data", noGenIdHc + " registration row(s) have no Gen ID (they arrived while the triggers were off). Run " + getMenuPathText_("runSmartMigration"));
+      }
+    }
+  } catch (e) {
+    warn("Data", "Payment agreement check failed: " + e.message);
+  }
+
+  // =========================================================================
+  // 8. Build HTML Report
+  // =========================================================================
+  var tones = { PASS: "ok", FAIL: "bad", WARN: "warn" };
   var now = new Date();
   var ts;
   try {
@@ -28638,11 +25994,34 @@ function runSystemHealthCheck() {
   } catch (e) {
     ts = now.toString();
   }
-  html.push("<div class='timestamp'>Run at: " + ts + " | v" + SYSTEM_CONFIG.META.VERSION + "</div>");
 
-  html.push("</body></html>");
+  // problems first, then what passed
+  var rank = { FAIL: 0, WARN: 1, PASS: 2 };
+  var sorted = results.map(function (r, i) { return { r: r, i: i }; })
+    .sort(function (a, b) { return (rank[a.r.status] - rank[b.r.status]) || (a.i - b.i); })
+    .map(function (x) { return x.r; });
+  var reportRows = sorted.map(function (r) {
+    return [uiBadge_(r.status, tones[r.status] || ""), '<span class="ui-muted">' + Utils.escapeHtml(r.cat) + '</span>', Utils.escapeHtml(r.msg)];
+  });
 
-  var output = HtmlService.createHtmlOutput(html.join("\n"))
+  var reportBody =
+    '<div class="ui-grid" style="margin-bottom:14px;">' +
+      uiStat_(passCount, "Passed", "ok") + uiStat_(failCount, "Failed", "bad") + uiStat_(warnCount, "Warnings", "warn") +
+    '</div>' +
+    (failCount === 0
+      ? uiCallout_("ok", "&#x2705;", "<b>All critical checks passed.</b> " + (warnCount ? "The warnings are things to know, not errors." : "The system is healthy."))
+      : uiCallout_("bad", "&#x274C;", "<b>" + failCount + " critical issue" + (failCount === 1 ? "" : "s") + " need attention.</b> They are listed first, each with the tool that fixes it.")) +
+    uiCard_("Checks", uiTable_(["Result", "Area", "Details"], reportRows), String(results.length));
+
+  var html = [buildAdminDialog_({
+    icon: "&#x1FA7A;",
+    title: "System health check",
+    subtitle: "Run at " + ts + " \u00B7 v" + SYSTEM_CONFIG.META.VERSION,
+    actions: '<button class="ui-btn" onclick="google.script.host.close()">Close</button>',
+    body: reportBody
+  })];
+
+  var output = HtmlService.createHtmlOutput(withGuideLink_(html.join("\n"), "help"))
     .setWidth(850)
     .setHeight(600)
     .setTitle("System Health Check");
@@ -28653,7 +26032,7 @@ function runSystemHealthCheck() {
 
 
 // ============================================================================
-// V22: PARTICIPANT NUMBER AUDIT TOOL
+// PARTICIPANT NUMBER AUDIT TOOL
 // ============================================================================
 // Scans all submission rows to find participant numbers assigned to competitions
 // where the participant didn't actually fill in the corresponding form section.
@@ -28762,15 +26141,15 @@ function auditParticipantNumbers() {
   html.push('.stat .lbl { font-size: 11px; color: #8b949e; margin-top: 2px; }');
   html.push('.ok { color: #3fb950; }');
   html.push('.bad { color: #f85149; }');
-  html.push('.warn { color: #d29922; }');
+  html.push('.warn { color: #e3b341; }');
   html.push('table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }');
   html.push('th { text-align: left; padding: 10px 12px; background: #161b22; color: #c9d1d9; font-weight: 600; border-bottom: 1px solid #30363d; }');
   html.push('td { padding: 8px 12px; border-bottom: 1px solid #21262d; color: #8b949e; }');
   html.push('tr:hover td { background: rgba(177,186,196,0.04); }');
   html.push('.tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }');
   html.push('.tag-bad { background: rgba(248,81,73,0.15); color: #f85149; }');
-  html.push('.tag-ok { background: rgba(63,185,80,0.15); color: #3fb950; }');
-  html.push('.tag-warn { background: rgba(210,153,34,0.15); color: #d29922; }');
+  html.push('.tag-ok { background: rgba(46,160,67,0.15); color: #3fb950; }');
+  html.push('.tag-warn { background: rgba(210,153,34,0.15); color: #e3b341; }');
   html.push('.btn { padding: 6px 14px; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 12px; font-family: inherit; }');
   html.push('.btn:hover { background: #30363d; border-color: #8b949e; }');
   html.push('.btn-danger { background: rgba(248,81,73,0.15); border-color: rgba(248,81,73,0.4); color: #f85149; }');
@@ -28845,7 +26224,7 @@ function auditParticipantNumbers() {
 
   html.push('</body></html>');
 
-  var output = HtmlService.createHtmlOutput(html.join('\n'))
+  var output = HtmlService.createHtmlOutput(withGuideLink_(html.join('\n'), "submit"))
     .setWidth(900)
     .setHeight(550)
     .setTitle('Participant Number Audit');
@@ -28903,465 +26282,1023 @@ function executeParticipantNumberCleanup(issueData) {
 }
 
 // ============================================================================
-// PART XX: SYSTEM INTRODUCTION & GUIDE
+// PART XX: SYSTEM INTRODUCTION & GUIDE (LIVE)
 // ============================================================================
-// Premium tabbed guide dialog covering all Admin Center features.
+// Nothing in this guide describes a fixed, older version of the system. Every name, price,
+// rule, column and menu item is read at the moment the guide opens, from:
+//   - SYSTEM_CONFIG                 prices, rules, sheet names, columns, status words
+//   - getAdminMenuDefinition_()     the same list that builds the Admin Center menu
+//   - the spreadsheet itself        which sheets exist, counts, triggers, folders, quota
+// Change a setting, rename a sheet or move a menu item, and the guide changes with it.
 // ============================================================================
 
 /**
- * Show the System Introduction & Guide dialog.
+ * Everything the guide reads from the spreadsheet itself. Read-only. Each lookup is
+ * independent, so one broken sheet cannot stop the guide from opening.
  */
-function showSystemIntroduction() {
-  var meta = SYSTEM_CONFIG.META;
-  var version = meta.VERSION || "21.0";
-  var systemName = meta.NAME || "Husay ng Soksay";
-  var org = meta.ORG || "UPLB Sociology Society";
-  var sheets = SYSTEM_CONFIG.SHEETS;
+function getSystemGuideData_() {
+  var out = {
+    health: null,
+    sheets: {},               // key -> { name, exists, rows }
+    extraSheets: [],          // [{ name, exists, rows }]
+    submissions: { exists: false, total: 0, processed: 0, flagged: 0, error: 0, pending: 0, unprocessed: 0 },
+    coupons: { exists: false, total: 0, active: 0, member: 0 },
+    anonFolders: [],          // [{ key, prefix, configured }]
+    anonReady: false,
+    mergeGroups: 0,
+    dailyQuota: null,
+    regHeaders: [],
+    finHeaders: [],
+    scriptId: "",
+    problems: []
+  };
+  function attempt(label, fn) {
+    try { fn(); } catch (e) { out.problems.push(label + ": " + (e && e.message ? e.message : e)); }
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var S = SYSTEM_CONFIG.SHEETS;
 
+  attempt("status", function () { out.health = getSystemHealthData(); });
+
+  attempt("sheets", function () {
+    Object.keys(S).forEach(function (key) {
+      var sh = ss.getSheetByName(S[key]);
+      out.sheets[key] = { name: S[key], exists: !!sh, rows: sh ? Math.max(0, sh.getLastRow() - 1) : 0 };
+    });
+    [V22_CONFIG.MERGE.LEDGER_SHEET, V22_CONFIG.AUDIT.SHEET, "Finance QA Report", "Member Compensation Report"].forEach(function (name) {
+      var sh = ss.getSheetByName(name);
+      out.extraSheets.push({ name: name, exists: !!sh, rows: sh ? Math.max(0, sh.getLastRow() - 1) : 0 });
+    });
+  });
+
+  attempt("headers", function () {
+    var reg = ss.getSheetByName(S.REGISTRATION);
+    if (reg && reg.getLastColumn() > 0) out.regHeaders = reg.getRange(1, 1, 1, reg.getLastColumn()).getValues()[0];
+    var fin = ss.getSheetByName(S.FINANCE);
+    if (fin && fin.getLastColumn() > 0) out.finHeaders = fin.getRange(1, 1, 1, fin.getLastColumn()).getValues()[0];
+  });
+
+  attempt("submissions", function () {
+    var sh = ss.getSheetByName(S.SUBMISSIONS);
+    if (!sh) return;
+    out.submissions.exists = true;
+    if (sh.getLastRow() < 2) return;
+    var statusCol = ColumnManager.headerMap(sh)["SYS_SUB_STATUS"] || 0;
+    var vals = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (!String(vals[i][SYSTEM_CONFIG.COLS.SUB.EMAIL - 1] || "").trim()) continue;
+      out.submissions.total++;
+      var st = statusCol ? String(vals[i][statusCol - 1] || "").trim().toUpperCase() : "";
+      if (st === "PROCESSED") out.submissions.processed++;
+      else if (st === "FLAGGED") out.submissions.flagged++;
+      else if (st === "ERROR") out.submissions.error++;
+      else if (st === "PENDING") out.submissions.pending++;
+      else out.submissions.unprocessed++;
+    }
+  });
+
+  attempt("coupons", function () {
+    var sh = ss.getSheetByName(S.COUPONS);
+    if (!sh) return;
+    out.coupons.exists = true;
+    if (sh.getLastRow() < 2) return;
+    var C = SYSTEM_CONFIG.COLS.COUPON;
+    var vals = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (!String(vals[i][C.CODE - 1] || "").trim()) continue;
+      out.coupons.total++;
+      if (String(vals[i][C.STATUS - 1] || "ACTIVE").trim().toUpperCase() === "ACTIVE") out.coupons.active++;
+      if (String(vals[i][C.TYPE - 1] || "").trim().toUpperCase() === "MEMBER") out.coupons.member++;
+    }
+  });
+
+  attempt("folders", function () {
+    var prefixes = SYSTEM_CONFIG.DEPERSONALIZATION.PREFIXES;
+    var all = true;
+    Object.keys(prefixes).forEach(function (key) {
+      var configured = !!getAnonFolderId_(key);
+      if (!configured) all = false;
+      out.anonFolders.push({ key: key, prefix: prefixes[key], configured: configured });
+    });
+    out.anonReady = all && out.anonFolders.length > 0;
+  });
+
+  attempt("groups", function () {
+    var reg = ss.getSheetByName(S.REGISTRATION);
+    if (!reg || reg.getLastRow() < 2) return;
+    var col = ColumnManager.headerMap(reg)[V22_CONFIG.MERGE.REG_HEADERS.GROUP_ID];
+    if (!col) return;
+    var ids = reg.getRange(2, col, reg.getLastRow() - 1, 1).getValues();
+    var seen = {};
+    for (var i = 0; i < ids.length; i++) {
+      var id = String(ids[i][0] || "").trim();
+      if (id && !seen[id]) { seen[id] = true; out.mergeGroups++; }
+    }
+  });
+
+  attempt("quota", function () { out.dailyQuota = Number(MailApp.getRemainingDailyQuota()); });
+  attempt("script", function () { out.scriptId = String(ScriptApp.getScriptId() || ""); });
+
+  return out;
+}
+
+/**
+ * Show the System Introduction & Guide dialog.
+ * @param {string=} startTab  optional page to open on (used by the "Guide" link in other dialogs)
+ */
+function showSystemIntroduction(startTab) {
+  var CFG = SYSTEM_CONFIG;
+  var meta = CFG.META || {};
+  var systemName = meta.NAME || "Registration System";
+  var esc = Utils.escapeHtml;
+  var live = getSystemGuideData_();
+  var healthOk = !!live.health;
+  var health = live.health || {
+    triggers: {}, formLinked: false, stats: { total: 0, paid: 0, pending: 0 },
+    rateLimit: { emailsSentThisHour: 0, maxPerHour: CFG.ADMIN.RATE_LIMIT.MAX_EMAILS_PER_HOUR }
+  };
+
+  // ── Words, names and numbers that come from the settings ────────────────
+  var PAID_WORD = CFG.ADMIN.TRIGGER_WORD;
+  var PAID = '<code>' + esc(PAID_WORD) + '</code>';
+  var NOT_YET = '<code>' + esc(CFG.ADMIN.NOT_YET_WORD) + '</code>';
+  var PRICING = CFG.PRICING;
+  var hourlyCap = CFG.ADMIN.RATE_LIMIT.MAX_EMAILS_PER_HOUR;
+  var prefixes = CFG.DEPERSONALIZATION.PREFIXES;
+  var digits = CFG.DEPERSONALIZATION.COUNTER_DIGITS || 4;
+
+  function sheet(key) { return '<b>' + esc(CFG.SHEETS[key] || key) + '</b>'; }
+  function peso(n) {
+    n = Number(n || 0);
+    var whole = Math.abs(n - Math.round(n)) < 0.000001;
+    return '&#8369;' + (whole ? String(Math.round(n)) : n.toFixed(2)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function sampleNumber(prefix) {
+    var n = "1";
+    while (n.length < digits) n = "0" + n;
+    return prefix + "-" + n;
+  }
+  var firstPrefixKey = Object.keys(prefixes)[0];
+  var sampleParticipantNum = sampleNumber(firstPrefixKey ? prefixes[firstPrefixKey] : "XX");
+  var sampleGenId = Utils.generateId("REF");
+
+  // ── The menu: one definition, shared with onOpen() ───────────────────────
+  var menuDef = getAdminMenuDefinition_();
+  var menuFlat = flattenAdminMenu_(menuDef, ADMIN_MENU_TITLE);
+  var menuByFn = {};
+  menuFlat.forEach(function (item) { if (!menuByFn[item.fn]) menuByFn[item.fn] = item; });
+
+  /** Where a tool is in the menu right now, e.g. "Admin Center → Finance Operations → Sync". */
+  function go(fn) {
+    var item = menuByFn[fn];
+    if (!item) return '<kbd>' + esc(fn) + '</kbd>';
+    return '<kbd>' + esc(item.path + ' → ' + item.label) + '</kbd>';
+  }
+
+  // ── Small HTML builders ──────────────────────────────────────────────────
   var html = [];
-  html.push('<!DOCTYPE html><html><head><meta charset="UTF-8">');
-  html.push('<style>');
+  function add(s) { html.push(s); }
+  function h2(text) { add('<h2>' + text + '</h2>'); }
+  function h3(icon, text) { add('<h3><span class="icon">' + icon + '</span> ' + text + '</h3>'); }
+  function p(text) { add('<p>' + text + '</p>'); }
+  function list(items) {
+    return '<ul>' + items.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
+  }
+  function ul(items) { add(list(items)); }
+  function callout(kind, title, body) {
+    add('<div class="callout' + (kind ? ' ' + kind : '') + '"><div class="callout-title">' + title + '</div>' + body + '</div>');
+  }
+  function table(headers, rows) {
+    var out = ['<table><tr>'];
+    headers.forEach(function (h) { out.push('<th>' + h + '</th>'); });
+    out.push('</tr>');
+    rows.forEach(function (r) {
+      out.push('<tr>');
+      r.forEach(function (c) { out.push('<td>' + (c === null || c === undefined ? '' : c) + '</td>'); });
+      out.push('</tr>');
+    });
+    out.push('</table>');
+    add(out.join(''));
+  }
+  function steps(items) {
+    items.forEach(function (s, i) {
+      add('<div class="step"><div class="step-num">' + (i + 1) + '</div><div class="step-content">' +
+        '<div class="step-title">' + s[0] + '</div><div class="step-desc">' + s[1] + '</div></div></div>');
+    });
+  }
+  function stat(value, label) {
+    add('<div class="stat"><div class="num">' + esc(String(value)) + '</div><div class="lbl">' + esc(label) + '</div></div>');
+  }
+  var MARKS = { ok: '&#x2705;', warn: '&#x26A0;&#xFE0F;', bad: '&#x274C;', info: '&#x2139;&#xFE0F;' };
+  function check(state, what, detail) {
+    add('<div class="check ' + state + '"><div class="dot">' + MARKS[state] + '</div>' +
+      '<div class="what">' + what + '</div><div class="detail">' + detail + '</div></div>');
+  }
+  /** "Tool / what it does" table for some menu functions, text taken from the menu definition. */
+  function tools(fns) {
+    var rows = [];
+    fns.forEach(function (fn) {
+      var item = menuByFn[fn];
+      if (!item) return;
+      rows.push(['<b>' + esc(item.label) + '</b><br><span class="muted">' + esc(item.path) + '</span>', esc(item.desc)]);
+    });
+    if (rows.length) table(['Tool', 'What it does'], rows);
+  }
+  function faq(question, answer) {
+    add('<div class="faq"><div class="q">' + question + '</div><div class="a">' + answer + '</div></div>');
+  }
 
-  // ── CSS ────────────────────────────────────────────────────────────────
-  html.push([
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: START HERE
+  // ════════════════════════════════════════════════════════════════════════
+  function tabStart() {
+    var st = health.stats, sub = live.submissions;
+
+    h2('Where things stand right now');
+    p('<span class="muted">Read from this spreadsheet at ' + esc(Utils.nowTzString()) +
+      '. Close the guide and open it again to refresh.</span>');
+
+    add('<div class="stat-grid">');
+    stat(st.total, 'Registrations');
+    stat(st.paid, 'Paid');
+    stat(st.pending, 'Not yet paid');
+    stat(sub.total, 'Submissions');
+    stat(live.mergeGroups, 'Payment groups');
+    stat(live.coupons.active, 'Active codes');
+    add('</div>');
+
+    h3('&#x1F9F0;', 'Setup checklist');
+    if (!healthOk) {
+      check('bad', 'Status', 'The system status could not be read (' + esc(live.problems.join('; ')) + '). The rest of this guide still applies.');
+    }
+
+    var needed = ['REGISTRATION', 'FINANCE', 'COUPONS', 'PARTICIPANT_DB'];
+    var missing = needed.filter(function (k) { return !(live.sheets[k] && live.sheets[k].exists); });
+    check(missing.length ? 'bad' : 'ok', 'Sheets',
+      missing.length
+        ? 'Missing: ' + missing.map(function (k) { return esc(CFG.SHEETS[k]); }).join(', ') + '. Run ' + go('showSystemBuilder') + ' to create them.'
+        : needed.map(function (k) { return esc(CFG.SHEETS[k]) + ' (' + live.sheets[k].rows + (live.sheets[k].rows === 1 ? ' row)' : ' rows)'); }).join(' &middot; '));
+
+    if (healthOk) {
+      var trig = health.triggers || {};
+      var lacking = [];
+      if (!trig.onFormSubmit) lacking.push('on form submit');
+      if (!trig.onEdit) lacking.push('on edit');
+      check(lacking.length ? 'bad' : 'ok', 'Automatic triggers',
+        lacking.length
+          ? 'Not installed: ' + lacking.join(' and ') + '. Until you run ' + go('createTriggers') +
+            ', nothing happens by itself: no Gen ID, no emails, no receipts.'
+          : 'Both installed (on form submit, on edit).');
+
+      check(health.formLinked ? 'ok' : 'warn', 'Registration form',
+        health.formLinked
+          ? 'A Google Form is linked to this spreadsheet. ' + go('diagnoseFormConnection') + ' shows exactly which sheet it writes to.'
+          : 'No linked Google Form was found. Link the registration form to this spreadsheet so that it writes to ' +
+            sheet('REGISTRATION') + ', then check with ' + go('diagnoseFormConnection') + '.');
+    }
+
+    check(sub.exists ? 'ok' : 'warn', 'Submission form',
+      sub.exists
+        ? sheet('SUBMISSIONS') + ' exists (' + sub.total + ' submissions).'
+        : 'There is no sheet named ' + sheet('SUBMISSIONS') + ' yet. Before entries open, link the submission form to this ' +
+          'spreadsheet and rename its response sheet to exactly that name.');
+
+    var noFolder = live.anonFolders.filter(function (f) { return !f.configured; });
+    check(live.anonReady ? 'ok' : 'warn', 'Anonymized folders',
+      live.anonReady
+        ? 'Set for all ' + live.anonFolders.length + ' competitions.'
+        : 'Not set for: ' + noFolder.map(function (f) { return esc(f.key); }).join(', ') + '. Run ' + go('configureAnonFolders') +
+          ' before entries open. Without a folder, entry files are not copied for the judges.');
+
+    if (healthOk) {
+      var rl = health.rateLimit;
+      var quotaText = (live.dailyQuota === null || isNaN(live.dailyQuota)) ? '' : ' Google allows ' + live.dailyQuota + ' more today.';
+      var mailState = (live.dailyQuota !== null && live.dailyQuota <= 0) ? 'bad' : (rl.emailsSentThisHour >= rl.maxPerHour ? 'warn' : 'ok');
+      check(mailState, 'Email allowance', rl.emailsSentThisHour + ' of ' + rl.maxPerHour + ' used this hour.' + quotaText);
+    }
+
+    var todo = [];
+    if (st.pending > 0) todo.push('<b>' + st.pending + '</b> registration(s) are waiting for their payment to be verified. See <a data-goto="daily">Daily work</a>.');
+    if (sub.error > 0) todo.push('<b>' + sub.error + '</b> submission(s) have the status ERROR. Open ' + go('openSubmissionDashboard') + '; see <a data-goto="submit">Submissions</a> for what each status means.');
+    if (sub.flagged > 0) todo.push('<b>' + sub.flagged + '</b> submission(s) are FLAGGED because a name or school was found in the entry.');
+    if (sub.pending > 0) todo.push('<b>' + sub.pending + '</b> submission(s) are PENDING because the anonymized folders were not set up when they arrived.');
+    if (sub.unprocessed > 0) todo.push('<b>' + sub.unprocessed + '</b> submission(s) were never processed. Run ' + go('reprocessAllPendingSubmissions') + '.');
+    h3('&#x1F4CC;', 'Needs attention');
+    if (todo.length) ul(todo); else p('Nothing is waiting for you.');
+
+    h3('&#x1F9ED;', 'The whole system in four steps');
+    steps([
+      ['A participant fills in the registration form',
+        'Their answers land in ' + sheet('REGISTRATION') + '. Within seconds the system gives them a Gen ID (like <code>' + esc(sampleGenId) +
+        '</code>), works out the fee, adds a row to ' + sheet('FINANCE') + ' and emails them a Registration Received message.'],
+      ['You check the payment',
+        'In ' + sheet('FINANCE') + ', set the <b>Status</b> of their row to ' + PAID + '. The receipt email, the referral credit and the paid date all follow from that one change.'],
+      ['The participant submits their entry',
+        'Through the submission form. A paid participant gets a participant number (like <code>' + esc(sampleParticipantNum) +
+        '</code>), a copy of their files is made under that number for the judges, and they receive a Submission Acknowledgement.'],
+      ['You run the event from the menu',
+        'Dashboards, announcements, people paying together, corrections and reports are under <kbd>' + esc(ADMIN_MENU_TITLE) +
+        '</kbd>. All ' + menuFlat.length + ' tools are explained in the <a data-goto="menu">Menu</a> tab.']
+    ]);
+
+    callout('', 'This guide is generated, not written once',
+      'Prices, rules, sheet names, columns and the menu list are read from the settings and from this spreadsheet each time the guide opens. ' +
+      'If someone changes a setting, the guide shows the new value.');
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: DAILY WORK
+  // ════════════════════════════════════════════════════════════════════════
+  function tabDaily() {
+    var rr = PRICING.REFERRAL_REWARD;
+
+    h2('Daily work');
+    h3('&#x1F4B3;', 'Verify a payment');
+    steps([
+      ['Open ' + sheet('FINANCE') + ' and find the participant',
+        'Every registration gets a row there automatically. What they owe is in <b>Total Amount</b>; their uploaded proof is in <b>Proof Link</b>.'],
+      ['Compare the proof with the amount',
+        'When there are many, ' + go('openPaymentVerificationCenter') + ' lists what each person should pay next to the amount you type in as received.'],
+      ['Fill in <b>Verifier</b> and <b>Pay Ref</b>',
+        'Who checked it, and the reference number of the payment. Both are copied to the registration for your records.'],
+      ['Set <b>Status</b> to ' + PAID,
+        'Choose it from the dropdown or type it. This is the step that starts everything else.']
+    ]);
+    callout('', 'What happens by itself when the Status becomes ' + esc(PAID_WORD), list([
+      'The date and time are stamped in <b>SYS_PAID_AT</b>.',
+      'The Acknowledgement Receipt is emailed, in the same conversation as their registration email. <b>Email Sent</b> then shows SENT, ERROR or SKIPPED with the time.',
+      'The <b>Payment Status</b> column in ' + sheet('REGISTRATION') + ' changes to ' + esc(PAID_WORD) + '.',
+      'If they registered with someone\'s referral code, that person is credited (' + peso(rr.INITIAL) + ' for a first referral, ' + peso(rr.SUBSEQUENT) + ' for later ones) and emailed.',
+      'If the row is the payer of a payment group, every member of the group gets a receipt, is marked paid, and their referrers are credited too.',
+      'From that moment the participant can submit an entry.'
+    ]));
+    callout('', 'Several rows at once',
+      'You can paste ' + esc(PAID_WORD) + ' into several rows or drag it down. The rows are handled one after another, a few seconds each. ' +
+      'Wait until <b>Email Sent</b> is filled in on all of them before changing more rows.');
+    callout('warn', 'Always in ' + esc(CFG.SHEETS.FINANCE),
+      'The <b>Status</b> column of ' + sheet('FINANCE') + ' is the one that counts. The <b>Payment Status</b> column in ' + sheet('REGISTRATION') +
+      ' is only a copy that the system keeps up to date; typing there does nothing.');
+
+    h3('&#x21A9;&#xFE0F;', 'Undo a payment');
+    if (CFG.ADMIN.ENABLE_PAID_REVERSAL) {
+      p('Change the <b>Status</b> back to ' + NOT_YET + '. The system takes back the referral credit that payment gave (and tells the referrer), ' +
+        'clears the paid date, writes REVERSED in <b>Email Sent</b>, and for a payment group does the same for every member. ' +
+        'Setting the Status to ' + PAID + ' again later sends the receipt again.');
+    } else {
+      p('Undoing is switched off in the settings (<code>ENABLE_PAID_REVERSAL</code> is false). Changing the Status back does not take back the referral credit or the receipt.');
+    }
+
+    h3('&#x1F4E7;', 'When an email did not go out');
+    table(['Email Sent shows', 'What it means', 'What to do'], [
+      ['<code>SENT: &hellip;</code>', 'Handed to Gmail for delivery.', 'Nothing.'],
+      ['<code>ERROR: &hellip;</code>', 'Gmail refused it: a mistyped address, the daily quota, or a permission problem.', 'Fix the cause, then ' + go('resendSelectedRowEmailMenu') + ' or ' + go('resendAllFailedEmails') + '.'],
+      ['<code>SKIPPED: &hellip;</code>', 'Not sent on purpose: the hourly cap of ' + hourlyCap + ' was reached, the same receipt already went out in the last ' +
+        CFG.ADMIN.DUPLICATE_SEND_WINDOW_HOURS + ' hours, or the row is a group member covered by the group receipt.', 'If it should still go: ' + go('resendAllPendingOREmails') + '.'],
+      ['<code>REVERSED: &hellip;</code>', 'The payment was undone.', 'Set the Status to ' + PAID + ' again when it is really paid.'],
+      ['Nothing, on a row that says ' + esc(PAID_WORD), 'The change was never processed: the triggers are not installed, or it was typed in the wrong sheet.',
+        'Check the triggers on the <a data-goto="start">Start here</a> tab, then change the Status to ' + NOT_YET + ' and back to ' + PAID + '.']
+    ]);
+
+    h3('&#x1F5C2;&#xFE0F;', 'Other everyday jobs');
+    table(['I want to&hellip;', 'Go to'], [
+      ['Correct a name, email, competition or amount', go('openManualResponseEditor')],
+      ['Handle several people paying with one transfer', go('openCombinedRegistrationMerge')],
+      ['Send a message to participants', go('openAnnouncementCenter')],
+      ['See who has not received an email', go('showEmailDashboard')],
+      ['Look at entries as they come in', go('openSubmissionDashboard')],
+      ['See what has been collected and what is pending', go('showFinanceDashboard')],
+      ['See registration numbers by school, region, competition', go('showAnalyticsDashboard')],
+      ['List the cashback owed to referrers', go('exportCashbackReport')],
+      ['List what members earned with their codes', go('exportMemberCompensationReport')],
+      ['Make the lists for the judges', go('generateCompetitionSheets')],
+      ['Check that everything is healthy', go('openSystemDashboard')]
+    ]);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: PRICES & RULES
+  // ════════════════════════════════════════════════════════════════════════
+  function tabPrices() {
+    var names = Object.keys(PRICING.SINGLE);
+    var rr = PRICING.REFERRAL_REWARD;
+    var MC = CFG.MEMBER_COUPON;
+
+    h2('Prices and rules in force');
+    p('These are the values the system is using right now. To change one, edit <code>SYSTEM_CONFIG</code> at the top of the script ' +
+      '(Extensions &rarr; Apps Script). This page shows the new value the next time it opens.');
+
+    h3('&#x1F3F7;&#xFE0F;', 'Competitions');
+    table(['Name on the registration form', 'Price alone', 'Counts as', 'Name on the submission form', 'Numbers', "Judges' sheet"], names.map(function (n) {
+      var comp = getCompetitionByRegistrationName_(n);
+      return [esc(n), peso(PRICING.SINGLE[n]), isSpecialCompetition_(n) ? 'Special' : 'Standard',
+        comp ? esc(comp.submissionName) : '<span class="muted">not in the competition list</span>',
+        comp ? '<code>' + esc(sampleParticipantNumber_(comp.key, 1)) + '</code>' : '',
+        comp ? esc(comp.sheetName) : ''];
+    }));
+    p('This one list (<code>SYSTEM_CONFIG.COMPETITIONS</code>) is what the pricing, receipts, previews, anonymized folders, judges\' sheets and self-tests all read.');
+
+    h3('&#x1F4E6;', 'Bundle prices');
+    var bundles = Object.keys(PRICING.BUNDLES).map(function (k) {
+      var m = /^STD_(\d+)_SPC_(\d+)$/.exec(k);
+      var std = m ? Number(m[1]) : 0, spc = m ? Number(m[2]) : 0;
+      var label = m
+        ? [std ? std + ' standard' : '', spc ? spc + ' special' : ''].filter(function (x) { return x; }).join(' + ')
+        : k;
+      return { label: label, count: std + spc, spc: spc, price: PRICING.BUNDLES[k] };
+    }).sort(function (a, b) { return (a.count - b.count) || (a.spc - b.spc); });
+    table(['Combination', 'Price'], bundles.map(function (b) { return [esc(b.label), peso(b.price)]; }));
+    p('Any other combination is charged the sum of the single prices.');
+
+    var samples = [];
+    try { samples = getPreviewCompetitionSamples_(); } catch (sampleErr) { samples = []; }
+    if (samples.length) {
+      p('Worked out by the pricing engine itself:');
+      table(['Example', 'Singles add up to', 'Charged', 'Saved'], samples.map(function (s) {
+        var calc = PricingEngine.calculate("", s.value);
+        return [esc(s.label), peso(calc.rawTotal), '<b>' + peso(calc.finalPrice) + '</b>', calc.bundleDiscount ? peso(calc.bundleDiscount) : '&mdash;'];
+      }));
+    }
+    p('<b>What a participant owes</b> = bundle price &minus; coupon &minus; referral discount. A referrer\'s own cashback is then taken off their Total Amount in ' + sheet('FINANCE') + '.');
+
+    h3('&#x1F91D;', 'Referrals');
+    ul([
+      'A referral code is another participant\'s Gen ID, typed into the registration form.',
+      'The person who uses a valid code pays ' + peso(PRICING.REFERRAL_DISCOUNT_PER_USE) + ' less.',
+      'The owner of the code earns ' + peso(rr.INITIAL) + ' for the first referral and ' + peso(rr.SUBSEQUENT) +
+        ' for each one after it, but only once the referred person is ' + PAID + '. Undoing that payment takes the credit back.'
+    ]);
+    table(['Paid referrals', 'Total cashback'], [1, 2, 3, 5, 10].map(function (n) { return [n, peso(referralCashbackTotal_(n))]; }));
+
+    h3('&#x1F396;&#xFE0F;', 'Member ambassador codes');
+    ul([
+      'Codes look like <code>' + esc(MC.PREFIX) + '-NAME</code>, one per member.',
+      'Each gives the participant ' + peso(MC.DEFAULT_DISCOUNT) + ' off and can be used up to ' + MC.DEFAULT_MAX_USES + ' times unless you choose otherwise when generating.',
+      'A use is counted when someone registers with the code, whether or not they have paid yet.'
+    ]);
+    var tiers = Object.keys(MC.COMPENSATION).map(function (k) { return MC.COMPENSATION[k]; }).sort(function (a, b) { return a.MIN - b.MIN; });
+    table(['Uses', 'Member earns per use'], tiers.map(function (t) {
+      return [t.MAX >= 999 ? t.MIN + ' or more' : t.MIN + ' to ' + t.MAX, peso(t.RATE)];
+    }));
+    var milestoneKeys = Object.keys(MC.MILESTONES || {}).sort(function (a, b) { return Number(a) - Number(b); });
+    if (milestoneKeys.length) {
+      table(['Bonus when a code reaches', 'Bonus'], milestoneKeys.map(function (k) { return [k + ' uses', peso(MC.MILESTONES[k])]; }));
+    }
+    table(['Example: a code used', 'Member is owed'], [1, 5, 10, 25].map(function (n) {
+      return [n + ' time' + (n === 1 ? '' : 's'), peso(calculateMemberCompensation(n).totalCompensation)];
+    }));
+
+    h3('&#x2699;&#xFE0F;', 'Other settings');
+    var verifiers = CFG.ADMIN.VERIFIERS || {};
+    var spiel = CFG.ADMIN.OR_EMAIL_SPIEL || {};
+    var notif = CFG.ADMIN.REFERRAL_NOTIFICATIONS || {};
+    table(['Setting', 'Value now'], [
+      ['Word that marks a payment as verified', PAID],
+      ['Word for a payment not yet verified', NOT_YET],
+      ['Undo a payment by changing the Status back', CFG.ADMIN.ENABLE_PAID_REVERSAL ? 'On' : 'Off'],
+      ['Emails are sent under the name', esc(CFG.ADMIN.EMAIL_SENDER_NAME || '')],
+      ['Most emails the system sends in one hour', String(hourlyCap)],
+      ['The same receipt is not sent twice within', CFG.ADMIN.DUPLICATE_SEND_WINDOW_HOURS + ' hours'],
+      ['Emails to referrers about their credit', notif.ENABLED ? 'On' : 'Off'],
+      ['Names signed on receipts', esc([verifiers.FINANCE_HEAD, verifiers.ORG_FINANCE_HEAD].filter(function (x) { return x; }).join(' and '))],
+      ['Deadline shown in the receipt email', esc(spiel.SUBMISSION_DEADLINE || '')],
+      ['Proof-of-payment links accepted from', esc((CFG.ADMIN.ALLOWED_PROOF_DOMAINS || []).join(', '))],
+      ['Participant numbers', Object.keys(prefixes).map(function (k) { return '<code>' + esc(sampleNumber(prefixes[k])) + '</code> ' + esc(k.toLowerCase()); }).join(', ')],
+      ['Time zone for dates', esc(meta.TIMEZONE || '')]
+    ]);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: REGISTRATION
+  // ════════════════════════════════════════════════════════════════════════
+  function tabRegistration() {
+    h2('Registration');
+    h3('&#x26A1;', 'What happens when the form is submitted');
+    steps([
+      ['The answers arrive in ' + sheet('REGISTRATION'), 'One row per participant. The form writes columns on the left; the system writes its own columns further right.'],
+      ['A Gen ID is created', 'For example <code>' + esc(sampleGenId) + '</code>. It identifies the participant everywhere, and it is also the referral code they can give to others.'],
+      ['The fee is worked out', 'From the competitions chosen, using the bundle prices on the <a data-goto="prices">Prices &amp; rules</a> tab. The base fee, each discount and the total are written in their own columns.'],
+      ['Coupon and referral codes are checked', 'A valid coupon is taken off the fee and one use is counted. A valid referral code takes ' + peso(PRICING.REFERRAL_DISCOUNT_PER_USE) + ' off. A code that is unknown, expired or used up is ignored and the normal price applies.'],
+      ['A row is added to ' + sheet('FINANCE'), 'With the amount to pay and the Status ' + NOT_YET + '.'],
+      ['The Registration Received email is sent', 'With their Gen ID, the breakdown of the fee and how to pay. Later emails to the same person continue that conversation.']
+    ]);
+
+    h3('&#x1F4DD;', 'Good to know');
+    ul([
+      'If a participant edits their form answers, their row is worked out again: the fee is updated and a coupon they removed is given back.',
+      'To correct something yourself, use ' + go('openManualResponseEditor') + '. It shows the change before saving and keeps ' + sheet('FINANCE') + ' in step.',
+      'If a row has no Gen ID, it arrived while the triggers were off. Select it and run ' + go('forceReprocess') + ', or ' + go('runSmartMigration') + ' for all such rows.',
+      'To remove a registration, use ' + go('deleteSelectedRow') + ' rather than deleting the row by hand, so that its ' + esc(CFG.SHEETS.FINANCE) + ' row and email history go too. A coupon use or referral credit it caused is not given back.',
+      'Do not insert, delete or move columns in ' + sheet('REGISTRATION') + '. The system finds most of them by position; the <a data-goto="sheets">Sheets &amp; columns</a> tab shows the positions it expects next to what your sheet has.'
+    ]);
+
+    h3('&#x1F527;', 'Tools');
+    tools(['showSystemBuilder', 'runSystemUpdater', 'forceReprocess', 'runSmartMigration', 'openManualResponseEditor', 'setupParticipantDatabaseQuery', 'deleteSelectedRow']);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: PAYMENTS
+  // ════════════════════════════════════════════════════════════════════════
+  function tabPayments() {
+    h2('Payments');
+    p(sheet('FINANCE') + ' is where payments are checked. The steps are on the <a data-goto="daily">Daily work</a> tab; this page explains the sheet itself.');
+
+    h3('&#x1F4CB;', 'The columns of ' + esc(CFG.SHEETS.FINANCE));
+    var notes = {
+      "Timestamp": ['System', 'When they registered.'],
+      "Email": ['System', 'Ties the row to the registration. Do not edit it here.'],
+      "Name": ['System', 'From the registration.'],
+      "Payment Mode": ['System', 'From the form.'],
+      "Proof Link": ['System', 'Their uploaded proof of payment.'],
+      "Ref Code": ['System', 'The referral code they used, if it was valid.'],
+      "Coupon Code": ['System', 'The coupon they used, if it was valid.'],
+      "Gen. ID": ['System', 'Their ID, which is also their own referral code.'],
+      "Ref Count": ['System', 'How many people they referred have paid.'],
+      "Cashback": ['System', 'What those referrals earned them.'],
+      "Total Amount": ['System', 'What they owe after discounts and cashback. The payer of a group carries the whole group\'s total; the members show 0.'],
+      "Status": ['<b>You</b>', NOT_YET + ' or ' + PAID + '. The one cell that drives receipts.'],
+      "Verifier": ['<b>You</b>', 'Who checked the payment.'],
+      "Pay Ref": ['<b>You</b>', 'Reference number of the payment.'],
+      "Email Sent": ['System', 'Result of the receipt email.'],
+      "SYS_PAID_AT": ['System', 'When it was marked paid.']
+    };
+    var aliases = CFG.FINANCE_HEADERS.ALIASES || {};
+    var present = {};
+    live.finHeaders.forEach(function (h) {
+      var name = String(h || '').trim();
+      if (name) present[aliases[name] || name] = true;
+    });
+    var haveSheet = live.finHeaders.length > 0;
+    table(['Column', 'Filled by', 'What it is', 'In your sheet'], CFG.FINANCE_HEADERS.REQUIRED.map(function (h) {
+      var n = notes[h] || ['', ''];
+      return ['<b>' + esc(h) + '</b>', n[0], n[1], !haveSheet ? '&mdash;' : (present[h] ? '&#x2705;' : '&#x274C; missing')];
+    }));
+    p('These columns are found by their header text, so they may be in any order, but the header text must stay as it is.');
+
+    h3('&#x1F517;', 'Keeping the two sheets in step');
+    p('Normally you never need to: every registration and every change of Status updates both sheets. Use these when rows were edited by hand or something was interrupted.');
+    tools(['syncDashboard', 'rebuildFinanceDashboardFull', 'validateFinanceDashboard', 'cleanupOrphanedFinanceRows', 'openPaymentVerificationCenter', 'showFinanceDashboard', 'exportCashbackReport']);
+    callout('warn', 'After a Sync or Rebuild, if you use payment groups',
+      'Run ' + go('reapplyAllMergeGroups') + ' so that group totals, colours and row order are put back.');
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: EMAILS
+  // ════════════════════════════════════════════════════════════════════════
+  function tabEmails() {
+    var notif = CFG.ADMIN.REFERRAL_NOTIFICATIONS || {};
+
+    h2('Emails');
+    h3('&#x2709;&#xFE0F;', 'What is sent, and when');
+    table(['Email', 'Sent when', 'To'], [
+      ['<b>Registration Received</b>', 'The registration form is submitted.', 'The participant'],
+      ['<b>Acknowledgement Receipt</b>', 'Their Status in ' + esc(CFG.SHEETS.FINANCE) + ' becomes ' + PAID + '.', 'The participant (every member, for a payment group)'],
+      ['<b>Referral credit</b>', 'Someone who used their code is marked ' + PAID + '.' + (notif.ENABLED ? '' : ' <i>Currently switched off in the settings.</i>'), 'The owner of the referral code'],
+      ['<b>Referral removed</b>', 'That payment is undone.' + (notif.ENABLED ? '' : ' <i>Currently switched off in the settings.</i>'), 'The owner of the referral code'],
+      ['<b>Submission Acknowledgement</b>', 'An entry from a paid participant is processed. It carries their participant number.', 'The participant'],
+      ['<b>Correction request</b>', 'You send it for a flagged entry.', 'The participant'],
+      ['<b>Announcement</b>', 'You send or schedule it in the Announcement Center.', 'The participants you filter for']
+    ]);
+    p('All emails are sent as <b>' + esc(CFG.ADMIN.EMAIL_SENDER_NAME || '') + '</b>, and each participant\'s emails are kept in one Gmail conversation.');
+
+    h3('&#x1F6A6;', 'Limits');
+    var quotaLine = (live.dailyQuota === null || isNaN(live.dailyQuota)) ? '' : ' Right now Google allows <b>' + live.dailyQuota + '</b> more today.';
+    ul([
+      'The system sends at most <b>' + hourlyCap + '</b> emails an hour (' + health.rateLimit.emailsSentThisHour + ' used this hour). Emails over the cap are marked SKIPPED; they are not retried by themselves, so send them later with the resend tools below.',
+      'Google has its own daily limit for the account that owns the script.' + quotaLine + ' The Announcement Center shows this before you send.',
+      'The same receipt is not sent twice within ' + CFG.ADMIN.DUPLICATE_SEND_WINDOW_HOURS + ' hours, so retyping ' + esc(PAID_WORD) + ' does not spam anyone. The resend tools override this on purpose.'
+    ]);
+
+    h3('&#x1F4E2;', 'Announcements');
+    ul([
+      'Choose who receives it: by form (registration, submissions or both), by payment (paid, pending, free), by submission (has one or not), by competition, or by typing specific addresses.',
+      '<b>Paid</b> follows the same rule as everywhere else: the Status in ' + esc(CFG.SHEETS.FINANCE) + ', and for a payment group the payer\'s Status.',
+      'Use the placeholders offered in the editor (name, Gen ID, competition and so on) to personalise the text, and preview before sending.',
+      'You can send now or schedule it. If the daily limit runs out part-way, the unsent addresses are kept so you can retry.'
+    ]);
+
+    h3('&#x1F527;', 'Tools');
+    tools(['showEmailDashboard', 'quickVerifyOREmails', 'resendSelectedRowEmailMenu', 'resendSelectedRowReferralNotification', 'resendAllPendingOREmails',
+      'resendAllFailedEmails', 'resendAllPendingReferralNotifications', 'checkSelectedRowEmailStatus', 'clearSelectedRowEmailTracking',
+      'previewConfirmedEmail', 'previewReceipt', 'openAnnouncementCenter', 'viewRateLimitStatus', 'resetRateLimiter']);
+    callout('warn', 'These two tests send real emails',
+      go('testEmailThreading') + ' sends to an address you type. ' + go('testThreadingExistingRegistration') +
+      ' sends to the participant on the selected row, so only use it on a test registration.');
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: SUBMISSIONS
+  // ════════════════════════════════════════════════════════════════════════
+  function tabSubmissions() {
+    var sub = live.submissions;
+
+    h2('Submissions and anonymity');
+    p('Judges must not know whose entry they are reading. The system gives each entry a participant number and makes a copy of the files under that number.');
+
+    h3('&#x26A1;', 'What happens when an entry is submitted');
+    steps([
+      ['The answers arrive in ' + sheet('SUBMISSIONS'), 'The participant must use the same email address they registered with.'],
+      ['The email is matched to a registration, which must be paid', 'A member of a payment group counts as paid once the group\'s payer is ' + esc(PAID_WORD) + '.'],
+      ['A participant number is given', 'One per competition entered: ' + Object.keys(prefixes).map(function (k) { return '<code>' + esc(sampleNumber(prefixes[k])) + '</code> ' + esc(k.toLowerCase()); }).join(', ') + '. Entering another competition later adds another number.'],
+      ['The entry is checked for personal details', 'The title and any readable document are searched for the participant\'s name, school and adviser. If one is found the entry is FLAGGED.'],
+      ['The files are copied', 'Into the anonymized folder for that competition, named by participant number. The originals are not changed.'],
+      ['The Submission Acknowledgement is emailed', 'With the participant number, for their records.']
+    ]);
+
+    h3('&#x1F6A9;', 'Statuses' + (sub.exists ? ' (your sheet now)' : ''));
+    table(['Status', sub.exists ? 'Now' : '', 'Meaning', 'What to do'], [
+      ['<code>PROCESSED</code>', sub.exists ? sub.processed : '', 'Numbered and copied.', 'Nothing.'],
+      ['<code>FLAGGED</code>', sub.exists ? sub.flagged : '', 'A name, school or adviser was found in the title or the document (or you flagged it).', 'Look at the entry. Then ' + go('sendCorrectionRequest') + ' or ' + go('unflagSubmission') + '.'],
+      ['<code>ERROR</code>', sub.exists ? sub.error : '', 'The email is not registered, the registration is not yet ' + esc(PAID_WORD) + ', the competition was not recognised, or a file could not be copied.', 'Fix the cause (usually: verify the payment), then ' + go('reprocessSelectedSubmission') + '.'],
+      ['<code>PENDING</code>', sub.exists ? sub.pending : '', 'The anonymized folders were not set up, so no files were copied.', go('configureAnonFolders') + ', then ' + go('reprocessAllPendingSubmissions') + '.'],
+      ['(empty)', sub.exists ? sub.unprocessed : '', 'Never processed, for example it arrived while the triggers were off.', go('reprocessAllPendingSubmissions') + '.']
+    ]);
+
+    h3('&#x1F4C1;', 'Anonymized folders');
+    if (live.anonFolders.length) {
+      table(['Competition', 'Numbers start with', 'Folder'], live.anonFolders.map(function (f) {
+        return [esc(f.key), '<code>' + esc(f.prefix) + '</code>', f.configured ? '&#x2705; set' : '&#x26A0;&#xFE0F; not set'];
+      }));
+    }
+    p('Set them once with ' + go('configureAnonFolders') + ', before entries open. Share those folders with the judges, never ' + sheet('SUBMISSIONS') + '.');
+
+    h3('&#x1F527;', 'Tools');
+    tools(['openSubmissionDashboard', 'reprocessAllPendingSubmissions', 'reprocessSelectedSubmission', 'resendAllPendingSubmissionConfirmations',
+      'resendSubmissionConfirmation', 'previewSubmissionAcknowledgement', 'flagSubmission', 'unflagSubmission', 'sendCorrectionRequest', 'scanSubmissionForPii',
+      'auditParticipantNumbers', 'fixDuplicateParticipantNumbers', 'auditAndSyncDriveFiles', 'configureAnonFolders', 'migrateAnonFiles',
+      'generateCompetitionSheets', 'runDepersonalizationTestSuite']);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: GROUPS (MERGE)
+  // ════════════════════════════════════════════════════════════════════════
+  function tabGroups() {
+    h2('People paying together');
+    p('When one transfer covers several registrations (a school paying for its students, a short-film team), put them in a payment group. ' +
+      'You have <b>' + live.mergeGroups + '</b> group' + (live.mergeGroups === 1 ? '' : 's') + ' now.');
+
+    h3('&#x1F517;', 'Make a group');
+    steps([
+      ['Open ' + go('openCombinedRegistrationMerge'), 'Search for the participants and tick them.'],
+      ['Choose who pays', 'That person is the <b>primary payer</b>. Their row will carry the amount for the whole group.'],
+      ['Choose the group total', 'The sum of the members\' own amounts, one of the bundle prices, or an amount you type.'],
+      ['Merge', 'The members are moved directly under the payer and coloured, in both sheets. The payer\'s Total Amount becomes the group total; the members show 0 and an empty Status.']
+    ]);
+
+    h3('&#x1F4B3;', 'When the group pays');
+    ul([
+      'Set the <b>payer\'s</b> Status to ' + PAID + ', exactly as for a single participant.',
+      'Every member receives the receipt and is marked ' + esc(PAID_WORD) + ' in ' + sheet('REGISTRATION') + '.',
+      'Members who registered with a referral code have their referrers credited.',
+      'Every member can submit an entry from then on.',
+      'Dashboards, the System Dashboard and announcement filters count the members as paid.',
+      'Undoing the payer\'s payment undoes all of that for the whole group.'
+    ]);
+
+    h3('&#x1F4DD;', 'Good to know');
+    ul([
+      'Leave the members\' Status empty. It is the payer\'s Status that counts.',
+      'After ' + go('syncDashboard') + ' or ' + go('rebuildFinanceDashboardFull') + ', run ' + go('reapplyAllMergeGroups') + '.',
+      go('promptUnmergeGroup') + ' dissolves a group and gives each member their own amount back.',
+      'Every merge and unmerge is recorded in the <b>' + esc(V22_CONFIG.MERGE.LEDGER_SHEET) + '</b> sheet.'
+    ]);
+
+    h3('&#x1F527;', 'Tools');
+    tools(['openCombinedRegistrationMerge', 'promptSendGroupReceipt', 'promptSendGroupRegReceived', 'reapplyAllMergeGroups', 'rearrangeMergedRows',
+      'addMergeGroupIndicators', 'removeMergeGroupIndicators', 'promptUnmergeGroup']);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: CODES
+  // ════════════════════════════════════════════════════════════════════════
+  function tabCodes() {
+    var MC = CFG.MEMBER_COUPON;
+    var rr = PRICING.REFERRAL_REWARD;
+    var c = live.coupons;
+
+    h2('Coupons, member codes and referrals');
+    p('Three different things take money off a fee. A participant may use one coupon or member code, and one referral code.');
+    table(['', 'Who creates it', 'The participant gets', 'Someone else gets'], [
+      ['<b>Promo code</b>', 'You, in ' + sheet('COUPONS'), 'The value you set for the code', '&mdash;'],
+      ['<b>Member code</b>', 'You, one per member (<code>' + esc(MC.PREFIX) + '-NAME</code>)', peso(MC.DEFAULT_DISCOUNT) + ' by default', 'The member earns per use (see <a data-goto="prices">Prices &amp; rules</a>)'],
+      ['<b>Referral code</b>', 'Nobody: it is each participant\'s own Gen ID', peso(PRICING.REFERRAL_DISCOUNT_PER_USE), 'The owner earns ' + peso(rr.INITIAL) + ', then ' + peso(rr.SUBSEQUENT) + ' each, once the new participant has paid']
+    ]);
+
+    h3('&#x1F39F;&#xFE0F;', sheet('COUPONS') + (c.exists ? ': ' + c.total + ' codes, ' + c.active + ' active, ' + c.member + ' member codes' : ': sheet not created yet'));
+    var couponCols = {
+      CODE: 'What the participant types.',
+      VALUE: 'Pesos taken off.',
+      START: 'First day it works. Required.',
+      END: 'Last day it works, that day included. Required.',
+      MAX_USE: 'How many times it may be used in total. Empty or 0 means no limit.',
+      CURRENT_USE: 'How many times it has been used. Counted by the system.',
+      STATUS: 'ACTIVE (or empty) to allow it; anything else switches it off.',
+      TYPE: 'PROMO or MEMBER.',
+      OWNER: 'For a member code, the member\'s name.'
+    };
+    var CC = CFG.COLS.COUPON;
+    table(['Column', 'Field', 'Meaning'], Object.keys(CC).sort(function (a, b) { return CC[a] - CC[b]; }).map(function (k) {
+      return [columnToLetter_(CC[k]), '<b>' + esc(k) + '</b>', couponCols[k] || ''];
+    }));
+    ul([
+      'A code works when it is ACTIVE, both dates are filled in with today between them, and it has uses left. Otherwise it is ignored and the normal price applies.',
+      'A code with an empty Start or End date is always rejected. To check all codes at once, open ' + sheet('COUPONS') + ' and run ' + go('runSystemUpdater') + ' with <b>Validate Codes</b> ticked.',
+      'Removing a registration does not give a use back; lower <b>CURRENT_USE</b> by hand if you need to.'
+    ]);
+
+    h3('&#x1F527;', 'Tools');
+    tools(['openCouponGenerator', 'openMemberCodeGenerator', 'viewMemberCodeStats', 'exportMemberCompensationReport', 'migrateCouponSheet', 'exportCashbackReport',
+      'previewReferralCredit', 'previewReferralRemoval']);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: MENU
+  // ════════════════════════════════════════════════════════════════════════
+  function menuRows(items, prefix, rows) {
+    items.forEach(function (entry) {
+      if (entry === "-" || !entry) return;
+      if (entry.menu) { menuRows(entry.items || [], (prefix ? prefix + ' → ' : '') + entry.menu, rows); return; }
+      rows.push('<tr class="menu-row"><td class="menu-item">' +
+        (prefix ? '<span class="muted">' + esc(prefix) + ' →</span><br>' : '') +
+        '<b>' + esc(entry[0]) + '</b></td><td>' + esc(entry[2] || '') + '</td></tr>');
+    });
+    return rows;
+  }
+  function menuGroup(title, items) {
+    var rows = menuRows(items, '', []);
+    if (!rows.length) return;
+    add('<div class="menu-group"><h3>' + esc(title) + '</h3><table><tr><th>Menu item</th><th>What it does</th></tr>' + rows.join('') + '</table></div>');
+  }
+  function tabMenu() {
+    h2('Every menu item, as it is now');
+    p('This list is built from the same definition that builds the <kbd>' + esc(ADMIN_MENU_TITLE) + '</kbd> menu, so it always matches the menu bar: ' +
+      menuFlat.length + ' tools.');
+    add('<input class="filter" id="menuFilter" type="text" placeholder="Type to find a tool, for example: receipt, merge, delete, resend">');
+    menuGroup('Top of the menu', menuDef.filter(function (e) { return e !== "-" && e && !e.menu; }));
+    menuDef.forEach(function (e) { if (e && e.menu) menuGroup(e.menu, e.items || []); });
+    add('<p id="menuNone" class="muted" style="display:none">No tool matches that.</p>');
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: SHEETS & COLUMNS
+  // ════════════════════════════════════════════════════════════════════════
+  function tabSheets() {
+    h2('Sheets and columns');
+    h3('&#x1F4D1;', 'The sheets');
+    var sheetNotes = {
+      REGISTRATION: 'Registration form answers, one row per participant, plus the system\'s own columns (Gen ID, fees, status).',
+      FINANCE: 'One row per participant for checking payments. Its Status column drives receipts.',
+      COUPONS: 'Promo and member codes with their value, validity and uses.',
+      SUBMISSIONS: 'Submission form answers, plus participant numbers and processing status.',
+      PARTICIPANT_DB: 'A live, read-only view of the Registration columns you choose.',
+      LOGS: 'A running record of what the system did and any errors. Created by itself.',
+      CASHBACK_REPORT: 'Written each time you export the cashback report.'
+    };
+    var extraNotes = {};
+    extraNotes[V22_CONFIG.MERGE.LEDGER_SHEET] = 'History of payment groups made and dissolved. Created on the first merge.';
+    extraNotes[V22_CONFIG.AUDIT.SHEET] = 'Who changed what with the Manual Editor and the merge tools.';
+    extraNotes["Finance QA Report"] = 'Written by the Finance validation.';
+    extraNotes["Member Compensation Report"] = 'Written each time you export member compensation.';
+    function state(s) { return s && s.exists ? '&#x2705; ' + s.rows + (s.rows === 1 ? ' row' : ' rows') : '&mdash; not created'; }
+    var rows = Object.keys(CFG.SHEETS).map(function (k) {
+      return ['<b>' + esc(CFG.SHEETS[k]) + '</b>', sheetNotes[k] || '', state(live.sheets[k])];
+    });
+    live.extraSheets.forEach(function (s) { rows.push(['<b>' + esc(s.name) + '</b>', extraNotes[s.name] || '', state(s)]); });
+    table(['Sheet', 'What it holds', 'Now'], rows);
+    p('The names in the first ' + Object.keys(CFG.SHEETS).length + ' rows come from the settings. A sheet must have exactly that name for the system to find it.');
+
+    h3('&#x1F4CD;', 'Where the system expects each column of ' + esc(CFG.SHEETS.REGISTRATION));
+    p('The left side is what the settings say; the right side is the header your sheet has in that position now. They should describe the same thing. ' +
+      'If they do not, a column has been moved: ' + go('showColumnMapping') + ' and ' + go('autoDetectColumnMapping') + ' help to put it right.');
+    var byCol = {};
+    function note(col, label) { if (col) (byCol[col] = byCol[col] || []).push(label); }
+    Object.keys(CFG.COLS.REG).forEach(function (k) { if (!/^CATEGORIES_/.test(k)) note(CFG.COLS.REG[k], k); });
+    Object.keys(CFG.SYS_REG_COLS || {}).forEach(function (k) { note(CFG.SYS_REG_COLS[k], k); });
+    Object.keys(CFG.SYS_REG_COLS_END || {}).forEach(function (k) { note(CFG.SYS_REG_COLS_END[k], k); });
+    var haveReg = live.regHeaders.length > 0;
+    table(['Column', 'Setting', 'Header in your sheet now'], Object.keys(byCol).map(Number).sort(function (a, b) { return a - b; }).map(function (col) {
+      var header = haveReg ? String(live.regHeaders[col - 1] === undefined ? '' : live.regHeaders[col - 1]).trim() : '';
+      if (header.length > 70) header = header.substring(0, 70) + '…';
+      return ['<b>' + columnToLetter_(col) + '</b> <span class="muted">(' + col + ')</span>', '<code>' + esc(byCol[col].join(' / ')) + '</code>',
+        !haveReg ? '<span class="muted">sheet not created</span>' : (header ? esc(header) : '<span class="muted">(no column here yet)</span>')];
+    }));
+    p('Columns whose setting begins with <code>SYS_</code> are found by their header text, so they still work if they sit elsewhere. ' +
+      'The system may add more <code>SYS_</code> columns at the far right, for example when the first payment group is made.');
+
+    h3('&#x1F527;', 'Tools');
+    tools(['checkAndFixColumns', 'autoDetectColumnMapping', 'testColumnAccess', 'showColumnMapping', 'showSystemBuilder']);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TAB: HELP
+  // ════════════════════════════════════════════════════════════════════════
+  function tabHelp() {
+    h2('When something is not right');
+
+    faq('Nothing happens when someone registers, or when I type ' + esc(PAID_WORD),
+      'The triggers are not installed, or they belong to someone who no longer has access. Run ' + go('createTriggers') +
+      ' while signed in as the account that should send the emails. The <a data-goto="start">Start here</a> tab shows whether they are installed.');
+    faq('I marked someone ' + esc(PAID_WORD) + ' but no receipt went out',
+      'Look at <b>Email Sent</b> on that row of ' + sheet('FINANCE') + '; the table on the <a data-goto="daily">Daily work</a> tab explains each value. ' +
+      'Also make sure you changed the Status in ' + sheet('FINANCE') + ', not the Payment Status in ' + sheet('REGISTRATION') + '.');
+    faq('An amount is wrong',
+      'Select the row in ' + sheet('REGISTRATION') + ' and run ' + go('forceReprocess') + ' to work it out again from their answers, or set it by hand in ' + go('openManualResponseEditor') + '.');
+    faq('New registrations are not appearing in ' + esc(CFG.SHEETS.REGISTRATION),
+      'The form is writing somewhere else. ' + go('diagnoseFormConnection') + ' shows where; ' + go('repairFormLink') + ' moves stray rows back.');
+    faq('Someone cannot fill in the form again',
+      'A form limited to one response remembers who answered, even after their row is deleted. ' + go('deleteSelectedRow') +
+      ' removes the stored response together with the row; ' + go('clearAllFormResponses') + ' clears them for everyone. ' +
+      go('showFormResponseClearingGuide') + ' explains how to do it by hand.');
+    faq(esc(CFG.SHEETS.FINANCE) + ' does not match ' + esc(CFG.SHEETS.REGISTRATION),
+      'Run ' + go('syncDashboard') + '. It keeps the Status, Verifier, Pay Ref and Email Sent you entered. If you use payment groups, follow it with ' + go('reapplyAllMergeGroups') + '.');
+    faq('A participant\'s entry shows ERROR',
+      'Most often their payment is not verified yet. Mark them ' + PAID + ', then select the entry and run ' + go('reprocessSelectedSubmission') + '. The <a data-goto="submit">Submissions</a> tab lists the other causes.');
+    faq('Emails stopped going out',
+      'Either the hourly cap of ' + hourlyCap + ' or Google\'s daily limit was reached; both are on the <a data-goto="start">Start here</a> tab. Wait, then send what was missed with ' + go('resendAllPendingOREmails') + '.');
+    faq('A column was moved, renamed or deleted',
+      'Put it back if you can (Edit &rarr; Undo). Otherwise compare the <a data-goto="sheets">Sheets &amp; columns</a> tab with your sheet, and use ' + go('checkAndFixColumns') + ' to add any system column that is missing.');
+    faq('I want to try something without risk',
+      'Use File &rarr; Make a copy and test there. In the copy, run ' + go('createTriggers') + ' and link test forms first. The previews under ' + go('previewReceipt') + ' never send anything.');
+    faq('Where can I see what the system did?',
+      sheet('LOGS') + ' records every step and every error with the time. Changes made with the Manual Editor and the merge tools are also in <b>' + esc(V22_CONFIG.AUDIT.SHEET) + '</b>. ' +
+      go('openSystemDashboard') + ' runs the checks for you.');
+    faq('How do I change a price, a deadline or the wording of an email?',
+      'In <code>SYSTEM_CONFIG</code> at the top of the script (Extensions &rarr; Apps Script). Save, then reload the spreadsheet. This guide, the previews and the emails all read from there.');
+
+    h3('&#x26A0;&#xFE0F;', 'Things the system does not do for you');
+    ul([
+      'Emails held back by the hourly cap are not retried by themselves.',
+      'Deleting a registration does not give back the coupon use or the referral credit it caused.',
+      'Member compensation counts every registration that used the code, paid or not.',
+      'The big clean-up tools cannot be undone: ' + go('clearAllRegistrationData') + ', ' + go('clearAllFinanceData') + ', ' + go('fullSystemReset') + '. Each asks you to type a phrase first.'
+    ]);
+  }
+
+  // ── PAGE ────────────────────────────────────────────────────────────────
+  var tabs = [
+    ['start', '&#x1F3E0; Start here', tabStart],
+    ['daily', '&#x1F4C5; Daily work', tabDaily],
+    ['prices', '&#x1F3F7;&#xFE0F; Prices &amp; rules', tabPrices],
+    ['register', '&#x1F4DD; Registration', tabRegistration],
+    ['pay', '&#x1F4B0; Payments', tabPayments],
+    ['email', '&#x1F4E7; Emails', tabEmails],
+    ['submit', '&#x1F4E4; Submissions', tabSubmissions],
+    ['groups', '&#x1F517; Groups', tabGroups],
+    ['codes', '&#x1F3AB; Codes', tabCodes],
+    ['menu', '&#x1F9ED; Menu', tabMenu],
+    ['sheets', '&#x1F4D1; Sheets &amp; columns', tabSheets],
+    ['help', '&#x2753; Help', tabHelp]
+  ];
+
+  var page = [];
+  page.push('<!DOCTYPE html><html><head><meta charset="UTF-8">');
+  page.push('<style>');
+  page.push([
     '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }',
-    '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");',
-    'body { font-family: "Inter", system-ui, sans-serif; background: #0d1117; color: #e6edf3; overflow-x: hidden; }',
-
-    // Scrollbar
-    '::-webkit-scrollbar { width: 6px; }',
+    'body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; background: #0d1117; color: #e6edf3; overflow-x: hidden; }',
+    '::-webkit-scrollbar { width: 6px; height: 6px; }',
     '::-webkit-scrollbar-track { background: #161b22; }',
     '::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }',
     '::-webkit-scrollbar-thumb:hover { background: #484f58; }',
 
-    // Hero
-    '.hero { background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a1e2e 100%); padding: 32px 32px 24px; border-bottom: 1px solid #21262d; position: relative; overflow: hidden; }',
-    '.hero::before { content: ""; position: absolute; top: -50%; right: -30%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(136,58,234,0.08) 0%, transparent 70%); pointer-events: none; }',
-    '.hero::after { content: ""; position: absolute; bottom: -40%; left: -20%; width: 350px; height: 350px; background: radial-gradient(circle, rgba(88,166,255,0.06) 0%, transparent 70%); pointer-events: none; }',
-    '.hero h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #58a6ff, #bc8cff, #f778ba); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }',
+    '.wrapper { display: flex; flex-direction: column; height: 100vh; }',
+    '.hero { background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a1e2e 100%); padding: 22px 28px 18px; border-bottom: 1px solid #21262d; flex-shrink: 0; }',
+    '.hero h1 { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #58a6ff, #bc8cff, #f778ba); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }',
     '.hero .subtitle { color: #8b949e; font-size: 13px; margin-top: 4px; }',
-    '.hero .badge { display: inline-block; background: rgba(56,139,253,0.15); color: #58a6ff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(56,139,253,0.3); margin-top: 8px; }',
+    '.hero .badge { display: inline-block; background: rgba(56,139,253,0.15); color: #58a6ff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(56,139,253,0.3); margin: 8px 6px 0 0; }',
+    '.hero .badge.live { background: rgba(46,160,67,0.15); color: #3fb950; border-color: rgba(46,160,67,0.35); }',
 
-    // Tabs
-    '.tab-bar { display: flex; gap: 0; background: #161b22; border-bottom: 1px solid #21262d; overflow-x: auto; flex-shrink: 0; }',
-    '.tab-btn { padding: 12px 18px; border: none; background: transparent; color: #8b949e; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.2s ease; font-family: inherit; }',
+    '.tab-bar { display: flex; flex-wrap: wrap; background: #161b22; border-bottom: 1px solid #21262d; flex-shrink: 0; }',
+    '.tab-btn { padding: 9px 13px; border: none; background: transparent; color: #8b949e; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; font-family: inherit; }',
     '.tab-btn:hover { color: #c9d1d9; background: rgba(177,186,196,0.06); }',
     '.tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; background: rgba(56,139,253,0.08); }',
-
-    // Content
-    '.tab-content { display: none; padding: 24px 28px 32px; animation: fadeIn 0.3s ease; overflow-y: auto; flex: 1; }',
+    '.tab-content { display: none; padding: 22px 28px 32px; overflow-y: auto; flex: 1; }',
     '.tab-content.active { display: block; }',
-    '@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }',
 
-    // Sections
-    'h2 { font-size: 18px; font-weight: 700; color: #e6edf3; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }',
-    'h3 { font-size: 14px; font-weight: 600; color: #c9d1d9; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }',
+    'h2 { font-size: 18px; font-weight: 700; color: #e6edf3; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }',
+    'h3 { font-size: 14px; font-weight: 600; color: #c9d1d9; margin: 22px 0 10px; display: flex; align-items: center; gap: 8px; }',
     'h3 .icon { font-size: 16px; }',
     'p, li { font-size: 13px; line-height: 1.7; color: #8b949e; }',
+    'p { margin-bottom: 10px; }',
     'ul { padding-left: 20px; margin-bottom: 12px; }',
     'li { margin-bottom: 4px; }',
-    'li strong { color: #c9d1d9; }',
+    'b { color: #c9d1d9; font-weight: 600; }',
+    '.muted { color: #6e7681; }',
+    'a[data-goto] { color: #58a6ff; cursor: pointer; text-decoration: underline; }',
 
-    // Feature cards
-    '.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin: 16px 0; }',
-    '.card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 16px; transition: all 0.25s ease; }',
-    '.card:hover { border-color: #30363d; transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }',
-    '.card .card-icon { font-size: 24px; margin-bottom: 8px; }',
-    '.card .card-title { font-size: 14px; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }',
-    '.card .card-desc { font-size: 12px; color: #8b949e; line-height: 1.6; }',
+    '.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; margin: 14px 0 4px; }',
+    '.stat { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 12px 14px; }',
+    '.stat .num { font-size: 22px; font-weight: 700; color: #e6edf3; }',
+    '.stat .lbl { font-size: 11px; color: #8b949e; margin-top: 2px; }',
 
-    // Callout
-    '.callout { background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.25); border-radius: 8px; padding: 14px 16px; margin: 14px 0; font-size: 12px; color: #79c0ff; }',
+    '.check { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border: 1px solid #21262d; border-radius: 8px; margin-bottom: 6px; background: #161b22; }',
+    '.check.bad { border-color: rgba(248,81,73,0.45); }',
+    '.check.warn { border-color: rgba(210,153,34,0.45); }',
+    '.check .dot { flex-shrink: 0; width: 20px; text-align: center; font-size: 13px; }',
+    '.check .what { font-size: 13px; font-weight: 600; color: #e6edf3; width: 150px; flex-shrink: 0; }',
+    '.check .detail { font-size: 12px; color: #8b949e; line-height: 1.6; flex: 1; }',
+
+    '.callout { background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.25); border-radius: 8px; padding: 12px 16px; margin: 14px 0; font-size: 12px; line-height: 1.6; color: #79c0ff; }',
     '.callout.warn { background: rgba(210,153,34,0.1); border-color: rgba(210,153,34,0.25); color: #e3b341; }',
-    '.callout.danger { background: rgba(248,81,73,0.1); border-color: rgba(248,81,73,0.25); color: #ff7b72; }',
     '.callout .callout-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }',
+    '.callout ul { margin: 4px 0 0; }',
+    '.callout li { color: inherit; font-size: 12px; }',
+    '.callout b { color: inherit; }',
 
-    // Table
-    'table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }',
-    'th { text-align: left; padding: 10px 12px; background: #161b22; color: #c9d1d9; font-weight: 600; border-bottom: 1px solid #30363d; }',
-    'td { padding: 8px 12px; border-bottom: 1px solid #21262d; color: #8b949e; }',
+    'table { width: 100%; border-collapse: collapse; margin: 10px 0 12px; font-size: 12px; }',
+    'th { text-align: left; padding: 9px 12px; background: #161b22; color: #c9d1d9; font-weight: 600; border-bottom: 1px solid #30363d; }',
+    'td { padding: 8px 12px; border-bottom: 1px solid #21262d; color: #8b949e; line-height: 1.6; vertical-align: top; }',
     'tr:hover td { background: rgba(177,186,196,0.04); }',
+    'td.menu-item { width: 40%; }',
     'code { background: rgba(110,118,129,0.2); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #79c0ff; font-family: "SF Mono", Consolas, monospace; }',
+    'kbd { background: #21262d; border: 1px solid #30363d; border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #c9d1d9; font-family: inherit; line-height: 1.9; -webkit-box-decoration-break: clone; box-decoration-break: clone; }',
 
-    // Kbd
-    'kbd { background: #21262d; border: 1px solid #30363d; border-radius: 4px; padding: 2px 6px; font-size: 11px; color: #c9d1d9; font-family: inherit; display: inline-block; }',
-
-    // Steps
-    '.step { display: flex; gap: 14px; margin-bottom: 16px; align-items: flex-start; }',
-    '.step-num { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #238636, #2ea043); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }',
+    '.step { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }',
+    '.step-num { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #238636, #2ea043); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }',
     '.step-content { flex: 1; }',
-    '.step-content .step-title { font-size: 13px; font-weight: 600; color: #e6edf3; margin-bottom: 2px; }',
-    '.step-content .step-desc { font-size: 12px; color: #8b949e; line-height: 1.6; }',
+    '.step-title { font-size: 13px; font-weight: 600; color: #e6edf3; margin-bottom: 2px; }',
+    '.step-desc { font-size: 12px; color: #8b949e; line-height: 1.6; }',
 
-    // Layout
-    '.wrapper { display: flex; flex-direction: column; height: 100vh; }',
+    '.filter { width: 100%; padding: 9px 12px; margin: 2px 0 6px; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; font-family: inherit; font-size: 13px; }',
+    '.filter:focus { outline: none; border-color: #58a6ff; }',
+    '.faq { border: 1px solid #21262d; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; background: #161b22; }',
+    '.faq .q { font-size: 13px; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }',
+    '.faq .a { font-size: 12px; color: #8b949e; line-height: 1.7; }'
   ].join('\n'));
-  html.push('</style></head><body>');
-  html.push('<div class="wrapper">');
+  page.push('</style></head><body>');
+  page.push('<div class="wrapper">');
 
   // ── HERO ────────────────────────────────────────────────────────────────
-  html.push('<div class="hero">');
-  html.push('  <h1>' + systemName + ' Admin Center</h1>');
-  html.push('  <div class="subtitle">' + org + ' — Administrative Management System</div>');
-  html.push('  <span class="badge">v' + version + ' • Script ID: ' + ScriptApp.getScriptId().substring(0, 12) + '…</span>');
-  html.push('</div>');
+  page.push('<div class="hero">');
+  page.push('  <h1>' + esc(systemName) + ' Admin Center</h1>');
+  page.push('  <div class="subtitle">' + esc(meta.ORG || '') + ' &mdash; how the system works and how to run it</div>');
+  page.push('  <span class="badge">v' + esc(meta.VERSION || '1.0') + (live.scriptId ? ' &bull; Script ' + esc(live.scriptId.substring(0, 12)) + '&hellip;' : '') + '</span>');
+  page.push('  <span class="badge live">&#x25CF; Live: built from the current settings, menu and sheets</span>');
+  page.push('</div>');
 
   // ── TAB BAR ─────────────────────────────────────────────────────────────
-  html.push('<div class="tab-bar">');
-  var tabs = [
-    ['overview', '🏠 Overview'],
-    ['workflow', '🔄 Workflow'],
-    ['registration', '📝 Registration'],
-    ['finance', '💰 Finance'],
-    ['email', '📧 Emails'],
-    ['submissions', '📤 Submissions'],
-    ['merge', '🔗 Merge'],
-    ['coupons', '🎫 Coupons'],
-    ['tools', '🔧 Tools'],
-    ['faq', '❓ FAQ']
-  ];
+  page.push('<div class="tab-bar">');
+  var openOn = tabs[0][0];
+  for (var s0 = 0; s0 < tabs.length; s0++) {
+    if (typeof startTab === "string" && tabs[s0][0] === startTab) openOn = startTab;
+  }
   for (var t = 0; t < tabs.length; t++) {
-    html.push('<button class="tab-btn' + (t === 0 ? ' active' : '') + '" data-tab="' + tabs[t][0] + '">' + tabs[t][1] + '</button>');
+    page.push('<button class="tab-btn' + (tabs[t][0] === openOn ? ' active' : '') + '" data-tab="' + tabs[t][0] + '">' + tabs[t][1] + '</button>');
   }
-  html.push('</div>');
+  page.push('</div>');
 
-  // ── TAB: OVERVIEW ───────────────────────────────────────────────────────
-  html.push('<div id="tab-overview" class="tab-content active">');
-  html.push('<h2>System Overview</h2>');
-  html.push('<p>The <strong>' + systemName + '</strong> Admin Center is a comprehensive Google Sheets–based management system for the literary and arts event organized by the ' + org + '. It automates the full participant lifecycle from registration to submission depersonalization.</p>');
-
-  html.push('<div class="card-grid">');
-  var overviewCards = [
-    ['📝', 'Registration Pipeline', 'Automatic form processing, payment calculation, referral/coupon discounts, and unique ID generation.'],
-    ['💰', 'Finance Dashboard', 'Real-time financial tracking with payment verification, mismatch detection, and cashback reports.'],
-    ['📧', 'Email System', 'Threaded confirmation emails, acknowledgement receipts, referral notifications, and bulk announcements.'],
-    ['📤', 'Submission System', 'Form response processing with automatic depersonalization, participant numbering, and anonymous file copies.'],
-    ['🔗', 'Merge / Grouping', 'Multi-participant group registration with combined pricing, shared receipts, and visual indicators.'],
-    ['🎫', 'Coupon & Referral', 'Promo codes, member ambassador codes, referral tracking, and reward compensation.'],
-    ['📊', 'Analytics', 'Premium dashboards with registration trends, regional heatmaps, school clustering, and competition breakdowns.'],
-    ['🔒', 'Depersonalization', 'Automatic PII removal — participant numbers replace names in submissions. Anonymized file copies in Drive.'],
-    ['📋', 'Competition Sheets', 'Auto-generated per-competition sheets from submission data (Essay, Speech, Photo, Film).'],
-    ['🩺', 'System Health', 'Full diagnostic health check validating config, sheets, columns, services, and data integrity.']
-  ];
-  for (var c = 0; c < overviewCards.length; c++) {
-    html.push('<div class="card">');
-    html.push('  <div class="card-icon">' + overviewCards[c][0] + '</div>');
-    html.push('  <div class="card-title">' + overviewCards[c][1] + '</div>');
-    html.push('  <div class="card-desc">' + overviewCards[c][2] + '</div>');
-    html.push('</div>');
+  // ── TAB CONTENT (a tab that fails shows its error instead of breaking the guide) ──
+  for (var i = 0; i < tabs.length; i++) {
+    html = [];
+    try {
+      tabs[i][2]();
+    } catch (tabErr) {
+      html.push('<div class="callout warn"><div class="callout-title">This page could not be built</div>' +
+        esc(String(tabErr && tabErr.message ? tabErr.message : tabErr)) + '</div>');
+      try { AuditLogService.warn("GUIDE_TAB_FAIL", tabs[i][0] + ": " + tabErr); } catch (logErr) {}
+    }
+    page.push('<div id="tab-' + tabs[i][0] + '" class="tab-content' + (tabs[i][0] === openOn ? ' active' : '') + '">');
+    page.push(html.join('\n'));
+    page.push('</div>');
   }
-  html.push('</div>');
-
-  html.push('<h3><span class="icon">📂</span> Sheet Map</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Sheet</th><th>Config Key</th><th>Purpose</th></tr>');
-  var sheetMap = [
-    [sheets.REGISTRATION, 'REGISTRATION', 'Raw form responses + SYS columns for processing state'],
-    [sheets.SUBMISSIONS, 'SUBMISSIONS', 'Competition entry submissions + depersonalization data'],
-    [sheets.FINANCE, 'FINANCE', 'Financial tracking mirror — synced from Registration'],
-    [sheets.COUPONS, 'COUPONS', 'Promo & member ambassador codes with usage tracking'],
-    [sheets.LOGS, 'LOGS', 'Timestamped audit trail for all admin actions'],
-    [sheets.PARTICIPANT_DB || 'Participant Database', 'PARTICIPANT_DB', 'Query-ready read-only participant database']
-  ];
-  for (var s = 0; s < sheetMap.length; s++) {
-    html.push('<tr><td><strong>' + sheetMap[s][0] + '</strong></td><td><code>' + sheetMap[s][1] + '</code></td><td>' + sheetMap[s][2] + '</td></tr>');
-  }
-  html.push('</table>');
-  html.push('</div>'); // end overview
-
-  // ── TAB: WORKFLOW ───────────────────────────────────────────────────────
-  html.push('<div id="tab-workflow" class="tab-content">');
-  html.push('<h2>Participant Lifecycle</h2>');
-  html.push('<p>Here\'s the complete flow from registration to competition sheet generation:</p>');
-
-  var steps = [
-    ['Registration', 'Participant fills out the Google Form. The <code>onFormSubmit</code> trigger fires and processes the response automatically.'],
-    ['Payment Calculation', 'System calculates the total amount based on selected competitions. Applies any referral discounts or coupon codes. Writes result to SYS columns.'],
-    ['Registration Email', 'A "Registration Received" email is sent with the participant\'s Gen. ID, amount owed, and payment instructions.'],
-    ['Payment Verification', 'Admin marks the row as <kbd>PAID</kbd> in the Payment Status column (or uses the Payment Verification Center). The system verifies amount, checks for mismatches.'],
-    ['Acknowledgement Receipt', 'Once paid, an Acknowledgement Receipt (AR) email is automatically sent in a thread with the original registration email.'],
-    ['Submission', 'Participant submits their competition entry via the Submission Form. The system matches them by email to their registration.'],
-    ['Depersonalization', 'Participant numbers are assigned (e.g., SP-0001, ES-0002). Files are copied to anonymized folders with names replaced by participant numbers.'],
-    ['Submission Confirmation', 'An acknowledgement email is sent confirming receipt of their submission along with their participant number(s).'],
-    ['Competition Sheets', 'Run "Generate Competition Sheets" to create per-competition data sheets (Essay Writing, Speech, Mobile Phone Photography, Short-Film) with anonymized data.']
-  ];
-  for (var st = 0; st < steps.length; st++) {
-    html.push('<div class="step">');
-    html.push('  <div class="step-num">' + (st + 1) + '</div>');
-    html.push('  <div class="step-content">');
-    html.push('    <div class="step-title">' + steps[st][0] + '</div>');
-    html.push('    <div class="step-desc">' + steps[st][1] + '</div>');
-    html.push('  </div>');
-    html.push('</div>');
-  }
-
-  html.push('<div class="callout">');
-  html.push('  <div class="callout-title">💡 Tip: Automatic vs Manual</div>');
-  html.push('  Steps 1–3 and 5–8 happen automatically via triggers. Steps 4 and 9 require admin action.');
-  html.push('</div>');
-  html.push('</div>'); // end workflow
-
-  // ── TAB: REGISTRATION ──────────────────────────────────────────────────
-  html.push('<div id="tab-registration" class="tab-content">');
-  html.push('<h2>Registration System</h2>');
-
-  html.push('<h3><span class="icon">⚡</span> Automatic Processing (on form submit)</h3>');
-  html.push('<ul>');
-  html.push('<li><strong>Unique Gen. ID</strong> — Auto-generated for each participant (e.g., HNS-2026-00042)</li>');
-  html.push('<li><strong>Competition parsing</strong> — Detects selected competition types and calculates pricing</li>');
-  html.push('<li><strong>Coupon validation</strong> — Checks promo / member codes, applies discounts</li>');
-  html.push('<li><strong>Referral tracking</strong> — Links referrer Gen. IDs, applies referral discounts & credits</li>');
-  html.push('<li><strong>Finance sync</strong> — Creates corresponding row in Financial Dashboard</li>');
-  html.push('<li><strong>Email sent</strong> — Registration Received email with amount-to-pay summary</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">💳</span> Payment Flow</h3>');
-  html.push('<ul>');
-  html.push('<li>Type <kbd>PAID</kbd> in the Payment Status column → system sends Acknowledgement Receipt</li>');
-  html.push('<li>Type <kbd>NOT YET PAID</kbd> to revert (if enabled in config)</li>');
-  html.push('<li>Use the <strong>Payment Verification Center</strong> for bulk verification with mismatch detection</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">✏️</span> Manual Editor</h3>');
-  html.push('<p>Open from <strong>Admin Center → ✏️ Manual Editor System → Open Manual Editor</strong>. Search by email/name, edit fields with live preview, re-send emails after edits.</p>');
-
-  html.push('<div class="callout warn">');
-  html.push('  <div class="callout-title">⚠️ Important</div>');
-  html.push('  Never manually edit SYS_ columns (columns starting with SYS_). These are managed by the system.');
-  html.push('</div>');
-  html.push('</div>'); // end registration
-
-  // ── TAB: FINANCE ───────────────────────────────────────────────────────
-  html.push('<div id="tab-finance" class="tab-content">');
-  html.push('<h2>Finance Operations</h2>');
-
-  html.push('<h3><span class="icon">🛡️</span> Payment Verification Center</h3>');
-  html.push('<p>Accessible via <strong>Admin Center → 💰 Finance Operations → Payment Verification Center</strong>. Shows all registrations with calculated vs reported amounts. Highlights mismatches and lets you send verification emails in bulk.</p>');
-
-  html.push('<h3><span class="icon">📊</span> Dashboards</h3>');
-  html.push('<ul>');
-  html.push('<li><strong>Analytics Dashboard</strong> — Registration trends, competition breakdown, regional heatmap, school distribution</li>');
-  html.push('<li><strong>Finance Dashboard</strong> — Revenue summary, payment status, coupon usage, cashback totals</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">📊</span> Participant Database &amp; Reports</h3>');
-  html.push('<ul>');
-  html.push('<li><strong>Setup Participant Database Query</strong> — Creates a read-only query-view of all participants for easy searching and filtering. Access from <strong>Admin Center → 📊 Dashboards &amp; Reports → Setup Participant Database Query</strong>.</li>');
-  html.push('<li><strong>Export Cashback Report</strong> — Generates a detailed cashback/referral report showing amounts owed to referrers.</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">🔄</span> Sync Operations</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Action</th><th>What it does</th></tr>');
-  html.push('<tr><td><strong>Sync Dashboard (Light)</strong></td><td>Quick update — syncs in-memory data only</td></tr>');
-  html.push('<tr><td><strong>Rebuild Dashboard (Full + QA)</strong></td><td>Full rebuild of Financial Dashboard with data validation</td></tr>');
-  html.push('<tr><td><strong>Validate Dashboard (QA Only)</strong></td><td>Runs integrity checks without modifying data</td></tr>');
-  html.push('<tr><td><strong>Cleanup Orphaned Rows</strong></td><td>Removes Finance rows with no matching Registration</td></tr>');
-  html.push('</table>');
-  html.push('</div>'); // end finance
-
-  // ── TAB: EMAIL ─────────────────────────────────────────────────────────
-  html.push('<div id="tab-email" class="tab-content">');
-  html.push('<h2>Email Management</h2>');
-
-  html.push('<h3><span class="icon">📨</span> Email Types</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Email</th><th>When Sent</th><th>Content</th></tr>');
-  html.push('<tr><td><strong>Registration Received</strong></td><td>On form submit (auto)</td><td>Gen. ID, competitions, amount to pay, payment info</td></tr>');
-  html.push('<tr><td><strong>Acknowledgement Receipt</strong></td><td>On PAID trigger (auto)</td><td>Payment confirmation with itemized receipt table</td></tr>');
-  html.push('<tr><td><strong>Referral Credit</strong></td><td>After referral applied (auto)</td><td>Notification to referrer about their earned reward</td></tr>');
-  html.push('<tr><td><strong>Referral Removal</strong></td><td>After referral removed (auto)</td><td>Notification that a referral reward was adjusted</td></tr>');
-  html.push('<tr><td><strong>Submission Confirmation</strong></td><td>After submission processed (auto)</td><td>Participant number(s), competition entries received</td></tr>');
-  html.push('</table>');
-
-  html.push('<h3><span class="icon">📢</span> Announcement Center</h3>');
-  html.push('<p>Send custom emails to filtered groups of participants. Filter by source (Registration / Submissions), payment status, competition type, and more. Supports scheduling, draft preview, and bulk send with progress tracking.</p>');
-
-  html.push('<h3><span class="icon">📊</span> Monitoring Tools</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Tool</th><th>Purpose</th></tr>');
-  html.push('<tr><td><strong>Email Status Dashboard</strong></td><td>Full overview of all email statuses — shows sent, error, failed, and pending counts for every email type</td></tr>');
-  html.push('<tr><td><strong>Quick Verify AR Emails</strong></td><td>Fast check: are all PAID participants missing an Acknowledgement Receipt? Highlights gaps.</td></tr>');
-  html.push('<tr><td><strong>View Rate Limit Status</strong></td><td>Shows emails sent this hour vs quota, remaining capacity</td></tr>');
-  html.push('<tr><td><strong>Reset Rate Limiter</strong></td><td>Clears the rate limit counter (use if stuck after quota reset)</td></tr>');
-  html.push('</table>');
-
-  html.push('<h3><span class="icon">🔧</span> Troubleshooting</h3>');
-  html.push('<ul>');
-  html.push('<li><strong>Resend Email</strong> — Select a row → Admin Center → 📧 Email → Selected Row → Resend Email</li>');
-  html.push('<li><strong>Bulk Resend</strong> — Admin Center → 📧 Email → Bulk Operations → Resend All Failed/Error Emails</li>');
-  html.push('<li><strong>Check Status</strong> — Select a row → Check Email Status (shows thread info, send times)</li>');
-  html.push('</ul>');
-  html.push('</div>'); // end email
-
-  // ── TAB: SUBMISSIONS ───────────────────────────────────────────────────
-  html.push('<div id="tab-submissions" class="tab-content">');
-  html.push('<h2>Submissions & Depersonalization</h2>');
-
-  html.push('<h3><span class="icon">🔒</span> How Depersonalization Works</h3>');
-  html.push('<ul>');
-  html.push('<li>When a participant submits their entry, <code>handleSubmissionFormResponse2</code> fires automatically</li>');
-  html.push('<li>Each competition entry gets a unique participant number (e.g., <code>SP-0001</code>, <code>ES-0012</code>, <code>PH-0003</code>, <code>FM-0007</code>)</li>');
-  html.push('<li>Uploaded files are copied to anonymous Google Drive folders with participant numbers as filenames</li>');
-  html.push('<li>SYS columns track: participant number, depersonalization status, anonymous file IDs, matched registration</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">📋</span> Submission Dashboard</h3>');
-  html.push('<p>Open from <strong>Admin Center → 🔒 Submission & Depersonalization → Submission Dashboard</strong>. View all submissions, reprocess failed ones, flag/unflag entries, scan for PII leaks, and resend confirmations.</p>');
-
-  html.push('<h3><span class="icon">🛠️</span> Admin Actions</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Action</th><th>Use When</th></tr>');
-  html.push('<tr><td><strong>Reprocess All Pending</strong></td><td>Some submissions were missed or errored</td></tr>');
-  html.push('<tr><td><strong>Fix Duplicate Numbers</strong></td><td>Two participants got the same participant number</td></tr>');
-  html.push('<tr><td><strong>Audit & Sync Drive Files</strong></td><td>File names in Drive don\'t match participant numbers</td></tr>');
-  html.push('<tr><td><strong>Configure Anon Folders</strong></td><td>First-time setup — creates Drive folders for anonymized files</td></tr>');
-  html.push('<tr><td><strong>Flag / Unflag</strong></td><td>Mark problematic submissions for review</td></tr>');
-  html.push('<tr><td><strong>Scan for PII</strong></td><td>Check if uploaded files still contain participant names</td></tr>');
-  html.push('</table>');
-
-  html.push('<h3><span class="icon">📋</span> Competition Sheet Generator</h3>');
-  html.push('<p>Generates (or refreshes) four separate sheets — <strong>Essay Writing</strong>, <strong>Speech</strong>, <strong>Mobile Phone Photography</strong>, <strong>Short-Film</strong> — from the Submission Form data. Run from <strong>Admin Center → 📋 Competition Tools → Generate Competition Sheets</strong>.</p>');
-  html.push('</div>'); // end submissions
-
-  // ── TAB: MERGE ─────────────────────────────────────────────────────────
-  html.push('<div id="tab-merge" class="tab-content">');
-  html.push('<h2>Merge / Grouping System</h2>');
-  html.push('<p>The Merge system lets you group multiple individual registrations into a single "Master Transaction". This is useful when multiple participants registered separately but want to pay as one group (e.g., friends or school delegations).</p>');
-
-  html.push('<h3><span class="icon">🔗</span> How to Merge</h3>');
-  html.push('<div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Open Merge Interface</div><div class="step-desc">Admin Center → 🔗 Merge / Grouping System → Open Merge Interface</div></div></div>');
-  html.push('<div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Search & Select Participants</div><div class="step-desc">Search by email or name. Select the participants to merge. Choose who is the "Primary" (the one who pays).</div></div></div>');
-  html.push('<div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Preview & Execute</div><div class="step-desc">Preview the combined pricing. Confirm the merge. The system recalculates totals, updates Finance, and sends group receipts.</div></div></div>');
-
-  html.push('<h3><span class="icon">🎨</span> Visual Indicators</h3>');
-  html.push('<ul>');
-  html.push('<li><strong>Add Visual Group Indicators</strong> — Color-codes rows on both Registration & Finance sheets by merge group</li>');
-  html.push('<li><strong>Rearrange Merged Rows</strong> — Moves group members to appear directly below their primary</li>');
-  html.push('<li><strong>Reapply All Merges</strong> — Recalculates all groups (safe to run anytime)</li>');
-  html.push('</ul>');
-
-  html.push('<div class="callout">');
-  html.push('  <div class="callout-title">💡 Unmerging</div>');
-  html.push('  Use "Unmerge Group (by ID)" to dissolve a group. Each member gets their original individual pricing restored.');
-  html.push('</div>');
-  html.push('</div>'); // end merge
-
-  // ── TAB: COUPONS ───────────────────────────────────────────────────────
-  html.push('<div id="tab-coupons" class="tab-content">');
-  html.push('<h2>Coupon & Referral System</h2>');
-
-  html.push('<h3><span class="icon">🎟️</span> Promo Codes</h3>');
-  html.push('<p>Generate discount codes via <strong>Admin Center → 🎫 Coupon System → Promo Codes → Generate New Promo Codes</strong>. Codes are stored in the <code>' + sheets.COUPONS + '</code> sheet with usage limits, date ranges, and status tracking.</p>');
-
-  html.push('<h3><span class="icon">🎖️</span> Member Ambassador Codes</h3>');
-  html.push('<p>Member ambassadors get personalized codes (e.g., <code>SOK-JUAN</code>, <code>SOK-MARIA</code>). Each use gives the participant a discount and earns the ambassador compensation.</p>');
-  html.push('<ul>');
-  html.push('<li><strong>View Member Stats</strong> — Shows usage count and earned compensation per member</li>');
-  html.push('<li><strong>Export Compensation Report</strong> — Creates a detailed breakdown for payout processing</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">🔗</span> Referral System</h3>');
-  html.push('<p>Participants can share their Gen. ID as a referral code. When used:</p>');
-  html.push('<ul>');
-  html.push('<li>Referrer earns a cashback credit (configurable in <code>PRICING.REFERRAL_REWARD</code>)</li>');
-  html.push('<li>New participant gets a discount (configurable in <code>PRICING.REFERRAL_DISCOUNT_PER_USE</code>)</li>');
-  html.push('<li>Both parties receive email notifications automatically</li>');
-  html.push('</ul>');
-  html.push('</div>'); // end coupons
-
-  // ── TAB: TOOLS ─────────────────────────────────────────────────────────
-  html.push('<div id="tab-tools" class="tab-content">');
-  html.push('<h2>System Tools</h2>');
-
-  html.push('<h3><span class="icon">🎛️</span> System Dashboard (Interactive)</h3>');
-  html.push('<p>The <strong>System Dashboard</strong> is an interactive diagnostic center accessible from <strong>Admin Center → 🔧 System Tools → 🎛️ System Dashboard</strong>. It provides:</p>');
-  html.push('<ul>');
-  html.push('<li><strong>Live health cards</strong> — Sheet status, trigger status, form link, rate limit at a glance</li>');
-  html.push('<li><strong>Registration stats</strong> — Total, paid, and pending counts in real time</li>');
-  html.push('<li><strong>Test runners</strong> — Run targeted tests for Email, Pricing, Merge, Coupon, and Data Integrity</li>');
-  html.push('<li><strong>Auto-fix</strong> — One-click fixes for common issues (missing triggers, broken columns)</li>');
-  html.push('<li><strong>Export diagnostics</strong> — Download a full diagnostic report as text</li>');
-  html.push('</ul>');
-
-  html.push('<h3><span class="icon">🩺</span> Health Checks &amp; Tests</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Tool</th><th>Purpose</th></tr>');
-  html.push('<tr><td><strong>Full System Health Check</strong></td><td>Validates config, sheets, columns, services, and data integrity — 30+ checks</td></tr>');
-  html.push('<tr><td><strong>Run Health Check</strong></td><td>Quick diagnostic of critical system components</td></tr>');
-  html.push('<tr><td><strong>Run Quick Self-Test</strong></td><td>Tests core functions (Utils, AuditLog, etc.)</td></tr>');
-  html.push('<tr><td><strong>Test Depersonalization System</strong></td><td>Full lifecycle simulation of submission processing</td></tr>');
-  html.push('</table>');
-
-  html.push('<h3><span class="icon">⚙️</span> Column Configuration</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Tool</th><th>Purpose</th></tr>');
-  html.push('<tr><td><strong>Check & Fix Columns + Data</strong></td><td>Validates header names match config; auto-fixes mismatches</td></tr>');
-  html.push('<tr><td><strong>Auto-Detect Column Mapping</strong></td><td>Scans sheet headers and maps them to config dynamically</td></tr>');
-  html.push('<tr><td><strong>Show All Column Headers</strong></td><td>Displays current header → config mapping for debugging</td></tr>');
-  html.push('</table>');
-
-  html.push('<h3><span class="icon">🗑️</span> Data Management</h3>');
-  html.push('<table>');
-  html.push('<tr><th>Tool</th><th>Purpose</th></tr>');
-  html.push('<tr><td><strong>Diagnose Form Connection</strong></td><td>Check if Google Form is properly linked to this sheet</td></tr>');
-  html.push('<tr><td><strong>Delete Selected Row(s)</strong></td><td>Safely remove rows with Finance sync</td></tr>');
-  html.push('<tr><td><strong>Repair / Re-link Form</strong></td><td>Fix broken form-to-sheet connections</td></tr>');
-  html.push('<tr><td><strong>FULL SYSTEM RESET</strong></td><td>⚠️ Nuclear option — clears all data. Use with extreme caution.</td></tr>');
-  html.push('</table>');
-
-  html.push('<div class="callout danger">');
-  html.push('  <div class="callout-title">🚨 FULL SYSTEM RESET</div>');
-  html.push('  This will permanently delete ALL registration, finance, and submission data. Only use during development or to start completely fresh. There is no undo.');
-  html.push('</div>');
-  html.push('</div>'); // end tools
-
-  // ── TAB: FAQ ───────────────────────────────────────────────────────────
-  html.push('<div id="tab-faq" class="tab-content">');
-  html.push('<h2>Frequently Asked Questions</h2>');
-
-  var faqs = [
-    ['A participant says they didn\'t receive their email', 'Select their row → Admin Center → 📧 Email → Selected Row → Check Email Status. If it was sent, they should check spam. If not, use Resend Email.'],
-    ['Payment amount is wrong after applying a coupon', 'Open the Manual Editor, search for the participant, and verify the coupon code. You can adjust the final amount manually in the Finance sheet or use the Payment Verification Center.'],
-    ['Submission says "Error" in SYS_SUB_STATUS', 'Go to Admin Center → 🔒 Submission & Depersonalization → Reprocess Selected Row. Check if the participant\'s email matches their registration.'],
-    ['How do I add a new competition type?', 'Update <code>SYSTEM_CONFIG.PRICING.SINGLE</code> with the new competition and price. Also update the form, depersonalization prefixes, and competition sheet generator.'],
-    ['Merge groups aren\'t showing colors', 'Run Admin Center → 🔗 Merge / Grouping System → Add Visual Group Indicators. This needs to be re-applied after data changes.'],
-    ['Daily email quota exhausted', 'Google limits Apps Script to ~100 emails/day (varies by account type). Check remaining quota at Admin Center → 📧 Email → View Rate Limit Status. The Announcement Center has built-in retry scheduling for quota exhaustion.'],
-    ['Form responses aren\'t being processed', 'Run Admin Center → 🔧 System Tools → Create/Update Triggers to ensure the onFormSubmit trigger is installed. Also check Admin Center → 🗑️ Data Management → Diagnose Form Connection.'],
-    ['How do I update the email template text?', 'Edit <code>SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL</code> (for AR emails) or <code>SYSTEM_CONFIG.ADMIN.SUB_EMAIL_SPIEL</code> (for submission acknowledgements). Use the Preview Emails menu to verify before sending.']
-  ];
-
-  for (var f = 0; f < faqs.length; f++) {
-    html.push('<h3><span class="icon">❓</span> ' + faqs[f][0] + '</h3>');
-    html.push('<p>' + faqs[f][1] + '</p>');
-  }
-
-  html.push('<div class="callout">');
-  html.push('  <div class="callout-title">📬 Need Help?</div>');
-  html.push('  Contact the system developer or check the audit logs at <strong>' + sheets.LOGS + '</strong> for detailed error messages.');
-  html.push('</div>');
-  html.push('</div>'); // end faq
 
   // ── JAVASCRIPT ─────────────────────────────────────────────────────────
-  html.push('<script>');
-  html.push([
+  page.push('<script>');
+  page.push([
+    'function showTab(name) {',
+    '  document.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.toggle("active", b.dataset.tab === name); });',
+    '  document.querySelectorAll(".tab-content").forEach(function(c) { c.classList.toggle("active", c.id === "tab-" + name); });',
+    '  var panel = document.getElementById("tab-" + name);',
+    '  if (panel) panel.scrollTop = 0;',
+    '}',
     'document.querySelectorAll(".tab-btn").forEach(function(btn) {',
-    '  btn.addEventListener("click", function() {',
-    '    document.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active"); });',
-    '    document.querySelectorAll(".tab-content").forEach(function(c) { c.classList.remove("active"); });',
-    '    btn.classList.add("active");',
-    '    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");',
+    '  btn.addEventListener("click", function() { showTab(btn.dataset.tab); });',
+    '});',
+    'document.querySelectorAll("a[data-goto]").forEach(function(link) {',
+    '  link.addEventListener("click", function() { showTab(link.getAttribute("data-goto")); });',
+    '});',
+    'var menuFilter = document.getElementById("menuFilter");',
+    'if (menuFilter) menuFilter.addEventListener("input", function() {',
+    '  var q = menuFilter.value.toLowerCase().trim(), shown = 0;',
+    '  document.querySelectorAll(".menu-group").forEach(function(group) {',
+    '    var any = false;',
+    '    group.querySelectorAll(".menu-row").forEach(function(row) {',
+    '      var hit = !q || row.textContent.toLowerCase().indexOf(q) >= 0;',
+    '      row.style.display = hit ? "" : "none";',
+    '      if (hit) { any = true; shown++; }',
+    '    });',
+    '    group.style.display = any ? "" : "none";',
     '  });',
+    '  document.getElementById("menuNone").style.display = shown ? "none" : "block";',
     '});'
   ].join('\n'));
-  html.push('</script>');
+  page.push('</script>');
 
-  html.push('</div>'); // end wrapper
-  html.push('</body></html>');
+  page.push('</div>'); // end wrapper
+  page.push('</body></html>');
 
-  var output = HtmlService.createHtmlOutput(html.join('\n'))
-    .setWidth(920)
-    .setHeight(640)
+  var output = HtmlService.createHtmlOutput(withGuideLink_(page.join('\n'), ""))
+    .setWidth(980)
+    .setHeight(680)
     .setTitle(systemName + ' — System Guide');
   SpreadsheetApp.getUi().showModalDialog(output, systemName + ' — System Guide');
 }

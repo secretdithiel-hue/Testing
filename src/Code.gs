@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * PROJECT: HUSAY NG SOKSAY - REGISTRATION SYSTEM
- * VERSION: V1.0 (BASELINE RELEASE)
+ * VERSION: V1.1
  * DATE:    OCTOBER 2026
  * ============================================================================
  *
@@ -109,6 +109,35 @@
  *
  * CHANGELOG:
  *    V1.0 - Baseline release.
+ *    V1.1 - Bug fixes and a builder that reproduces the original spreadsheet.
+ *      - A registration or submission made while a long Financial Dashboard edit
+ *        was running was dropped after 30 s. Triggers now wait up to 5 / 4 minutes;
+ *        anything still not processed gets a visible "NOT PROCESSED" note.
+ *      - A form response on a tab that is neither form sheet (e.g. a newly linked
+ *        "Form Responses 1") was processed against the Registration row with the
+ *        same number. It is now logged and skipped.
+ *      - Edits did nothing at all when the installable onEdit trigger was missing;
+ *        a toast now says to create the triggers. Pastes/clears that include the
+ *        header row are processed.
+ *      - Typing a date into Registration SYS_PAID_AT set Finance to PAID without
+ *        sending the receipt or crediting the referrer; it now runs the PAID flow.
+ *      - Manual Response Editor reported "receipt sent" when the PAID flow had
+ *        skipped or failed the send; it now sends the requested receipt.
+ *      - Scheduled announcements: one draft per run (two large ones could pass the
+ *        6-minute limit and lose the unsent one); recipients not reached in time are
+ *        queued for retry; failures of the same announcement are merged, not
+ *        overwritten.
+ *      - Receipts showed a P0 coupon discount when the coupon had been switched to
+ *        INACTIVE after use (CouponService.getValueOnly now uses getCouponValue_).
+ *      - Repair Form Link could move Submission Form answers into Registration.
+ *      - BUILD BUILD BUILD now makes a new spreadsheet look like the original
+ *        (getOriginalLayout_): tabs and order, form question headers, colours,
+ *        fonts, widths, frozen rows, banding, dropdowns, judges' sheets, hidden
+ *        system tabs, time zone, locale; renames linked "Form Responses" tabs;
+ *        installs the triggers on a new copy; no longer adds the WELCOME50 coupon.
+ *      - SYS_APPLICANT_AMT is configured at column 60, after the 7 merge columns
+ *        (53-59), which is where the original adds it on first use. It is found by
+ *        header, so live sheets behave the same; a new build no longer puts it at 53.
  * ============================================================================
  */
 
@@ -119,7 +148,7 @@
 var SYSTEM_CONFIG = {
   META: {
     NAME: "Husay ng Soksay",
-    VERSION: "1.0",
+    VERSION: "1.1",
     ORG: "UPLB Sociology Society",
     TIMEZONE: "Asia/Manila",
     CURRENCY: "PHP"
@@ -273,7 +302,7 @@ var SYSTEM_CONFIG = {
     SYS_PROCESSED: 50,        // AX
     SYS_REFERRER_CREDITED: 51,// AY
     SYS_REF_NOTIF_SENT: 52,   // AZ
-    SYS_APPLICANT_AMT: 53     // BA - NEW: Manually verified amount
+    SYS_APPLICANT_AMT: 60     // BH - Manually verified amount (after the 7 SYS_MERGE_ columns, 53-59)
   },
 
   // NEW: Member Ambassador Coupon System Configuration
@@ -2476,10 +2505,11 @@ CouponService.prototype.claim = function (code) {
   return { valid: true, value: info.value, reason: "" };
 };
 
+// The value of a code already claimed, for receipts and recalculation. It must not depend on
+// the coupon still being ACTIVE (the lazy cache skips inactive codes, so a coupon switched off
+// after use showed a P0 discount on the receipt), so it uses the shared lookup.
 CouponService.prototype.getValueOnly = function (code) {
-  var c = Utils.upper(code);
-  var info = this.loadCache().get(c);
-  return info ? Number(info.value || 0) : 0;
+  return getCouponValue_(code, this.sheet);
 };
 
 CouponService.prototype.revert = function (code) {
@@ -4140,15 +4170,58 @@ var FinanceWriter = (function () {
 // PART 10: MAIN TRIGGERS (UPGRADED WITH FIXES)
 // ============================================================================
 
+// How long a trigger waits for another run to finish before giving up. A block edit of the
+// Financial Dashboard can hold the lock for minutes; a 30 s wait dropped work made meanwhile.
+// Both stay under the 6-minute run-time limit with room for the work itself.
+var LOCK_WAIT_FORM_MS_ = 5 * 60 * 1000;
+var LOCK_WAIT_EDIT_MS_ = 4 * 60 * 1000;
+var NOT_PROCESSED_NOTE_PREFIX_ = "⚠️ NOT PROCESSED: ";
+
+/** Put a visible note on cells the system could not process, so the drop is not silent. */
+function markNotProcessed_(range, message) {
+  try { range.setNote(NOT_PROCESSED_NOTE_PREFIX_ + message); } catch (e) {}
+}
+
+/** Remove the "not processed" notes from a range once it has been processed. */
+function clearNotProcessedNotes_(range) {
+  try {
+    var notes = range.getNotes();
+    var changed = false;
+    for (var r = 0; r < notes.length; r++) {
+      for (var c = 0; c < notes[r].length; c++) {
+        if (String(notes[r][c]).indexOf(NOT_PROCESSED_NOTE_PREFIX_) === 0) { notes[r][c] = ""; changed = true; }
+      }
+    }
+    if (changed) range.setNotes(notes);
+  } catch (e) {}
+}
+
 function onFormSubmit(e) {
+  if (!e || !e.range) return;
+
+  // Only the two form sheets are processed. A form linked to this spreadsheet writes to a new
+  // "Form Responses N" tab until that tab is renamed (BUILD BUILD BUILD does this). Treating
+  // such a row as a registration used to process the Registration row with the same number.
+  var sheetName = e.range.getSheet().getName();
+  if (sheetName !== SYSTEM_CONFIG.SHEETS.REGISTRATION && sheetName !== SYSTEM_CONFIG.SHEETS.SUBMISSIONS) {
+    AuditLogService.error("FORM_SHEET_UNKNOWN", "A form response arrived in \"" + sheetName + "\" (row " + e.range.getRow() +
+      "), which is not \"" + SYSTEM_CONFIG.SHEETS.REGISTRATION + "\" or \"" + SYSTEM_CONFIG.SHEETS.SUBMISSIONS +
+      "\". It was not processed. Run " + getMenuPathText_("showSystemBuilder") + " to rename the form's tab.");
+    return;
+  }
+
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(30000); }
+  try { lock.waitLock(LOCK_WAIT_FORM_MS_); }
   catch (err) {
-    AuditLogService.error("LOCK_TIMEOUT", "onFormSubmit lock timeout");
+    var howToRetry = (sheetName === SYSTEM_CONFIG.SHEETS.SUBMISSIONS)
+      ? "Select the row and run " + getMenuPathText_("reprocessSelectedSubmission") + ", then " + getMenuPathText_("resendSubmissionConfirmation") + "."
+      : "Select the row and run " + getMenuPathText_("forceReprocess") + ".";
+    AuditLogService.error("LOCK_TIMEOUT", "onFormSubmit lock timeout: " + sheetName + " row " + e.range.getRow() +
+      " was not processed. " + howToRetry);
+    markNotProcessed_(e.range.getSheet().getRange(e.range.getRow(), 1), "the system was busy. " + howToRetry);
     return;
   }
   try {
-    var sheetName = e.range.getSheet().getName();
     if (sheetName === SYSTEM_CONFIG.SHEETS.SUBMISSIONS) {
       handleSubmissionFormResponse2(e);
     } else {
@@ -5051,21 +5124,32 @@ function onEdit(e) {
   // user edit calls it twice: once as a simple trigger (limited permissions - it cannot send
   // email) and once as the installable trigger. Only the installable run may do the work;
   // otherwise the two runs race each other (ERROR receipts, double referral credit).
-  if (e.authMode && (e.authMode === ScriptApp.AuthMode.LIMITED || String(e.authMode) === "LIMITED")) return;
+  var isLimitedRun = e.authMode && (e.authMode === ScriptApp.AuthMode.LIMITED || String(e.authMode) === "LIMITED");
 
   // Cheap filter before taking the lock: only these two sheets are watched
   var editedSheetName = e.range.getSheet().getName();
   if (editedSheetName !== SYSTEM_CONFIG.SHEETS.FINANCE &&
       editedSheetName !== SYSTEM_CONFIG.SHEETS.REGISTRATION) return;
-  if (e.range.getRow() < 2) return;
+  // A block that starts on the header row (whole column selected) still covers data rows
+  if (e.range.getLastRow() < 2) return;
+
+  if (isLimitedRun) {
+    // Without the installable trigger nothing below runs at all, so say so on screen
+    warnIfEditTriggerMissing_();
+    return;
+  }
+
+  markEditTriggerSeen_();
 
   // Serialize edits. Previously an edit made while another one was still being processed
   // (e.g. marking two rows PAID a few seconds apart) was silently dropped.
+  var startedAt = Date.now();
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(30000); }
+  try { lock.waitLock(LOCK_WAIT_EDIT_MS_); }
   catch (lockErr) {
     AuditLogService.error("LOCK_TIMEOUT", "onEdit lock timeout: " + editedSheetName + "!" +
       e.range.getA1Notation() + " was not processed. Re-enter the value to retry.");
+    markNotProcessed_(e.range, "the system was busy. Re-enter this value to process it.");
     return;
   }
   try {
@@ -5075,12 +5159,38 @@ function onEdit(e) {
       Utilities.sleep(500);
       waitedMs += 500;
     }
+    e.startedAt = startedAt;   // the block-edit time budget counts the wait for the lock
+    clearNotProcessedNotes_(e.range);
     processEdit_(e);
   } catch (err) {
     AuditLogService.error("EDIT_CRITICAL", err && err.stack ? err.stack : String(err));
   } finally {
     lock.releaseLock();
   }
+}
+
+var EDIT_TRIGGER_SEEN_KEY_ = "HNS_EDIT_TRIGGER_SEEN";
+
+/** Called from the installable onEdit run: remembers that the trigger is installed. */
+function markEditTriggerSeen_() {
+  try {
+    var props = PropertiesService.getDocumentProperties();
+    if (props.getProperty(EDIT_TRIGGER_SEEN_KEY_) !== "1") props.setProperty(EDIT_TRIGGER_SEEN_KEY_, "1");
+  } catch (e) {}
+}
+
+/**
+ * Called from the simple-trigger run of onEdit. If the installable onEdit trigger has never
+ * run in this spreadsheet (a new copy where the triggers were not created yet), a PAID edit
+ * would do nothing at all, so show a toast that says how to fix it.
+ */
+function warnIfEditTriggerMissing_() {
+  try {
+    if (PropertiesService.getDocumentProperties().getProperty(EDIT_TRIGGER_SEEN_KEY_) === "1") return;
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      "Edits are not processed yet: the triggers are not installed. Run " + getMenuPathText_("createTriggers") + ".",
+      "⚠️ " + SYSTEM_CONFIG.META.NAME, 10);
+  } catch (e) {}
 }
 
 function processEdit_(e) {
@@ -5098,7 +5208,7 @@ function processEdit_(e) {
   if (sheet.getName() === SYSTEM_CONFIG.SHEETS.FINANCE) {
     // Several cells changed in one go (paste, fill-down, clearing a selection)
     if (range.getNumRows() > 1 || range.getNumColumns() > 1) {
-      processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols);
+      processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols, e.startedAt);
       return;
     }
     var editedCol = range.getColumn();
@@ -5145,8 +5255,9 @@ function processEdit_(e) {
  * (Status first). For Status, the previous value comes from the registration's
  * SYS_LAST_FIN_STATUS, which is what makes un-marking several PAID rows reverse correctly.
  */
-function processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols) {
-  var startedAt = Date.now();
+function processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols, triggerStartedAt) {
+  // Counted from the start of the trigger run, which may have waited for the lock first
+  var startedAt = triggerStartedAt || Date.now();
   var TIME_BUDGET_MS = 4.5 * 60 * 1000;   // stay inside the trigger's run-time limit
 
   var firstCol = range.getColumn();
@@ -5177,6 +5288,8 @@ function processFinanceBlockEdit_(range, finSheet, regSheet, sysRegCols, finCols
     if (Date.now() - startedAt > TIME_BUDGET_MS) {
       AuditLogService.warn("BLOCK_EDIT_PARTIAL", "Finance rows " + r + "-" + lastRow +
         " were not processed (time limit). Re-enter their values a few rows at a time.");
+      markNotProcessed_(finSheet.getRange(r, colByHeader[canonical], lastRow - r + 1, 1),
+        "time limit reached while processing a large paste. Re-enter this value.");
       break;
     }
     try {
@@ -5949,17 +6062,29 @@ function handleRegistrationPaidAtEditSync(e, finCols) {
   var finRow = repo.findFinanceRowIndexByEmail(email, finCols);
   if (!finRow) return;
 
+  var statusCell = null;
+  var oldStatusRaw = "";
   TriggerGuard.mute(function () {
     finSheet.getRange(finRow, finCols.SysPaidAt).setValue(newPaidAt || "");
     if (newPaidAt && Utils.parseMaybeDate(newPaidAt) && finCols.Status) {
-      var statusCell = finSheet.getRange(finRow, finCols.Status);
-      var currentStatus = Utils.normalizeStatusValue(statusCell.getValue());
-      if (currentStatus !== SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) {
-        statusCell.setValue(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD);
+      var cell = finSheet.getRange(finRow, finCols.Status);
+      var rawStatus = cell.getValue();
+      if (Utils.normalizeStatusValue(rawStatus) !== SYSTEM_CONFIG.ADMIN.TRIGGER_WORD) {
+        cell.setValue(SYSTEM_CONFIG.ADMIN.TRIGGER_WORD);
+        statusCell = cell;
+        oldStatusRaw = rawStatus;
         AuditLogService.info("REG_TO_FIN_STATUS", "Auto-set Finance status to PAID for " + email);
       }
     }
   });
+
+  // A status written by the script fires no onEdit, so run the PAID flow here, the same as
+  // typing PAID into the Financial Dashboard: receipt, referral credit, Registration status.
+  // Before, Finance said PAID while no receipt was sent and the referrer was never credited.
+  if (statusCell) {
+    handleFinanceEditSync({ range: statusCell, oldValue: oldStatusRaw },
+      ColumnManager.ensureSysColsOnRegistration(regSheet), finCols, "Status");
+  }
 
   AuditLogService.info("REG_TO_FIN_SYNC", "Synced Registration SYS_PAID_AT -> Finance for " + email);
 }
@@ -6003,6 +6128,7 @@ function createTriggers() {
   if (needed.indexOf("onEdit") >= 0) {
     ScriptApp.newTrigger("onEdit").forSpreadsheet(SpreadsheetApp.getActive()).onEdit().create();
   }
+  recordTriggersInstalled_();
 
   ui.alert("✅ Triggers created", "Installed: " + needed.join(", ") + ".", ui.ButtonSet.OK);
   return true;
@@ -6685,6 +6811,7 @@ function forceReprocess() {
     if (activeSheet.getName() === SYSTEM_CONFIG.SHEETS.REGISTRATION) {
       if (activeRow < 2) return ui.alert("Select a data row (row 2+).");
       handleSubmission({ range: regSheet.getRange(activeRow, 1) });
+      clearNotProcessedNotes_(regSheet.getRange(activeRow, 1));
       return ui.alert("✅ Reprocessed Registration row " + activeRow + ".");
     }
 
@@ -11514,9 +11641,19 @@ function repairFormLink() {
   var orphanedSheets = [];
   var sheets = ss.getSheets();
   
+  // Only tabs fed by the registration form qualify. A "Form Responses" tab of the Submission
+  // form (e.g. after linking a copied form) would otherwise be moved into Registration.
+  var regForSkip = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
+  var subForSkip = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.SUBMISSIONS);
+  var regFormUrl = regForSkip ? formIdFromUrl_(regForSkip.getFormUrl()) : "";
+  var subFormUrl = subForSkip ? formIdFromUrl_(subForSkip.getFormUrl()) : "";
+
   for (var i = 0; i < sheets.length; i++) {
     var name = sheets[i].getName();
     if (name.indexOf("Form Responses") !== -1 && name !== SYSTEM_CONFIG.SHEETS.REGISTRATION) {
+      var thisFormUrl = formIdFromUrl_(sheets[i].getFormUrl());
+      if (thisFormUrl && ((subFormUrl && thisFormUrl === subFormUrl) || (regFormUrl && thisFormUrl !== regFormUrl))) continue;
+      if (detectFormSheetKind_(sheets[i]) === "SUBMISSION") continue;
       var lastRow = sheets[i].getLastRow();
       if (lastRow > 1) {
         orphanedSheets.push({ sheet: sheets[i], name: name, rows: lastRow - 1 });
@@ -13573,22 +13710,25 @@ function getSystemBuilderHtml_() {
   }
   var body =
     '<div id="mainContent">' +
-    uiCard_("What will be created",
+    uiCard_("What will be created (the same tabs and look as the original)",
       '<ul class="ui-list">' +
-      item("&#x1F4DD;", S.REGISTRATION, "Form response columns plus the system columns") +
-      item("&#x1F4B0;", S.FINANCE, "The " + SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED.length + " payment tracking columns") +
+      item("&#x1F4DD;", S.REGISTRATION, "The form's columns plus the system and payment-group columns") +
       item("&#x1F4CA;", S.PARTICIPANT_DB, "A live view built with a QUERY formula") +
-      item("&#x1F39F;&#xFE0F;", S.COUPONS, "Discount codes, " + Object.keys(SYSTEM_CONFIG.COLS.COUPON).length + " columns") +
-      item("&#x1F3A8;", "Formatting and dropdowns", "Header colours, column widths, frozen rows, status dropdowns") +
-      item("&#x1F9EA;", "A sample coupon", "One example code so you can test a registration") +
+      item("&#x1F4B0;", S.FINANCE, "The payment tracking columns") +
+      item("&#x1F4E5;", S.SUBMISSIONS, "The submission form's columns plus the SYS_ columns") +
+      item("&#x2696;&#xFE0F;", "Judges' sheets", getCompetitions_().map(function (c) { return c.sheetName; }).join(", ")) +
+      item("&#x1F39F;&#xFE0F;", S.COUPONS, "Discount codes, " + Object.keys(SYSTEM_CONFIG.COLS.COUPON).length + " columns (empty)") +
+      item("&#x1F3A8;", "Formatting and dropdowns", "Header colours, fonts, column widths, frozen rows, alternating rows, dropdowns, tab order") +
+      item("&#x1F648;", "Hidden system tabs", S.LOGS + ", " + V22_CONFIG.AUDIT.SHEET + ", " + V22_CONFIG.MERGE.LEDGER_SHEET) +
+      item("&#x2699;&#xFE0F;", "Triggers", "On a new copy: the form-submit and edit triggers, installed as you") +
       '</ul>') +
     uiCallout_("ok", "&#x1F6E1;&#xFE0F;", "<b>Safe to run again.</b> Sheets that already hold data are left as they are; only missing headers are added. " +
-      "For a completely fresh start, delete the existing sheets first.") +
-    uiCard_("After building",
-      '<div class="ui-step"><div class="n">1</div><div>Link your Google Form to <b>' + esc(S.REGISTRATION) + '</b>.</div></div>' +
-      '<div class="ui-step"><div class="n">2</div><div>Run ' + esc(getMenuPathText_("checkAndFixColumns")) + ' to verify the columns.</div></div>' +
-      '<div class="ui-step"><div class="n">3</div><div>Create the triggers with ' + esc(getMenuPathText_("createTriggers")) + '.</div></div>' +
-      '<div class="ui-step"><div class="n">4</div><div>Open ' + esc(getMenuPathText_("showSystemIntroduction")) + '; its first page shows what is still missing.</div></div>') +
+      "For a completely fresh start, use a new spreadsheet.") +
+    uiCard_("Before building (new spreadsheet)",
+      '<div class="ui-step"><div class="n">1</div><div>Make copies of the registration and submission Google Forms.</div></div>' +
+      '<div class="ui-step"><div class="n">2</div><div>In each form: Responses, Link to Sheets, choose this spreadsheet. Google adds "Form Responses" tabs; the build renames them to <b>' +
+        esc(S.REGISTRATION) + '</b> and <b>' + esc(S.SUBMISSIONS) + '</b>. (Linked later? Just run the build again.)</div></div>' +
+      '<div class="ui-step"><div class="n">3</div><div>After building, open ' + esc(getMenuPathText_("showSystemIntroduction")) + '; its first page shows what is still missing.</div></div>') +
     '<div class="ui-bar">' +
       '<button class="ui-btn lg" onclick="google.script.host.close()">Cancel</button>' +
       '<button class="ui-btn success lg" onclick="startBuild()">&#x1F680; Build the system</button>' +
@@ -13635,41 +13775,158 @@ function getSystemBuilderHtml_() {
 }
 
 /**
- * BUILD THE ENTIRE SYSTEM - Main function
+ * THE LOOK OF THE ORIGINAL SPREADSHEET ("4th Husay ng SokSay")
+ * BUILD BUILD BUILD uses this to make a new spreadsheet look exactly like the original: tab
+ * names and order, header text, header colours and fonts, column widths, frozen rows,
+ * alternating row colours, dropdowns and the hidden system tabs. Column POSITIONS still come
+ * from SYSTEM_CONFIG; this only holds what the settings do not say (wording and looks).
+ * It is a function (not a var) because V22_CONFIG is defined further down the file.
  */
+function getOriginalLayout_() {
+  var S = SYSTEM_CONFIG.SHEETS;
+  function repeat(width, count) { var a = []; for (var i = 0; i < count; i++) a.push(width); return a; }
+  var judgeHeaders = ["Timestamp", "Email Address", "SYS_Participant_NUM", "Full Name", "Region", "School/University",
+    "Adviser", "Facebook or Messenger Link", "Contact Number of Participant", "Title (If possible)"];
+
+  return {
+    FONT: "Google Sans",
+    FONT_SIZE: 10,
+
+    REGISTRATION: {
+      // Question text of the registration Google Form, by SYSTEM_CONFIG.COLS.REG key
+      // (a linked form writes its own question text; these are used when there is no form yet)
+      FORM_HEADERS: {
+        TIMESTAMP: "Timestamp", EMAIL: "Email Address", NAME: "FULL NAME", SEX: "SEX", AGE: "AGE", REGION: "REGION",
+        CONTACT: "PERSONAL CONTACT NUMBER", GUARDIAN_NAME: "FULL NAME OF GUARDIAN",
+        GUARDIAN_CONTACT: "CONTACT NUMBER OF GUARDIAN", GUARDIAN_REL: "RELATIONSHIP TO GUARDIAN",
+        FACEBOOK: "FACEBOOK PROFILE LINK", SCHOOL: "SCHOOL NAME", GRADE_LEVEL: "GRADE LEVEL",
+        ADVISER: "FULL NAME OF ADVISER", COMPETITION_COUNT: "HOW MANY COMPETITIONS WILL YOU JOIN?",
+        COMPETITION: "WHICH COMPETITIONS WILL YOU JOIN?", PAY_MODE: "MODE OF PAYMENT USED",
+        PAY_PROOF: "Upload your PROOF OF PAYMENT here", REG_FORM: "Upload the FILLED UP REGISTRATION FORM here.",
+        REF_INPUT: "REFERRAL CODE", COUPON_INPUT: "COUPON CODE"
+      },
+      // Form-only questions the script never reads (column -> text)
+      FORM_ONLY_HEADERS: { 3: "REPUBLIC ACT 10173: DATA PRIVACY ACT OF 2012", 4: "ETHICAL USE PLEDGE",
+        15: "PROOF OF SCHOOL AFFLIATION", 16: "ANY VALID ID" },
+      HEADER_COLOR: "#0000ff",
+      BAND_HEADER_COLOR: "#000eff",
+      NOT_BOLD_COLS: [19],
+      WIDTHS: [150, 263, 300, 172, 231, 150, 150, 150, 225, 198, 246, 220, 192, 150, 231, 150, 150, 186, 300, 279, 195, 265, 300]
+        .concat(repeat(150, 36)),
+      COLUMN_COUNT: 59
+    },
+
+    SUBMISSION: {
+      // Question text of the submission Google Form, columns 1-42
+      FORM_HEADERS: [
+        "Timestamp", "Email Address", "REPUBLIC ACT 10173: DATA PRIVACY ACT OF 2012", "ETHICAL USE PLEDGE",
+        "Please specify the competition to which you intend to submit an entry.",
+        "FULL NAME OF PARTICIPANT  (For Speech Competition)", "REGION (For Speech Competition)",
+        "SCHOOL/UNIVERSITY (For Speech Competition)", "NAME OF ADVISER/COACH (For Speech Competition)",
+        "FACEBOOK OR MESSENGER LINK OF PARTICIPANT (For Speech Competition)",
+        "CONTACT NUMBER OF PARTICIPANT (For Speech Competition)",
+        "Upload the VIDEO of your speech here (For Speech Competition)",
+        "For the Speech Competition Upload a WRITTEN copy of your speech here",
+        "FULL NAME OF PARTICIPANT (For Essay Writing Competition)", "REGION (For Essay Writing Competition)",
+        "SCHOOL/UNIVERSITY (For Essay Writing Competition)", "NAME OF ADVISER/COACH (For Essay Writing Competition)",
+        "FACEBOOK OR MESSENGER LINK OF PARTICIPANT (For Essay Writing Competition)",
+        "CONTACT NUMBER OF PARTICIPANT (For Essay Writing Competition)", "TITLE OF ESSAY",
+        "Upload your ESSAY here for Essay Writing Competition",
+        "FULL NAME OF PARTICIPANT (For Mobile Phone Photography Competition)",
+        "REGION (For Mobile Phone Photography Competition)",
+        "SCHOOL/UNIVERSITY (For Mobile Phone Photography Competition)",
+        "NAME OF ADVISER/COACH (For Mobile Phone Photography Competition)",
+        "FACEBOOK OR MESSENGER LINK OF PARTICIPANT (For Mobile Phone Photography Competition)",
+        "CONTACT NUMBER OF PARTICIPANT (For Mobile Phone Photography Competition)", "TITLE OF THE PHOTOGRAPH",
+        "PHONE USED IN TAKING THE PHOTOGRAPH",
+        "Upload your ORIGINAL PHOTOGRAPH here for the Mobile Phone Photography Competition",
+        "Upload your PHOTOGRAPH AND EXPLANATION IN A4 here", "TEAM MEMBERS (For Short Film Competition)",
+        "REGION  (For Short Film Competition)", "SCHOOL/UNIVERSITY (For Short Film Competition)",
+        "NAME OF ADVISER/COACH (For Short Film Competition)",
+        "FACEBOOK OR MESSENGER LINK OF TEAM REPRESENTATIVE FOR SHORT FILM (For Short Film Competition)",
+        "CONTACT NUMBER OF TEAM REPRESENTATIVE FOR SHORT FILM (For Short Film Competition)",
+        "Do you consent to the UPLB Sociology Society and the 4th Husay ng SokSay Event Committee posting your entry on our Official Facebook Pages for the People's Choice Award?",
+        "TITLE OF SHORT FILM", "ROLES IN THE SHORT FILM", "Upload your SHORT FILM here", "Submit Another Competition?"
+      ],
+      HEADER_COLOR: "#3200ff",
+      SYS_HEADER_COLOR: "#333333",
+      WIDTHS: [150, 150, 300, 172, 300, 300, 240, 300, 300, 300, 300, 300, 300, 300, 275, 300, 300, 300, 300, 150, 182,
+        300, 300, 300, 300, 300, 300, 211, 300, 290, 300, 300, 259, 300, 300, 300, 300, 300, 172, 201, 216,
+        150, 150, 150, 150, 150, 150, 150, 171, 150, 150, 150],
+      COLUMN_COUNT: 52
+    },
+
+    FINANCE: {
+      // The original has one more column than FINANCE_HEADERS.REQUIRED (not read by the script)
+      EXTRA_HEADERS: ["SYS_LAST_UPDATED"],
+      HEADER_COLOR: "#0000ff",
+      ADMIN_HEADER_COLOR: "#00ff00",               // Status, Verifier, Pay Ref
+      ADMIN_HEADERS: ["Status", "Verifier", "Pay Ref"],
+      LEFT_WRAP_HEADERS: ["Email"],
+      LEFT_CLIP_HEADERS: ["Proof Link", "SYS_PAID_AT"],
+      STATUS_OPTIONS: [SYSTEM_CONFIG.ADMIN.NOT_YET_WORD, SYSTEM_CONFIG.ADMIN.TRIGGER_WORD, "N/A", "Status"],
+      WIDTHS: [100, 274, 100, 100, 100, 100, 138, 129, 100, 100, 100, 144, 100, 133, 133, 100, 100, 100],
+      COLUMN_COUNT: 18
+    },
+
+    PARTICIPANT_DB: {
+      // Registration columns shown, in this order (the original's QUERY)
+      COLUMN_KEYS: ["TIMESTAMP", "EMAIL", "NAME", "AGE", "SEX", "REGION", "CONTACT", "GUARDIAN_NAME",
+        "GUARDIAN_CONTACT", "FACEBOOK", "SCHOOL", "GRADE_LEVEL", "REG_FORM"],
+      LAST_SOURCE_KEY: "GEN_ID",                   // the QUERY reads 'Registration Form'!A:<this column>
+      HEADER_COLOR: "#0000ff",
+      WRAP_COLS: [6],
+      LEFT_WRAP_COLS: [13],
+      WIDTHS: [130, 130, 130, 130, 130, 130, 233, 202, 243, 179, 207, 130, 156, 100, 143],
+      COLUMN_COUNT: 15
+    },
+
+    COUPONS: {
+      HEADERS: ["CODE", "VALUE", "START_DATE", "END_DATE", "MAX_USE", "CURRENT_USE", "STATUS", "Type", "Owner"],
+      HEADER_COLOR: "#0000ff",
+      WIDTHS: [157, 100, 100, 100, 100, 100, 100, 100, 247],
+      COLUMN_COUNT: 9
+    },
+
+    // The judges' sheets, filled by Generate Competition Sheets (same headers as that tool)
+    JUDGES: {
+      HEADER_COLOR: "#1a73e8",
+      SHEETS: {
+        ESSAY:  { headers: judgeHeaders.concat(["Essay File"]),
+                  widths: [122, 355, 136, 229, 228, 426, 208, 175, 453, 621, 100] },
+        SPEECH: { headers: judgeHeaders.concat(["Speech Video", "Written Copy"]),
+                  widths: [122, 355, 136, 193, 381, 504, 175, 175, 185, 106, 87, 82] },
+        PHOTO:  { headers: judgeHeaders.concat(["Original Photo", "Photo + Explanation (A4)"]),
+                  widths: [122, 248, 136, 232, 381, 395, 184, 202, 226, 646, 120, 220] },
+        FILM:   { headers: judgeHeaders.concat(["Short Film File"]),
+                  widths: [122, 250, 136, 217, 381, 425, 166, 175, 276, 408, 91] }
+      }
+    },
+
+    // Tab order of the original, then the tabs it keeps hidden
+    TAB_ORDER: [S.REGISTRATION, S.PARTICIPANT_DB, S.FINANCE, S.SUBMISSIONS]
+      .concat(getCompetitions_().map(function (c) { return c.sheetName; }))
+      .concat([S.COUPONS]),
+    HIDDEN_TABS: [S.LOGS, V22_CONFIG.AUDIT.SHEET, V22_CONFIG.MERGE.LEDGER_SHEET],
+    LOCALE: "en_US"
+  };
+}
+
 /**
- * Registration header names by column position, generated from SYSTEM_CONFIG so the
- * builder always produces the layout the rest of the code reads.
+ * Registration header names by column position. Positions come from SYSTEM_CONFIG, so the
+ * builder always produces the layout the rest of the code reads; the wording is the
+ * original form's. The merge columns that follow are added by MergeService.ensureMergeCols_.
  */
 function getRegistrationLayoutHeaders_() {
   var R = SYSTEM_CONFIG.COLS.REG;
+  var L = getOriginalLayout_().REGISTRATION;
   var headers = [];
   function put(col, name) {
     if (col && !headers[col - 1]) headers[col - 1] = name;
   }
 
   // Form fields
-  put(R.TIMESTAMP, "Timestamp");
-  put(R.EMAIL, "Email Address");
-  put(R.NAME, "FULL NAME");
-  put(R.SEX, "SEX");
-  put(R.AGE, "AGE");
-  put(R.REGION, "REGION");
-  put(R.CONTACT, "PERSONAL CONTACT NUMBER");
-  put(R.GUARDIAN_NAME, "FULL NAME OF GUARDIAN");
-  put(R.GUARDIAN_CONTACT, "CONTACT NUMBER OF GUARDIAN");
-  put(R.GUARDIAN_REL, "RELATIONSHIP TO GUARDIAN");
-  put(R.FACEBOOK, "FACEBOOK PROFILE LINK");
-  put(R.SCHOOL, "SCHOOL NAME");
-  put(R.GRADE_LEVEL, "GRADE LEVEL");
-  put(R.ADVISER, "FULL NAME OF ADVISER");
-  put(R.COMPETITION_COUNT, "HOW MANY COMPETITIONS");
-  put(R.COMPETITION, "WHICH COMPETITIONS");
-  put(R.PAY_MODE, "MODE OF PAYMENT USED");
-  put(R.PAY_PROOF, "PROOF OF PAYMENT");
-  put(R.REG_FORM, "REGISTRATION FORM");
-  put(R.REF_INPUT, "REFERRAL CODE");
-  put(R.COUPON_INPUT, "COUPON CODE");
+  Object.keys(L.FORM_HEADERS).forEach(function (key) { put(R[key], L.FORM_HEADERS[key]); });
 
   // System columns
   put(R.GEN_ID, "Gen. ID");
@@ -13688,19 +13945,18 @@ function getRegistrationLayoutHeaders_() {
   put(R.LOCKED_REF, "LOCKED_REF");
   put(R.MASTER_SUBJECT, "MASTER_SUBJECT");
 
-  // SYS_ columns (the config key is the header text)
+  // SYS_ columns (the config key is the header text). SYS_APPLICANT_AMT is left out: it is
+  // added at the far right the first time the Payment Verification Center saves an amount,
+  // as in the original (the merge columns come first).
   var sysGroups = [SYSTEM_CONFIG.SYS_REG_COLS, SYSTEM_CONFIG.SYS_REG_COLS_END];
   for (var g = 0; g < sysGroups.length; g++) {
     for (var key in sysGroups[g]) {
-      if (sysGroups[g].hasOwnProperty(key)) put(sysGroups[g][key], key);
+      if (sysGroups[g].hasOwnProperty(key) && key !== "SYS_APPLICANT_AMT") put(sysGroups[g][key], key);
     }
   }
 
   // Form-only columns that the script never reads
-  put(3, "DATA PRIVACY ACT");
-  put(4, "ETHICAL USE PLEDGE");
-  put(15, "PROOF OF SCHOOL");
-  put(16, "ANY VALID ID");
+  Object.keys(L.FORM_ONLY_HEADERS).forEach(function (col) { put(Number(col), L.FORM_ONLY_HEADERS[col]); });
 
   for (var i = 0; i < headers.length; i++) {
     if (!headers[i]) headers[i] = "";
@@ -13726,6 +13982,11 @@ function fillBlankHeaders_(sheet, headers) {
   var range = sheet.getRange(1, 1, 1, headers.length);
   var current = range.getValues()[0];
   var filled = 0;
+  var allBlank = current.every(function (v) { return String(v || "").trim() === ""; });
+  if (allBlank) {
+    range.setValues([headers]);
+    return headers.filter(function (h) { return h; }).length;
+  }
   for (var i = 0; i < headers.length; i++) {
     if (String(current[i] || "").trim() === "" && headers[i]) {
       sheet.getRange(1, i + 1).setValue(headers[i]);
@@ -13735,179 +13996,447 @@ function fillBlankHeaders_(sheet, headers) {
   return filled;
 }
 
+/** The form id inside a Google Form URL ("" when there is none), so two URLs can be compared. */
+function formIdFromUrl_(url) {
+  var m = String(url || "").match(/\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?([A-Za-z0-9_-]+)/);
+  return m ? m[1] : String(url || "");
+}
+
+/**
+ * Which of the two forms writes to this sheet, judged from its header row:
+ * "REGISTRATION", "SUBMISSION" or "" (neither).
+ */
+function detectFormSheetKind_(sheet) {
+  try {
+    var lastCol = sheet.getLastColumn();
+    if (!lastCol) return "";
+    var text = sheet.getRange(1, 1, 1, lastCol).getValues()[0].join(" | ").toUpperCase();
+    if (/SUBMIT ANOTHER COMPETITION|SPECIFY THE COMPETITION|\(FOR SPEECH COMPETITION\)/.test(text)) return "SUBMISSION";
+    if (/WHICH COMPETITIONS|HOW MANY COMPETITIONS|GUARDIAN/.test(text)) return "REGISTRATION";
+  } catch (e) {}
+  return "";
+}
+
+/**
+ * Linking a Google Form to a spreadsheet makes a new "Form Responses N" tab. This gives that
+ * tab the name the system reads (and removes an empty placeholder tab made by an earlier
+ * build), so the form's answers land where the system looks for them.
+ * @return {Sheet|null} the sheet with the target name afterwards (null if there is none)
+ */
+function adoptFormResponseTab_(ss, targetName, kind, results) {
+  var target = ss.getSheetByName(targetName);
+  if (target && target.getFormUrl()) return target;   // already the form's own tab
+
+  var candidate = null;
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName() === targetName) continue;
+    var url = null;
+    try { url = sheets[i].getFormUrl(); } catch (e) {}
+    if (url && detectFormSheetKind_(sheets[i]) === kind) { candidate = sheets[i]; break; }
+  }
+  if (!candidate) return target;
+
+  var oldName = candidate.getName();
+  if (target) {
+    if (target.getLastRow() > 1) {
+      results.push("⚠️ The linked form tab \"" + Utils.escapeHtml(oldName) + "\" was not renamed because \"" +
+        Utils.escapeHtml(targetName) + "\" already holds data. Its responses are not processed until the form writes to \"" +
+        Utils.escapeHtml(targetName) + "\".");
+      return target;
+    }
+    ss.deleteSheet(target);   // empty placeholder from an earlier build, before the form was linked
+  }
+  candidate.setName(targetName);
+  results.push("✅ The linked form tab \"" + Utils.escapeHtml(oldName) + "\" is now \"" + Utils.escapeHtml(targetName) + "\"");
+  return candidate;
+}
+
+/** Make the sheet exactly `count` columns wide (only used on sheets without data). */
+function setColumnCount_(sheet, count) {
+  var max = sheet.getMaxColumns();
+  if (max < count) sheet.insertColumnsAfter(max, count - max);
+  else if (max > count) sheet.deleteColumns(count + 1, max - count);
+}
+
+/** Apply a list of column widths starting at column 1. */
+function setColumnWidthsList_(sheet, widths) {
+  for (var c = 0; c < widths.length && c < sheet.getMaxColumns(); c++) sheet.setColumnWidth(c + 1, widths[c]);
+}
+
+/** Bold white header row in the given colour. */
+function styleHeaderRow_(sheet, numCols, color, align) {
+  var header = sheet.getRange(1, 1, 1, numCols);
+  header.setBackground(color).setFontColor("#ffffff").setFontWeight("bold");
+  if (align) header.setHorizontalAlignment(align);
+  return header;
+}
+
+/** Original font on the whole sheet. */
+function setSheetFont_(sheet, layout) {
+  sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns())
+    .setFontFamily(layout.FONT).setFontSize(layout.FONT_SIZE);
+}
+
+/** Alternating row colours (white / light grey) with the given header colour. */
+function applyOriginalBanding_(sheet, numCols, headerColor) {
+  try {
+    sheet.getBandings().forEach(function (b) { b.remove(); });
+    sheet.getRange(1, 1, sheet.getMaxRows(), numCols)
+      .applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, false)
+      .setHeaderRowColor(headerColor)
+      .setFirstRowColor("#ffffff")
+      .setSecondRowColor("#f8f9fa");
+  } catch (e) {
+    AuditLogService.warn("BUILD_BANDING_FAIL", sheet.getName() + ": " + e);
+  }
+}
+
+/**
+ * Format Registration sheet like the original
+ */
+function formatRegistrationSheet_(sheet, numCols) {
+  var layout = getOriginalLayout_();
+  var L = layout.REGISTRATION;
+  setSheetFont_(sheet, layout);
+  sheet.getRange(1, 1, sheet.getMaxRows(), numCols).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  sheet.setFrozenRows(1);
+  applyOriginalBanding_(sheet, numCols, L.BAND_HEADER_COLOR);
+  styleHeaderRow_(sheet, numCols, L.HEADER_COLOR, "left");
+  L.NOT_BOLD_COLS.forEach(function (c) { if (c <= numCols) sheet.getRange(1, c).setFontWeight("normal"); });
+  setColumnWidthsList_(sheet, L.WIDTHS);
+}
+
+/**
+ * Format the Submission Form sheet like the original
+ */
+function formatSubmissionSheet_(sheet, numCols) {
+  var layout = getOriginalLayout_();
+  var L = layout.SUBMISSION;
+  setSheetFont_(sheet, layout);
+  sheet.getRange(1, 1, sheet.getMaxRows(), numCols).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  sheet.setFrozenRows(1);
+  applyOriginalBanding_(sheet, numCols, L.HEADER_COLOR);
+  styleHeaderRow_(sheet, numCols, L.HEADER_COLOR, "left");
+  var headers = sheet.getRange(1, 1, 1, numCols).getValues()[0];
+  for (var i = 0; i < headers.length; i++) {
+    if (String(headers[i]).indexOf("SYS_") === 0) sheet.getRange(1, i + 1).setBackground(L.SYS_HEADER_COLOR);
+  }
+  setColumnWidthsList_(sheet, L.WIDTHS);
+}
+
+/**
+ * Format Finance sheet like the original (whole sheet centred and wrapped, no frozen row)
+ */
+function formatFinanceSheet_(sheet, numCols) {
+  var layout = getOriginalLayout_();
+  var L = layout.FINANCE;
+  var rows = sheet.getMaxRows();
+  setSheetFont_(sheet, layout);
+  sheet.getRange(1, 1, rows, sheet.getMaxColumns()).setHorizontalAlignment("center").setWrap(true);
+  styleHeaderRow_(sheet, numCols, L.HEADER_COLOR, null);
+
+  var headers = sheet.getRange(1, 1, 1, numCols).getValues()[0].map(function (h) { return String(h).trim(); });
+  headers.forEach(function (h, i) {
+    var col = i + 1;
+    if (L.ADMIN_HEADERS.indexOf(h) >= 0) sheet.getRange(1, col).setBackground(L.ADMIN_HEADER_COLOR);
+    if (L.LEFT_WRAP_HEADERS.indexOf(h) >= 0) sheet.getRange(1, col, rows, 1).setHorizontalAlignment("left");
+    if (L.LEFT_CLIP_HEADERS.indexOf(h) >= 0) {
+      sheet.getRange(1, col, rows, 1).setHorizontalAlignment("left").setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+    }
+  });
+  setColumnWidthsList_(sheet, L.WIDTHS);
+}
+
+/**
+ * Format Coupons sheet like the original
+ */
+function formatCouponsSheet_(sheet, numCols) {
+  var layout = getOriginalLayout_();
+  setSheetFont_(sheet, layout);
+  sheet.getRange(1, 1, sheet.getMaxRows(), numCols).setHorizontalAlignment("left");
+  styleHeaderRow_(sheet, numCols, layout.COUPONS.HEADER_COLOR, "left");
+  setColumnWidthsList_(sheet, layout.COUPONS.WIDTHS);
+}
+
+/**
+ * Format the Participant Database like the original
+ */
+function formatParticipantDbSheet_(sheet) {
+  var layout = getOriginalLayout_();
+  var L = layout.PARTICIPANT_DB;
+  var shown = L.COLUMN_KEYS.length;
+  setSheetFont_(sheet, layout);
+  sheet.setFrozenRows(1);
+  styleHeaderRow_(sheet, shown, L.HEADER_COLOR, "center");
+  L.WRAP_COLS.forEach(function (c) { sheet.getRange(1, c).setWrap(true); });
+  L.LEFT_WRAP_COLS.forEach(function (c) { sheet.getRange(1, c).setHorizontalAlignment("left").setWrap(true); });
+  if (L.COLUMN_COUNT > shown) {
+    sheet.getRange(1, shown + 1, 1, L.COLUMN_COUNT - shown).setBackground(L.HEADER_COLOR).setFontWeight("bold");
+  }
+  setColumnWidthsList_(sheet, L.WIDTHS);
+}
+
+/**
+ * The Participant Database QUERY of the original (a live, read-only view of Registration)
+ */
+function getDefaultParticipantDbQuery_() {
+  var R = SYSTEM_CONFIG.COLS.REG;
+  var L = getOriginalLayout_().PARTICIPANT_DB;
+  var letters = L.COLUMN_KEYS.map(function (k) { return columnToLetter_(R[k]); });
+  return '=QUERY(\'' + SYSTEM_CONFIG.SHEETS.REGISTRATION + '\'!A:' + columnToLetter_(R[L.LAST_SOURCE_KEY]) +
+    ', "SELECT ' + letters.join(", ") + ' WHERE A IS NOT NULL", 1)';
+}
+
+/**
+ * Install the two triggers the system runs on (form submit, edit) if this account has not
+ * installed them yet. Returns the names that were added.
+ */
+var TRIGGERS_INSTALLED_KEY_ = "HNS_TRIGGERS_INSTALLED_BY";
+
+function installCoreTriggers_() {
+  var have = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
+  var added = [];
+  if (have.indexOf("onFormSubmit") < 0) {
+    ScriptApp.newTrigger("onFormSubmit").forSpreadsheet(SpreadsheetApp.getActive()).onFormSubmit().create();
+    added.push("onFormSubmit");
+  }
+  if (have.indexOf("onEdit") < 0) {
+    ScriptApp.newTrigger("onEdit").forSpreadsheet(SpreadsheetApp.getActive()).onEdit().create();
+    added.push("onEdit");
+  }
+  recordTriggersInstalled_();
+  return added;
+}
+
+/** Remember (for every admin) that the triggers of this spreadsheet have been installed. */
+function recordTriggersInstalled_() {
+  markEditTriggerSeen_();
+  try {
+    PropertiesService.getDocumentProperties().setProperty(TRIGGERS_INSTALLED_KEY_,
+      Session.getActiveUser().getEmail() || "an admin");
+  } catch (e) {}
+}
+
 function buildEntireSystem() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var S = SYSTEM_CONFIG.SHEETS;
+  var layout = getOriginalLayout_();
   var results = [];
+  // System tabs that already exist stay as they are; the ones this run creates (some are
+  // created as a side effect of logging) are hidden at the end, as in the original
+  var hiddenTabExisted = {};
+  layout.HIDDEN_TABS.forEach(function (name) { hiddenTabExisted[name] = !!ss.getSheetByName(name); });
 
   try {
     // ========================================
+    // 0. LINKED FORMS
+    // ========================================
+    // A form linked to this spreadsheet writes to "Form Responses N"; give those tabs the
+    // names the system reads before anything else is set up.
+    adoptFormResponseTab_(ss, S.REGISTRATION, "REGISTRATION", results);
+    adoptFormResponseTab_(ss, S.SUBMISSIONS, "SUBMISSION", results);
+
+    // ========================================
     // 1. REGISTRATION SHEET
     // ========================================
-    // The layout comes from SYSTEM_CONFIG. Existing headers are NEVER overwritten:
-    // a live sheet only gets header text added where a header cell is blank.
+    // The layout comes from SYSTEM_CONFIG. Existing headers are NEVER overwritten: a sheet
+    // only gets header text where a header cell is blank, and only a sheet without
+    // responses is formatted.
     var regHeaders = getRegistrationLayoutHeaders_();
-    var regSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-    var regIsNew = false;
-
+    var regSheet = ss.getSheetByName(S.REGISTRATION);
     if (!regSheet) {
-      regSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.REGISTRATION);
-      regIsNew = true;
-      results.push("✅ Created Registration sheet");
-    } else if (isSheetBlank_(regSheet)) {
-      regIsNew = true;
-      results.push("📝 Registration sheet was empty - setting it up");
+      regSheet = ss.insertSheet(S.REGISTRATION);
+      results.push("✅ Created " + S.REGISTRATION + " sheet");
     }
-
-    if (regIsNew) {
-      if (regSheet.getMaxColumns() < regHeaders.length) {
-        regSheet.insertColumnsAfter(regSheet.getMaxColumns(), regHeaders.length - regSheet.getMaxColumns());
-      }
-      regSheet.getRange(1, 1, 1, regHeaders.length).setValues([regHeaders]);
-      formatRegistrationSheet_(regSheet, regHeaders.length);
-      results.push("✅ Set up " + regHeaders.length + " Registration columns");
+    var regFresh = regSheet.getLastRow() <= 1;   // no responses yet: a new copy
+    var regFilled = fillBlankHeaders_(regSheet, regHeaders);
+    MergeService.ensureMergeCols_(regSheet);
+    if (regFresh) {
+      setColumnCount_(regSheet, Math.max(layout.REGISTRATION.COLUMN_COUNT, regSheet.getLastColumn()));
+      formatRegistrationSheet_(regSheet, regSheet.getLastColumn());
+      results.push("✅ Set up " + regSheet.getLastColumn() + " " + S.REGISTRATION + " columns");
     } else {
-      var regFilled = fillBlankHeaders_(regSheet, regHeaders);
-      results.push("📝 Registration sheet already has data - existing headers kept" +
+      results.push("📝 " + S.REGISTRATION + " already has responses - existing headers and formatting kept" +
         (regFilled ? ", " + regFilled + " blank header(s) filled in" : ""));
     }
 
     // ========================================
-    // 2. FINANCE SHEET
+    // 2. PARTICIPANT DATABASE SHEET
     // ========================================
-    // The Financial Dashboard is read by header NAME, so its headers must be the ones in
-    // SYSTEM_CONFIG.FINANCE_HEADERS and existing ones must not be replaced.
-    var finHeaders = SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED;
-    var finSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.FINANCE);
-    var finIsNew = false;
-
-    if (!finSheet) {
-      finSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.FINANCE);
-      finIsNew = true;
-      results.push("✅ Created Finance sheet");
-    } else if (isSheetBlank_(finSheet)) {
-      finIsNew = true;
-      results.push("💰 Finance sheet was empty - setting it up");
-    }
-
-    if (finIsNew) {
-      finSheet.getRange(1, 1, 1, finHeaders.length).setValues([finHeaders]);
-      formatFinanceSheet_(finSheet, finHeaders.length);
-      results.push("✅ Set up " + finHeaders.length + " Finance columns");
-    } else {
-      // Adds any missing required header at the end; never touches existing ones
-      ColumnManager.ensureFinanceHeaders(finSheet);
-      results.push("💰 Finance sheet already has data - existing headers kept, missing ones added");
-    }
-
-    // ========================================
-    // 3. COUPONS SHEET
-    // ========================================
-    var couponSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.COUPONS);
-    var couponIsNew = false;
-
-    if (!couponSheet) {
-      couponSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.COUPONS);
-      couponIsNew = true;
-      results.push("✅ Created Coupons sheet");
-    } else if (isSheetBlank_(couponSheet)) {
-      couponIsNew = true;
-    }
-
-    // Fills the 9 coupon headers (Code ... Owner) only if some are blank
-    ensureCouponHeaders_(couponSheet);
-
-    if (couponIsNew) {
-      formatCouponsSheet_(couponSheet, 9);
-      // [CODE, VALUE, START, END, MAX_USE, CURRENT_USE, STATUS, TYPE, OWNER]
-      var sampleCoupon = [
-        "WELCOME50",
-        50,
-        new Date(),
-        new Date(new Date().setMonth(new Date().getMonth() + 3)),
-        100,
-        0,
-        "ACTIVE",
-        "PROMO",
-        ""
-      ];
-      couponSheet.getRange(2, 1, 1, sampleCoupon.length).setValues([sampleCoupon]);
-      results.push("✅ Added sample coupon: WELCOME50 (₱50 off)");
-    } else {
-      results.push("🎟️ Coupons sheet already has data - left as is");
-    }
-
-    // ========================================
-    // 4. PARTICIPANT DATABASE SHEET
-    // ========================================
-    var dbSheet = ss.getSheetByName(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB);
+    var dbSheet = ss.getSheetByName(S.PARTICIPANT_DB);
     var dbIsNew = false;
-
     if (!dbSheet) {
-      dbSheet = ss.insertSheet(SYSTEM_CONFIG.SHEETS.PARTICIPANT_DB);
+      dbSheet = ss.insertSheet(S.PARTICIPANT_DB);
       dbIsNew = true;
-      results.push("✅ Created Participant Database sheet");
     } else if (isSheetBlank_(dbSheet)) {
       dbIsNew = true;
     }
-
     if (dbIsNew) {
-      // QUERY built from the configured column positions
-      var R = SYSTEM_CONFIG.COLS.REG;
-      var dbCols = [R.TIMESTAMP, R.NAME, R.GRADE_LEVEL, R.CONTACT, R.SCHOOL, R.COMPETITION, R.REF_INPUT, R.GEN_ID, R.PAYMENT_STATUS];
-      var dbLetters = dbCols.map(function (c) { return columnToLetter_(c); });
-      var lastLetter = columnToLetter_(regHeaders.length);
-      var queryFormula = '=QUERY(\'' + SYSTEM_CONFIG.SHEETS.REGISTRATION + '\'!A:' + lastLetter +
-        ', "SELECT ' + dbLetters.join(", ") + ' WHERE A IS NOT NULL", 1)';
-
-      dbSheet.getRange("A1").setFormula(queryFormula);
-      dbSheet.getRange("A1").setNote(
-        "📋 QUERY FORMULA - Auto-pulls from the Registration sheet\n\n" +
-        "Current columns: Timestamp, Name, Grade Level, Contact, School,\n" +
-        "Competitions, Referral Code, Gen. ID, Payment Status\n\n" +
-        "To customize: " + getMenuPathText_("setupParticipantDatabaseQuery") + "."
-      );
-
-      dbSheet.setFrozenRows(1);
-      dbSheet.getRange(1, 1, 1, dbCols.length)
-             .setBackground("#0891b2")
-             .setFontColor("white")
-             .setFontWeight("bold");
-      for (var w = 1; w <= dbCols.length; w++) {
-        dbSheet.setColumnWidth(w, 130);
-      }
-      results.push("✅ Set up Participant Database with QUERY formula");
+      setColumnCount_(dbSheet, layout.PARTICIPANT_DB.COLUMN_COUNT);
+      dbSheet.getRange("A1").setFormula(getDefaultParticipantDbQuery_());
+      formatParticipantDbSheet_(dbSheet);
+      results.push("✅ Set up " + S.PARTICIPANT_DB + " (live QUERY of " + S.REGISTRATION + ")");
+    } else if (/#REF!/.test(dbSheet.getRange("A1").getFormula())) {
+      // The QUERY pointed at an empty placeholder tab that step 0 replaced with the form's tab
+      dbSheet.getRange("A1").setFormula(getDefaultParticipantDbQuery_());
+      results.push("✅ Re-pointed the " + S.PARTICIPANT_DB + " QUERY at the new " + S.REGISTRATION + " tab");
     } else {
-      results.push("📊 Participant Database already has content - left as is");
+      results.push("📊 " + S.PARTICIPANT_DB + " already has content - left as is");
     }
 
     // ========================================
-    // 5. DATA VALIDATION (only on sheets this run created)
+    // 3. FINANCE SHEET
     // ========================================
-    setupDataValidation_(regIsNew ? regSheet : null, finIsNew ? finSheet : null);
-    if (regIsNew || finIsNew) results.push("✅ Added data validation (dropdowns)");
+    // The Financial Dashboard is read by header NAME, so its headers must be the ones in
+    // SYSTEM_CONFIG.FINANCE_HEADERS and existing ones must not be replaced.
+    var finHeaders = SYSTEM_CONFIG.FINANCE_HEADERS.REQUIRED.concat(layout.FINANCE.EXTRA_HEADERS);
+    var finSheet = ss.getSheetByName(S.FINANCE);
+    var finIsNew = false;
+    if (!finSheet) {
+      finSheet = ss.insertSheet(S.FINANCE);
+      finIsNew = true;
+    } else if (isSheetBlank_(finSheet)) {
+      finIsNew = true;
+    }
+    if (finIsNew) {
+      setColumnCount_(finSheet, layout.FINANCE.COLUMN_COUNT);
+      finSheet.getRange(1, 1, 1, finHeaders.length).setValues([finHeaders]);
+      formatFinanceSheet_(finSheet, finHeaders.length);
+      results.push("✅ Set up " + finHeaders.length + " " + S.FINANCE + " columns");
+    } else {
+      // Adds any missing required header at the end; never touches existing ones
+      ColumnManager.ensureFinanceHeaders(finSheet);
+      results.push("💰 " + S.FINANCE + " already has data - existing headers kept, missing ones added");
+    }
 
     // ========================================
-    // 6. REORDER SHEETS (only on a fresh build)
+    // 4. SUBMISSION FORM SHEET
     // ========================================
-    if (regIsNew && finIsNew) {
+    var subSheet = ss.getSheetByName(S.SUBMISSIONS);
+    if (!subSheet) {
+      subSheet = ss.insertSheet(S.SUBMISSIONS);
+      results.push("✅ Created " + S.SUBMISSIONS + " sheet (link the submission form to replace it)");
+    }
+    var subFresh = subSheet.getLastRow() <= 1;
+    if (subFresh) fillBlankHeaders_(subSheet, layout.SUBMISSION.FORM_HEADERS);
+    ColumnManager.ensureSysColsOnSubmissions(subSheet);
+    if (subFresh) {
+      setColumnCount_(subSheet, Math.max(layout.SUBMISSION.COLUMN_COUNT, subSheet.getLastColumn()));
+      formatSubmissionSheet_(subSheet, subSheet.getLastColumn());
+      results.push("✅ Set up " + subSheet.getLastColumn() + " " + S.SUBMISSIONS + " columns");
+    } else {
+      results.push("📥 " + S.SUBMISSIONS + " already has submissions - left as is (missing SYS_ columns added)");
+    }
+
+    // ========================================
+    // 5. JUDGES' COMPETITION SHEETS
+    // ========================================
+    var judgesMade = [];
+    getCompetitions_().forEach(function (comp) {
+      var spec = layout.JUDGES.SHEETS[comp.key];
+      if (!spec || ss.getSheetByName(comp.sheetName)) return;
+      var sh = ss.insertSheet(comp.sheetName);
+      sh.getRange(1, 1, 1, spec.headers.length).setValues([spec.headers]);
+      styleHeaderRow_(sh, spec.headers.length, layout.JUDGES.HEADER_COLOR, "center");
+      sh.setFrozenRows(1);
+      setColumnWidthsList_(sh, spec.widths);
+      judgesMade.push(comp.sheetName);
+    });
+    if (judgesMade.length) results.push("✅ Created the judges' sheets: " + judgesMade.join(", "));
+
+    // ========================================
+    // 6. COUPONS SHEET
+    // ========================================
+    var couponSheet = ss.getSheetByName(S.COUPONS);
+    var couponIsNew = false;
+    if (!couponSheet) {
+      couponSheet = ss.insertSheet(S.COUPONS);
+      couponIsNew = true;
+    } else if (isSheetBlank_(couponSheet)) {
+      couponIsNew = true;
+    }
+    if (couponIsNew) {
+      // No sample code: an active code with a guessable name would give a real discount
+      setColumnCount_(couponSheet, layout.COUPONS.COLUMN_COUNT);
+      couponSheet.getRange(1, 1, 1, layout.COUPONS.HEADERS.length).setValues([layout.COUPONS.HEADERS]);
+      formatCouponsSheet_(couponSheet, layout.COUPONS.HEADERS.length);
+      results.push("✅ Set up " + S.COUPONS + " (add codes with " + Utils.escapeHtml(getMenuPathText_("openCouponGenerator")) + ")");
+    } else {
+      ensureCouponHeaders_(couponSheet);
+      results.push("🎟️ " + S.COUPONS + " already has data - left as is");
+    }
+
+    // ========================================
+    // 7. DATA VALIDATION (only on sheets this run laid out)
+    // ========================================
+    setupDataValidation_(regFresh ? regSheet : null, finIsNew ? finSheet : null);
+    if (regFresh || finIsNew) results.push("✅ Added the dropdowns (Payment Status, Email Sent, Status)");
+
+    // ========================================
+    // 8. SYSTEM TABS (hidden, as in the original)
+    // ========================================
+    var hiddenMade = [];
+    var hiddenMakers = {};
+    hiddenMakers[S.LOGS] = function () { AuditLogService.info("SYSTEM_BUILD", "BUILD BUILD BUILD ran."); };
+    hiddenMakers[V22_CONFIG.AUDIT.SHEET] = function () { AdminAuditService.ensureSheet(); };
+    hiddenMakers[V22_CONFIG.MERGE.LEDGER_SHEET] = function () { MergeService.getLedgerSheet_(); };
+    layout.HIDDEN_TABS.forEach(function (name) {
+      if (hiddenTabExisted[name]) return;
+      if (!ss.getSheetByName(name) && hiddenMakers[name]) hiddenMakers[name]();
+      var sh = ss.getSheetByName(name);
+      if (sh) { sh.hideSheet(); hiddenMade.push(name); }
+    });
+    if (hiddenMade.length) results.push("✅ Created the hidden system tabs: " + hiddenMade.join(", "));
+
+    // ========================================
+    // 9. A NEW COPY ONLY: tab order, time zone, locale, empty default tab, triggers
+    // ========================================
+    if (regFresh) {
       try {
+        ss.setSpreadsheetTimeZone(SYSTEM_CONFIG.META.TIMEZONE);
+        ss.setSpreadsheetLocale(layout.LOCALE);
+      } catch (tzErr) {}
+
+      ss.getSheets().forEach(function (sh) {
+        // The "Sheet1" every new spreadsheet starts with (the original has none)
+        if (/^Sheet\d+$/.test(sh.getName()) && isSheetBlank_(sh) && ss.getSheets().length > 1) ss.deleteSheet(sh);
+      });
+
+      try {
+        var position = 1;
+        layout.TAB_ORDER.forEach(function (name) {
+          var sh = ss.getSheetByName(name);
+          if (!sh) return;
+          ss.setActiveSheet(sh);
+          ss.moveActiveSheet(position++);
+        });
         ss.setActiveSheet(regSheet);
-        ss.moveActiveSheet(1);
-        ss.setActiveSheet(finSheet);
-        ss.moveActiveSheet(2);
-        ss.setActiveSheet(dbSheet);
-        ss.moveActiveSheet(3);
-        ss.setActiveSheet(couponSheet);
-        ss.moveActiveSheet(4);
-        results.push("✅ Organized sheet order");
-      } catch (e) {
-        // Non-critical error
+        results.push("✅ Put the tabs in the original order");
+      } catch (orderErr) {
+        // Non-critical
       }
+
+      // Only on a new copy, and only once: triggers are per account, so if another admin
+      // installed them a second set would process every response twice.
+      var installedBy = PropertiesService.getDocumentProperties().getProperty(TRIGGERS_INSTALLED_KEY_);
+      if (installedBy) {
+        results.push("⚙️ Triggers were already installed by " + Utils.escapeHtml(installedBy) + " - not adding a second set");
+      } else {
+        var addedTriggers = installCoreTriggers_();
+        results.push(addedTriggers.length
+          ? "✅ Installed the triggers (" + addedTriggers.join(", ") + "). Emails are sent from " + Utils.escapeHtml(Session.getActiveUser().getEmail() || "this account") + "."
+          : "⚙️ Triggers were already installed");
+      }
+    } else {
+      results.push("⚙️ Triggers not changed (this spreadsheet already has responses). Use " + Utils.escapeHtml(getMenuPathText_("createTriggers")) + " if needed.");
     }
 
     // ========================================
-    // 7. BUILD SUCCESS REPORT
+    // 10. BUILD SUCCESS REPORT
     // ========================================
+    var regLinked = !!regSheet.getFormUrl();
+    var subLinked = !!subSheet.getFormUrl();
     var html = uiCallout_("ok", "&#x1F389;", "<b>The system is built.</b> Here is what was done and what to do next.");
     html += '<h2 class="ui-card-title">What was done</h2><ul class="ui-list">';
     for (var i = 0; i < results.length; i++) {
@@ -13916,13 +14445,15 @@ function buildEntireSystem() {
     html += '</ul><div class="ui-divider"></div>';
 
     html += '<h2 class="ui-card-title">Next steps</h2>';
-    var nextSteps = [
-      '<b>Link the Google Form:</b> open the form, Responses, Link to Sheets, choose this spreadsheet, and make it write to "' + Utils.escapeHtml(SYSTEM_CONFIG.SHEETS.REGISTRATION) + '".',
-      '<b>Create the triggers:</b> ' + Utils.escapeHtml(getMenuPathText_("createTriggers")),
-      '<b>Choose the columns of the participant list:</b> ' + Utils.escapeHtml(getMenuPathText_("setupParticipantDatabaseQuery")),
-      '<b>Test:</b> submit one form response and check that it is processed.',
-      '<b>Add your codes:</b> ' + Utils.escapeHtml(getMenuPathText_("openCouponGenerator"))
-    ];
+    var nextSteps = [];
+    if (!regLinked || !subLinked) {
+      nextSteps.push('<b>Link the Google Forms:</b> in each form (registration' + (regLinked ? ' is done' : '') + ', submission' + (subLinked ? ' is done' : '') +
+        ') open Responses, Link to Sheets, choose this spreadsheet. Then run BUILD BUILD BUILD again: it renames the new "Form Responses" tabs to "' +
+        Utils.escapeHtml(S.REGISTRATION) + '" and "' + Utils.escapeHtml(S.SUBMISSIONS) + '" and lays them out.');
+    }
+    nextSteps.push('<b>Check the setup:</b> ' + Utils.escapeHtml(getMenuPathText_("showSystemIntroduction")) + '; its first page shows what is still missing.');
+    nextSteps.push('<b>Test:</b> submit one registration and check that it is processed.');
+    nextSteps.push('<b>Add your codes:</b> ' + Utils.escapeHtml(getMenuPathText_("openCouponGenerator")));
     for (var n = 0; n < nextSteps.length; n++) {
       html += '<div class="ui-step"><div class="n">' + (n + 1) + '</div><div>' + nextSteps[n] + '</div></div>';
     }
@@ -13937,122 +14468,26 @@ function buildEntireSystem() {
 }
 
 /**
- * Format Registration sheet (header styling follows the SYSTEM_CONFIG layout)
- */
-function formatRegistrationSheet_(sheet, numCols) {
-  var R = SYSTEM_CONFIG.COLS.REG;
-
-  // Freeze header row
-  sheet.setFrozenRows(1);
-
-  // Header formatting
-  var headerRange = sheet.getRange(1, 1, 1, numCols);
-  headerRange.setBackground("#1e40af")
-             .setFontColor("white")
-             .setFontWeight("bold")
-             .setHorizontalAlignment("center")
-             .setVerticalAlignment("middle");
-
-  // Set row height for header
-  sheet.setRowHeight(1, 35);
-
-  // Column widths
-  for (var c = 1; c <= numCols; c++) {
-    try { sheet.setColumnWidth(c, 130); } catch (e) {}
-  }
-  try {
-    sheet.setColumnWidth(R.TIMESTAMP, 150);
-    sheet.setColumnWidth(R.EMAIL, 200);
-    sheet.setColumnWidth(R.NAME, 180);
-    sheet.setColumnWidth(R.SCHOOL, 180);
-    sheet.setColumnWidth(R.COMPETITION, 220);
-  } catch (e2) {}
-
-  // Color code fee columns (Base Fee .. Total Fee) with a green header
-  if (numCols >= R.TOTAL_FEE) {
-    sheet.getRange(1, R.BASE_FEE, 1, R.TOTAL_FEE - R.BASE_FEE + 1).setBackground("#059669");
-  }
-
-  // Color code referral columns (Referral Count, Referral Earnings) with a purple header
-  if (numCols >= R.CASHBACK) {
-    sheet.getRange(1, R.REF_COUNT, 1, R.CASHBACK - R.REF_COUNT + 1).setBackground("#7c3aed");
-  }
-
-  // Color code SYS_ / locked columns with a gray header
-  var sysHeaders = sheet.getRange(1, 1, 1, numCols).getValues()[0];
-  for (var i = 0; i < sysHeaders.length; i++) {
-    var h = String(sysHeaders[i] || "");
-    if (h.indexOf("SYS_") === 0 || h.indexOf("LOCKED_") === 0 || h === "MASTER_SUBJECT") {
-      sheet.getRange(1, i + 1).setBackground("#64748b");
-    }
-  }
-}
-
-/**
- * Format Finance sheet
- */
-function formatFinanceSheet_(sheet, numCols) {
-  // Freeze header row
-  sheet.setFrozenRows(1);
-
-  // Header formatting
-  var headerRange = sheet.getRange(1, 1, 1, numCols);
-  headerRange.setBackground("#059669")
-             .setFontColor("white")
-             .setFontWeight("bold")
-             .setHorizontalAlignment("center")
-             .setVerticalAlignment("middle");
-
-  // Set row height for header
-  sheet.setRowHeight(1, 35);
-
-  // Column widths by header name
-  var widths = { "Timestamp": 150, "Email": 220, "Name": 180, "Proof Link": 200, "Gen. ID": 130 };
-  var headers = headerRange.getValues()[0];
-  for (var i = 0; i < headers.length; i++) {
-    sheet.setColumnWidth(i + 1, widths[String(headers[i])] || 120);
-  }
-}
-
-/**
- * Format Coupons sheet
- */
-function formatCouponsSheet_(sheet, numCols) {
-  // Freeze header row
-  sheet.setFrozenRows(1);
-
-  // Header formatting
-  var headerRange = sheet.getRange(1, 1, 1, numCols);
-  headerRange.setBackground("#7c3aed")
-             .setFontColor("white")
-             .setFontWeight("bold")
-             .setHorizontalAlignment("center")
-             .setVerticalAlignment("middle");
-
-  // Set row height for header
-  sheet.setRowHeight(1, 35);
-
-  // Set column widths
-  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.CODE, 150);
-  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.VALUE, 100);
-  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.START, 120);
-  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.END, 120);
-  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.MAX_USE, 100);
-  sheet.setColumnWidth(SYSTEM_CONFIG.COLS.COUPON.CURRENT_USE, 100);
-}
-
-/**
- * Set up data validation dropdowns on freshly built sheets.
+ * Set up data validation dropdowns on freshly built sheets, as in the original.
  * Pass null for a sheet to leave it untouched.
  */
 function setupDataValidation_(regSheet, finSheet) {
   if (regSheet) {
+    var regRows = Math.max(1, regSheet.getMaxRows() - 1);
     // Payment Status dropdown in Registration
     var regStatusRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(getRegistrationStatusOptions_(), true)
       .setAllowInvalid(true)
       .build();
-    regSheet.getRange(2, SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS, 999, 1).setDataValidation(regStatusRule);
+    regSheet.getRange(2, SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS, regRows, 1).setDataValidation(regStatusRule);
+
+    // Email Sent / OR Email Sent dropdowns (the same rule Check & Fix Columns adds)
+    var emailRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(["SENT", "PENDING", "FAILED", ""], true)
+      .setAllowInvalid(true)
+      .build();
+    regSheet.getRange(2, SYSTEM_CONFIG.COLS.REG.EMAIL_SENT, regRows, 1).setDataValidation(emailRule);
+    regSheet.getRange(2, SYSTEM_CONFIG.COLS.REG.OR_EMAIL_SENT, regRows, 1).setDataValidation(emailRule);
   }
 
   if (finSheet) {
@@ -14061,10 +14496,10 @@ function setupDataValidation_(regSheet, finSheet) {
     var statusCol = ColumnManager.headerMap(finSheet)["Status"];
     if (statusCol) {
       var finStatusRule = SpreadsheetApp.newDataValidation()
-        .requireValueInList([SYSTEM_CONFIG.ADMIN.NOT_YET_WORD, SYSTEM_CONFIG.ADMIN.TRIGGER_WORD], true)
-        .setAllowInvalid(true)
+        .requireValueInList(getOriginalLayout_().FINANCE.STATUS_OPTIONS, true)
+        .setAllowInvalid(false)
         .build();
-      finSheet.getRange(2, statusCol, 999, 1).setDataValidation(finStatusRule);
+      finSheet.getRange(2, statusCol, Math.max(1, finSheet.getMaxRows() - 1), 1).setDataValidation(finStatusRule);
     }
   }
 }
@@ -14161,7 +14596,7 @@ var AdminAuditService = (function () {
     }
   }
 
-  return { log: log };
+  return { log: log, ensureSheet: getOrCreateSheet_ };
 })();
 
 // ----------------------------------------------------------------------------
@@ -15902,7 +16337,8 @@ var MergeService = (function () {
     propagateFinanceMetaToGroup_: propagateFinanceMetaToGroup_,
     markGroupMembersEmailSkipped_: markGroupMembersEmailSkipped_,
     rearrangeGroupOnSheet_: rearrangeGroupOnSheet_,
-    sendGroupRegistrationReceived_: sendGroupRegistrationReceived_
+    sendGroupRegistrationReceived_: sendGroupRegistrationReceived_,
+    getLedgerSheet_: getLedgerSheet_
   };
 })();
 
@@ -17843,12 +18279,19 @@ function V22_editor_saveEdits(payload) {
   // Registration "Payment Status" column. Before, the editor only wrote the word, so the
   // referrer was never credited and the two sheets disagreed.
   var statusFlowRan = false;
+  var receiptSentByStatusFlow = false;
   if (newFinStatus && statusEditFinRow && finCols && finCols.Status) {
     try {
+      var emailSentCellForFlow = finCols.EmailSent ? finSheet.getRange(statusEditFinRow, finCols.EmailSent) : null;
+      var emailSentBeforeFlow = emailSentCellForFlow ? String(emailSentCellForFlow.getValue() || "").trim() : "";
       handleFinanceEditSync(
         { range: finSheet.getRange(statusEditFinRow, finCols.Status), oldValue: beforeFin.status || "" },
         sysCols, finCols, "Status");
       statusFlowRan = true;
+      // The flow skips the send when the row already says SENT/SKIPPED, for a merged member,
+      // or when Gmail fails, so only a fresh "SENT" proves a receipt went out
+      var emailSentAfterFlow = emailSentCellForFlow ? String(emailSentCellForFlow.getValue() || "").trim() : "";
+      receiptSentByStatusFlow = emailSentAfterFlow.toUpperCase().indexOf("SENT") === 0 && emailSentAfterFlow !== emailSentBeforeFlow;
     } catch (statusErr) {
       AuditLogService.warn("MANUAL_EDIT_STATUS_FLOW_FAIL", String(statusErr));
     }
@@ -17876,7 +18319,7 @@ function V22_editor_saveEdits(payload) {
   // Optional resend
   var resendResult = null;
   var becamePaid = statusFlowRan && Utils.normalizeStatusValue(newFinStatus) === SYSTEM_CONFIG.ADMIN.TRIGGER_WORD;
-  if (resend === "AR" && becamePaid) {
+  if (resend === "AR" && becamePaid && receiptSentByStatusFlow) {
     // The PAID update above already sent the receipt
     resendResult = { sent: true, viaStatusUpdate: true };
   } else if (resend === "AR") {
@@ -19292,7 +19735,7 @@ function getAdminMenuDefinition_() {
   var S = SYSTEM_CONFIG.SHEETS;   // descriptions name the sheets as they are called in the settings
   return [
     ["🏗️ BUILD BUILD BUILD", "showSystemBuilder",
-      "First-time setup. Creates any missing sheet (" + [S.REGISTRATION, S.FINANCE, S.COUPONS, S.PARTICIPANT_DB].join(", ") + ") with the right headers. Sheets that already hold data are left exactly as they are."],
+      "First-time setup. Makes a new spreadsheet look like the original: renames the linked form tabs, creates any missing sheet (" + [S.REGISTRATION, S.PARTICIPANT_DB, S.FINANCE, S.SUBMISSIONS, S.COUPONS].join(", ") + ", the judges' sheets, the hidden system tabs) with the original headers, colours and dropdowns, and installs the triggers. Sheets that already hold data are left exactly as they are."],
     ["🔄 SYSTEM UPDATER", "runSystemUpdater",
       "Fills in missing data on the sheet you are viewing, for the rows you selected: missing Gen IDs, pricing columns, blank payment status, paid-referral counts, missing Finance rows."],
     "-",
@@ -20037,6 +20480,7 @@ function reprocessSelectedSubmission() {
   var result = DepersonalizationService.reprocessSubmission(subSheet, sysCols, row, repo);
 
   if (result.success) {
+    clearNotProcessedNotes_(subSheet.getRange(row, 1));
     ui.alert("✅ Row " + row + " reprocessed successfully.\n\nParticipant Number: " + result.participantNum + "\nStatus: " + result.status);
   } else {
     ui.alert("❌ Reprocessing failed: " + (result.error || "Unknown error"));
@@ -22671,17 +23115,43 @@ function getAnnouncementQuota() {
 function saveFailedAnnouncementRecipients(config) {
   try {
     var props = PropertiesService.getScriptProperties();
+    var recipients = config.recipients || [];
+
+    // The queue holds one announcement. If it already holds failures of this same
+    // announcement, add to them (dropping duplicates) instead of overwriting them.
+    // (config.replace: the queue's own retry run saves what is still failing, so replace.)
+    try {
+      var rawOld = config.replace ? null : props.getProperty("ANNOUNCE_FAILED_QUEUE");
+      if (rawOld) {
+        var old = JSON.parse(rawOld);
+        var sameAnnouncement = old && old.subject === config.subject && old.body === config.body &&
+          old.category === config.category && (old.signoff || "") === (config.signoff || "");
+        if (sameAnnouncement) {
+          var seen = {};
+          recipients = (old.recipients || []).concat(recipients).filter(function (r) {
+            var key = String(r && r.email || "").trim().toLowerCase();
+            if (!key || seen[key]) return false;
+            seen[key] = true;
+            return true;
+          });
+        } else if (old && old.recipients && old.recipients.length) {
+          AuditLogService.warn("ANNOUNCE_QUEUE_REPLACED", "Failed recipients of '" + old.subject + "' (" + old.recipients.length +
+            ") were replaced by those of '" + config.subject + "'. Resend '" + old.subject + "' from the Announcement Center if needed.");
+        }
+      }
+    } catch (mergeErr) {}
+
     var data = {
       category: config.category,
       subject: config.subject,
       body: config.body,
       signoff: config.signoff || "",
-      recipients: config.recipients,
+      recipients: recipients,
       savedAt: new Date().toISOString()
     };
     props.setProperty("ANNOUNCE_FAILED_QUEUE", JSON.stringify(data));
-    AuditLogService.info("ANNOUNCE_QUEUE_SAVED", "Saved " + config.recipients.length + " failed recipients for retry.");
-    return { success: true, count: config.recipients.length };
+    AuditLogService.info("ANNOUNCE_QUEUE_SAVED", "Saved " + recipients.length + " failed recipients for retry.");
+    return { success: true, count: recipients.length };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -22768,6 +23238,7 @@ function processScheduledAnnouncementQueue(e) {
     } else if (result.failedRecipients && result.failedRecipients.length > 0) {
       // Save remaining failures and reschedule
       config.recipients = result.failedRecipients;
+      config.replace = true;
       saveFailedAnnouncementRecipients(config);
       scheduleAnnouncementRetry();
     }
@@ -22879,12 +23350,17 @@ function processScheduledAnnouncement(e) {
 
     due.sort(function (x, y) { return new Date(x.sendAt).getTime() - new Date(y.sendAt).getTime(); });
 
-    // Remove the due ones from storage before sending so a second trigger cannot resend them
-    props.setProperty("ANNOUNCEMENT_SCHEDULED_SENDS", JSON.stringify(pending));
-
-    for (var d = 0; d < due.length; d++) {
-      sendScheduledAnnouncementDraft_(due[d], props);
+    // One announcement per run: two large ones in one run could pass the 6-minute limit,
+    // and the drafts not reached yet were already removed from storage. The others stay
+    // stored and a new trigger picks the next one up after this run can no longer be going
+    // (7 minutes), so two runs never send at the same time.
+    var draftNow = due.shift();
+    props.setProperty("ANNOUNCEMENT_SCHEDULED_SENDS", JSON.stringify(pending.concat(due)));
+    if (due.length > 0) {
+      ScriptApp.newTrigger("processScheduledAnnouncement").timeBased().after(7 * 60 * 1000).create();
     }
+
+    sendScheduledAnnouncementDraft_(draftNow, props);
   } catch (err) {
     AuditLogService.error("ANNOUNCE_SCHED_ERROR", "Scheduled announcement processing failed: " + err);
   }
@@ -22930,8 +23406,19 @@ function sendScheduledAnnouncementDraft_(draft, props) {
     var totalSent = 0;
     var totalFailed = 0;
     var failedRecipients = [];
+    var startedAt = Date.now();
+    var TIME_BUDGET_MS = 4.5 * 60 * 1000;   // stop before the 6-minute run-time limit
+    var notReached = 0;
 
     for (var i = 0; i < recipients.length; i += batchSize) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) {
+        // Keep the rest for the retry queue instead of losing them when the run is stopped
+        var rest = recipients.slice(i);
+        notReached = rest.length;
+        failedRecipients = failedRecipients.concat(rest);
+        AuditLogService.warn("ANNOUNCE_SCHED_PARTIAL", "Time limit reached: " + rest.length + " recipient(s) of '" + draft.subject + "' were queued for a retry.");
+        break;
+      }
       var batch = recipients.slice(i, i + batchSize);
       var batchConfig = {
         category: draft.category,
@@ -22951,7 +23438,8 @@ function sendScheduledAnnouncementDraft_(draft, props) {
       }
     }
 
-    AuditLogService.info("ANNOUNCE_SCHED_DONE", "Scheduled send complete: " + totalSent + " sent, " + totalFailed + " failed.");
+    AuditLogService.info("ANNOUNCE_SCHED_DONE", "Scheduled send complete: " + totalSent + " sent, " + totalFailed + " failed" +
+      (notReached ? ", " + notReached + " not reached (time limit)" : "") + ".");
 
     // Save failures for retry if needed
     if (failedRecipients.length > 0) {
@@ -22962,6 +23450,8 @@ function sendScheduledAnnouncementDraft_(draft, props) {
         signoff: draft.signoff,
         recipients: failedRecipients
       });
+      // Recipients cut off by the time limit were never tried, so retry them automatically
+      if (notReached) scheduleAnnouncementRetry();
     }
   } catch (e) {
     AuditLogService.error("ANNOUNCE_SCHED_ERROR", "Scheduled announcement '" + (draft && draft.subject) + "' failed: " + e);

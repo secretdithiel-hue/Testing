@@ -2,7 +2,7 @@
 
 A Google Apps Script system that runs the UPLB Sociology Society's **Husay ng Soksay** inter-high school social science competition from one Google Sheet. It automates registration, fees, payment receipts, referrals, discount codes, anonymous judging and announcements, all managed from one **Admin Center** menu.
 
-**Current version:** V1.0 (baseline release, October 2026)
+**Current version:** V1.1 (see the CHANGELOG at the top of `src/Code.gs`)
 
 ## Features
 
@@ -18,17 +18,25 @@ A Google Apps Script system that runs the UPLB Sociology Society's **Husay ng So
 
 | Path | What it is |
 | --- | --- |
-| `src/Code.gs` | The whole system (one script file). Settings live in `SYSTEM_CONFIG` near the top. |
+| `src/Code.gs` | The whole system (one script file). Settings live in `SYSTEM_CONFIG` near the top; the look of the original spreadsheet is in `getOriginalLayout_()`. |
 | `src/appsscript.json` | Apps Script manifest: Asia/Manila time zone, V8 runtime, Gmail API and Drive API advanced services. |
+| `tests/` | Node tests that run the real `Code.gs` against a small Google Sheets mock. |
 
 The git history keeps the version before the V1.0 relabel as the first commit, so `git diff` against it shows what V1.0 changed.
 
-## Setup
+## Setting up a new spreadsheet (same look as the original)
 
-1. Open the competition's Google Sheet → **Extensions → Apps Script**.
-2. Replace the contents of `Code.gs` with `src/Code.gs` from this repo.
-3. Under **Services**, add the **Gmail API** and the **Drive API** (or copy `src/appsscript.json` into the project's manifest under **Project Settings → Show "appsscript.json"**).
-4. Save, reload the Sheet, and open the **Admin Center** menu. Run `createTriggers` from there (also a button in the System Dashboard) to install the `onFormSubmit` and `onEdit` triggers, then run a health check.
+1. Create a new Google Sheet.
+2. Make copies of the **registration** and **submission** Google Forms, and in each copy open **Responses → Link to Sheets** and choose the new spreadsheet. Google adds two "Form Responses" tabs.
+3. In the sheet open **Extensions → Apps Script**, replace `Code.gs` with `src/Code.gs`, and add the **Gmail API** and **Drive API** under **Services** (or paste `src/appsscript.json` into the manifest under **Project Settings → Show "appsscript.json"**).
+4. Save, reload the sheet, and run **Admin Center → 🏗️ BUILD BUILD BUILD**. It:
+   - renames the form tabs to **Registration Form** and **Submission Form** and adds the system columns;
+   - creates the other tabs in the original order (Participant Database, Financial Dashboard, the four judges' sheets, Coupon Manager) and the hidden System Logs, Admin Audit Log and Merge Ledger;
+   - applies the original header text, colours, Google Sans font, column widths, frozen rows, alternating row colours and dropdowns;
+   - sets the time zone (Asia/Manila) and locale (en_US) and installs the form-submit and edit triggers as you.
+5. Fill in the Drive folder IDs in `SYSTEM_CONFIG.DEPERSONALIZATION.ANON_FOLDERS` if you use anonymized copies, add coupon codes, then submit one test registration.
+
+Linked the forms after building? Run BUILD again: it swaps the empty placeholder tabs for the form tabs. BUILD never reformats a sheet that already has responses, and it does not add triggers to a spreadsheet that already has them.
 
 To push from this repo with [clasp](https://github.com/google/clasp) instead, run `clasp clone <scriptId> --rootDir src` once, then `clasp push`.
 
@@ -37,4 +45,16 @@ To push from this repo with [clasp](https://github.com/google/clasp) instead, ru
 - Prices, rules, sheet names, columns and email wording: edit `SYSTEM_CONFIG`.
 - Competitions: edit `SYSTEM_CONFIG.COMPETITIONS` (and its price, prefix and submission columns). The Full System Health Check reports any mismatch.
 - Menu tools: edit `getAdminMenuDefinition_()` only.
-- Record every change in the **CHANGELOG** in the header of `src/Code.gs` (V1.1, V1.2, V2.0, …).
+- The look a new build gets: edit `getOriginalLayout_()`.
+- Record every change in the **CHANGELOG** in the header of `src/Code.gs` (V1.2, V2.0, …).
+
+## Tests
+
+Requires Node.js 18 or later; no packages to install.
+
+```sh
+node tests/run_builder_test.js src/Code.gs   # BUILD BUILD BUILD reproduces the original layout
+node tests/run_fix_tests.js src/Code.gs      # behaviour of the V1.1 bug fixes
+```
+
+`tests/original_layout.json` holds the original spreadsheet's tab names, header rows, column widths, colours and dropdowns (no participant data). The mock covers only the Apps Script calls these paths use, so test any change in a copy of the real spreadsheet before using it live.

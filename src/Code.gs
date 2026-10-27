@@ -138,16 +138,20 @@
  *      - SYS_APPLICANT_AMT is configured at column 60, after the 7 merge columns
  *        (53-59), which is where the original adds it on first use. It is found by
  *        header, so live sheets behave the same; a new build no longer puts it at 53.
- *    V1.2 - HNS brand look (colours from the "HNS Event Primer 2025" design in Canva).
- *      - SYSTEM_CONFIG.BRAND holds the brand colours and fonts.
- *      - Admin dialogs: deep indigo surfaces, cream text, violet buttons, yellow title
- *        bar accents and the Lilita One title font, applied to every dialog by
- *        withGuideLink_ (applyAdminBrandTheme_). BRAND.ADMIN_THEME = "classic" turns
- *        it off. Embedded email previews are left exactly as the email looks.
- *      - Emails: header, receipt table, totals, buttons and referral boxes use the
- *        brand indigo / yellow / cream; titles use the brand font (Arial Black in Gmail).
- *      - The Submission Acknowledgement preview no longer turns the whole dialog grey
- *        (the email's body styles are now kept inside its frame).
+ *    V1.2 - New look, designed in Canva in the style of the HNS Event Primer 2025.
+ *      - Mockups: SYSTEM_CONFIG.BRAND.DESIGN_MOCKUP (dashboard) and EMAIL_MOCKUP.
+ *      - Admin dialogs: cream ruled paper with yellow halftone corners, Poppins text,
+ *        a HUSAY NG SOKSAY wordmark block, page titles on a yellow ribbon, paper cards
+ *        with thick indigo outlines and yellow label tags, indigo table headers,
+ *        yellow pill tabs, indigo buttons (getAdminBrandCss_). The old dark palette is
+ *        swapped for the paper one when a dialog opens (applyAdminBrandTheme_), and any
+ *        text left with too little contrast is fixed (fixLowContrast_).
+ *        BRAND.ADMIN_THEME = "classic" restores the old dark dialogs.
+ *      - Emails: cream page, card with a thick indigo outline, yellow status ribbon in
+ *        the display font (PAYMENT CONFIRMED on receipts), section titles as indigo
+ *        tags, soft-yellow referral-code boxes, totals on a yellow highlight, brand
+ *        buttons; brand colours replace the old blue and gold.
+ *      - The Submission Acknowledgement preview no longer turns the whole dialog grey.
  *      - Spreadsheet tabs keep the original sheet's look.
  * ============================================================================
  */
@@ -174,7 +178,11 @@ var SYSTEM_CONFIG = {
     YELLOW: "#fbd23f",
     CREAM: "#f6efdc",
     ORANGE: "#f86810",
-    DISPLAY_FONT: "Lilita One",    // dialog titles (Google Font, closest to the primer's lettering)
+    DISPLAY_FONT: "Lilita One",    // titles, numbers, tags (Google Font, closest to the primer's lettering)
+    BODY_FONT: "Poppins",          // dialog text (the primer's body font)
+    // The Canva mockups the dialogs and emails were rebuilt from
+    DESIGN_MOCKUP: "https://canva.link/xsao2f81m0rtfpp",
+    EMAIL_MOCKUP: "https://canva.link/x8fk5sd3hbxnsxu",
     // Email titles: mail apps that cannot load web fonts (e.g. Gmail) use Arial Black
     EMAIL_TITLE_FONT: "'Lilita One','Arial Black',Arial,sans-serif"
   },
@@ -2853,11 +2861,11 @@ var EmailBuilder = (function () {
       '  }' +
       '</style>' +
       '</head>' +
-      '<body style="font-family:Arial,sans-serif;background-color:#f4f4f4;margin:0;padding:15px;">' +
-      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">' +
+      '<body style="font-family:Arial,sans-serif;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';margin:0;padding:15px;">' +
+      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
       headerBlock +
-      '<div style="background-color:' + HEADER_BLUE + ';color:#ffffff;text-align:center;padding:12px;font-size:16px;font-weight:bold;letter-spacing:1px;">REGISTRATION RECEIVED</div>' +
-      '<div class="email-content" style="padding:20px 25px;color:#333333;">' +
+      '<div style="background-color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-top:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;font-weight:400;letter-spacing:1px;">REGISTRATION RECEIVED</div>' +
+      '<div class="email-content" style="padding:20px 25px;color:#2b2160;">' +
       '<div style="font-size:15px;margin-bottom:10px;">Hi <strong>' + name + '</strong>,</div>' +
       '<div style="font-size:15px;margin-bottom:20px;">Registration received!</div>' +
       '<table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:14px;">' +
@@ -2868,9 +2876,9 @@ var EmailBuilder = (function () {
       '</table>' +
       refLine +
       couponLine +
-      '<div class="referral-box" style="border:2px dashed ' + SYSTEM_CONFIG.BRAND.INDIGO + ';background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';padding:15px;text-align:center;border-radius:5px;">' +
+      '<div class="referral-box" style="border:2px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';background-color:#fff4c7;padding:15px;text-align:center;border-radius:5px;">' +
       '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:5px;font-weight:bold;">Your Referral Code (Share to earn cashback!)</div>' +
-      '<div class="referral-code" style="font-size:22px;font-weight:bold;color:#333333;letter-spacing:1px;">' + genId + '</div>' +
+      '<div class="referral-code" style="font-size:22px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';letter-spacing:1px;">' + genId + '</div>' +
       '</div>' +
       '</div></div></body></html>'
     );
@@ -2896,8 +2904,8 @@ var EmailBuilder = (function () {
       '  }' +
       '</style>' +
       '</head>' +
-      '<body style="margin:0;padding:20px;background-color:#f2f2f2;font-family:Arial, Helvetica, sans-serif;">' +
-      '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#ffffff;box-shadow:0 0 10px rgba(0,0,0,0.1);border-radius:10px;overflow:hidden;">' +
+      '<body style="margin:0;padding:20px;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';font-family:Arial, Helvetica, sans-serif;">' +
+      '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
       // Header with logos
       '<div style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';padding:18px 10px;text-align:center;border-bottom:6px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';">' +
       '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;">' +
@@ -2915,7 +2923,8 @@ var EmailBuilder = (function () {
       '    </tr>' +
       '  </table>' +
       '</div>' +
-      '<div class="email-content" style="padding:25px 30px;">' +
+      '<div style="background-color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;letter-spacing:1px;">PAYMENT CONFIRMED</div>' +
+      '<div class="email-content" style="padding:25px 30px;color:#2b2160;">' +
       // Confidential Badge
       '<div style="display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:bold;background:#eef2ff;color:#3730a3;margin-bottom:15px;">CONFIDENTIAL - DO NOT SHARE</div>' +
       // Email Spiel Section (BEFORE the receipt) - includes contact and sign-off
@@ -2923,7 +2932,7 @@ var EmailBuilder = (function () {
       // Horizontal divider
       '<div style="height:1px;background:#e6e8ec;margin:20px 0;"></div>' +
       // AR Section Header
-      '<h2 style="font-size:16px;font-weight:bold;margin:15px 0 12px 0;">Acknowledgement Receipt</h2>' +
+      '<h2 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:16px;margin:15px 0 12px 0;">Acknowledgement Receipt</h2>' +
       // Receipt Info Table
       '<table class="info-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;margin-bottom:15px;">' +
       '  <tr><th align="left" style="background:#f8fafc;padding:10px 12px;border:1px solid #e6e8ec;width:40%;">Receipt No.</th><td style="padding:10px 12px;border:1px solid #e6e8ec;">__GEN_ID__</td></tr>' +
@@ -2933,7 +2942,7 @@ var EmailBuilder = (function () {
       '  <tr><th align="left" style="background:#f8fafc;padding:10px 12px;border:1px solid #e6e8ec;">Payment Method</th><td style="padding:10px 12px;border:1px solid #e6e8ec;">__PAYMODE__</td></tr>' +
       '</table>' +
       // Breakdown Section
-      '<h3 style="font-size:14px;font-weight:bold;margin:15px 0 10px 0;">Breakdown</h3>' +
+      '<h3 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 10px 0;">Breakdown</h3>' +
       '<table class="breakdown-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;">' +
       '  <thead>' +
       '    <tr style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' +
@@ -2944,8 +2953,8 @@ var EmailBuilder = (function () {
       '  <tbody>__ITEM_ROWS__</tbody>' +
       '  <tfoot>' +
       '    <tr style="border-top:2px solid #e6e8ec;">' +
-      '      <td align="right" style="padding:12px;font-size:13px;font-weight:bold;">TOTAL AMOUNT PAID:</td>' +
-      '      <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">__TOTAL_PAID__</td>' +
+      '      <td align="right" style="padding:12px;font-size:13px;font-weight:bold;background:#fff4c7;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">TOTAL AMOUNT PAID:</td>' +
+      '      <td align="right" style="padding:12px;font-size:18px;font-weight:bold;background:#fff4c7;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';">__TOTAL_PAID__</td>' +
       '    </tr>' +
       '  </tfoot>' +
       '</table>' +
@@ -3138,7 +3147,7 @@ var EmailBuilder = (function () {
       var spielContent = spielConfig.CONTENT || [];
       
       // Section Title
-      emailSpiel = '<h3 style="font-size:14px;font-weight:bold;margin:20px 0 10px 0;">' + spielTitle + '</h3>';
+      emailSpiel = '<h3 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:20px 0 10px 0;">' + spielTitle + '</h3>';
       
       // Dear [Name] greeting
       emailSpiel += '<p style="font-size:14px;margin:15px 0;">Dear <b>' + escapeHtml_(data.name || "") + '</b>,</p>';
@@ -3161,8 +3170,8 @@ var EmailBuilder = (function () {
       
       // Referral code section
       emailSpiel += '<p style="font-size:13px;color:#555;margin:15px 0;">Under this message, you will also be provided by a unique referral code, which your friends or colleagues can use upon their registration to avail our discounted offers.</p>';
-      emailSpiel += '<h4 style="font-size:14px;font-weight:bold;margin:20px 0 10px 0;">REFERRAL CODE</h4>';
-      emailSpiel += '<div style="background:#f3f4f6;border:1px dashed #cbd5e1;padding:12px;border-radius:10px;font-family:monospace;font-size:14px;word-break:break-word;">' + escapeHtml_(displayGenId) + '</div>';
+      emailSpiel += '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:20px 0 10px 0;">REFERRAL CODE</h4>';
+      emailSpiel += '<div style="background:#fff4c7;border:2px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:12px;border-radius:10px;font-family:monospace;font-size:18px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';word-break:break-word;">' + escapeHtml_(displayGenId) + '</div>';
       
       // Horizontal divider
       emailSpiel += '<div style="height:1px;background:#e6e8ec;margin:15px 0;"></div>';
@@ -3184,7 +3193,7 @@ var EmailBuilder = (function () {
       }
       
       // Submission Form Section
-      emailSpiel += '<h4 style="font-size:14px;font-weight:bold;margin:15px 0 8px 0;">Official Submission Form</h4>';
+      emailSpiel += '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 8px 0;">Official Submission Form</h4>';
       if (spielConfig.SUBMISSION_INTRO) {
         emailSpiel += '<p style="font-size:14px;margin:8px 0;line-height:1.5;">' + spielConfig.SUBMISSION_INTRO + '</p>';
       }
@@ -3202,7 +3211,7 @@ var EmailBuilder = (function () {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;line-height:1.5;">' + spielConfig.PRIMER_INTRO + '</p>';
       }
       if (spielConfig.EVENT_PRIMER_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.PRIMER_BUTTON_LABEL || "Event Primer") + '</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:10px 16px;border-radius:10px;background:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border:2px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.PRIMER_BUTTON_LABEL || "Event Primer") + '</a></p>';
       }
       
       // Closing message
@@ -3213,7 +3222,7 @@ var EmailBuilder = (function () {
       // Contact Section (moved here, before the AR)
       var contactConfig = spielConfig.CONTACT || {};
       emailSpiel += '<div style="height:1px;background:#e6e8ec;margin:15px 0;"></div>';
-      emailSpiel += '<h4 style="font-size:14px;font-weight:bold;margin:15px 0 8px 0;">Contact</h4>';
+      emailSpiel += '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 8px 0;">Contact</h4>';
       emailSpiel += '<p style="font-size:13px;color:#555;line-height:1.6;">' +
         'For any questions, clarifications, and news updates about the events please reach out to us on:<br>' +
         'Email: <b>' + escapeHtml_(contactConfig.EMAIL || "husayngsoksayteam@gmail.com") + '</b><br>' +
@@ -3282,11 +3291,11 @@ var EmailBuilder = (function () {
       '  }' +
       '</style>' +
       '</head>' +
-      '<body style="font-family:Arial,sans-serif;background-color:#f4f4f4;margin:0;padding:15px;">' +
-      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">' +
+      '<body style="font-family:Arial,sans-serif;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';margin:0;padding:15px;">' +
+      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
       headerBlock +
-      '<div style="background-color:' + SUCCESS_GREEN + ';color:#ffffff;text-align:center;padding:12px;font-size:16px;font-weight:bold;letter-spacing:1px;">REFERRAL SUCCESS!</div>' +
-      '<div class="email-content" style="padding:20px 25px;color:#333333;">' +
+      '<div style="background-color:' + SUCCESS_GREEN + ';color:#ffffff;border-top:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;font-weight:400;letter-spacing:1px;">REFERRAL SUCCESS!</div>' +
+      '<div class="email-content" style="padding:20px 25px;color:#2b2160;">' +
       '<div style="font-size:15px;margin-bottom:15px;">Hi <strong>' + referrerName + '</strong>,</div>' +
       '<div style="background-color:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:15px;margin-bottom:20px;">' +
       '<div style="font-size:16px;color:#155724;font-weight:bold;margin-bottom:8px;">Great news!</div>' +
@@ -3313,9 +3322,9 @@ var EmailBuilder = (function () {
       '</tr>' +
       '</table>' +
       '</div>' +
-      '<div style="border:2px dashed ' + SYSTEM_CONFIG.BRAND.INDIGO + ';background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';padding:12px;text-align:center;border-radius:5px;margin-bottom:15px;">' +
+      '<div style="border:2px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';background-color:#fff4c7;padding:12px;text-align:center;border-radius:5px;margin-bottom:15px;">' +
       '<div style="font-size:11px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:5px;">Keep sharing your referral code!</div>' +
-      '<div style="font-size:18px;font-weight:bold;color:#333333;letter-spacing:1px;">' + referrerCode + '</div>' +
+      '<div style="font-size:18px;font-weight:bold;color:#2b2160;letter-spacing:1px;">' + referrerCode + '</div>' +
       '</div>' +
       '<div style="font-size:11px;color:#888;text-align:center;font-style:italic;">' +
       '*Cashback rewards are processed separately after the registration period.' +
@@ -3360,11 +3369,11 @@ var EmailBuilder = (function () {
       '  }' +
       '</style>' +
       '</head>' +
-      '<body style="font-family:Arial,sans-serif;background-color:#f4f4f4;margin:0;padding:15px;">' +
-      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">' +
+      '<body style="font-family:Arial,sans-serif;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';margin:0;padding:15px;">' +
+      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
       headerBlock +
-      '<div style="background-color:' + WARNING_ORANGE + ';color:#ffffff;text-align:center;padding:12px;font-size:16px;font-weight:bold;letter-spacing:1px;">REFERRAL UPDATE</div>' +
-      '<div class="email-content" style="padding:20px 25px;color:#333333;">' +
+      '<div style="background-color:' + WARNING_ORANGE + ';color:#ffffff;border-top:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;font-weight:400;letter-spacing:1px;">REFERRAL UPDATE</div>' +
+      '<div class="email-content" style="padding:20px 25px;color:#2b2160;">' +
       '<div style="font-size:15px;margin-bottom:15px;">Hi <strong>' + referrerName + '</strong>,</div>' +
       '<div style="background-color:#fff3cd;border:1px solid #ffeeba;border-radius:8px;padding:15px;margin-bottom:20px;">' +
       '<div style="font-size:15px;color:#856404;font-weight:bold;margin-bottom:8px;">Referral Update</div>' +
@@ -3394,7 +3403,7 @@ var EmailBuilder = (function () {
       '</div>' +
       '<div style="background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';border-radius:8px;padding:12px;margin-bottom:15px;text-align:center;">' +
       '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">Don\'t worry! Keep sharing your code to earn more cashback:</div>' +
-      '<div style="font-size:18px;font-weight:bold;color:#333333;letter-spacing:1px;margin-top:8px;">' + referrerCode + '</div>' +
+      '<div style="font-size:18px;font-weight:bold;color:#2b2160;letter-spacing:1px;margin-top:8px;">' + referrerCode + '</div>' +
       '</div>' +
       '<div style="font-size:11px;color:#888;text-align:center;">' +
       'If you have any questions, please contact us at ' + Utils.escapeHtml((SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT || {}).EMAIL || "") +
@@ -5048,8 +5057,8 @@ function buildSubmissionConfirmationHtml_(result) {
     '  }' +
     '</style>' +
     '</head>' +
-    '<body style="margin:0;padding:20px;background-color:#f2f2f2;font-family:Arial, Helvetica, sans-serif;">' +
-    '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#ffffff;box-shadow:0 0 10px rgba(0,0,0,0.1);border-radius:10px;overflow:hidden;">' +
+    '<body style="margin:0;padding:20px;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';font-family:Arial, Helvetica, sans-serif;">' +
+    '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
 
     // Header with logos (matching AR style)
     '<div style="background-color:' + BLUE + ';padding:18px 10px;text-align:center;border-bottom:6px solid ' + GOLD + ';">' +
@@ -5070,7 +5079,7 @@ function buildSubmissionConfirmationHtml_(result) {
     '</div>' +
 
     // Title bar (matching AR style)
-    '<div style="background-color:' + BLUE + ';color:#ffffff;text-align:center;padding:12px;font-size:16px;font-weight:bold;letter-spacing:1px;">' +
+    '<div style="background-color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-top:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;font-weight:400;letter-spacing:1px;">' +
     (spielConfig.TITLE || "SUBMISSION ACKNOWLEDGEMENT") +
     '</div>' +
 
@@ -5093,7 +5102,7 @@ function buildSubmissionConfirmationHtml_(result) {
     '<div style="height:1px;background:#e6e8ec;margin:20px 0;"></div>' +
 
     // Submission Details header
-    '<h2 style="font-size:16px;font-weight:bold;margin:15px 0 12px 0;">Submission Details</h2>' +
+    '<h2 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:16px;margin:15px 0 12px 0;">Submission Details</h2>' +
 
     // Submission Details Table (matching AR info-table style)
     '<table class="info-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;margin-bottom:15px;">' +
@@ -5121,7 +5130,7 @@ function buildSubmissionConfirmationHtml_(result) {
     '<div style="height:1px;background:#e6e8ec;margin:15px 0;"></div>' +
 
     // Contact Section (matching AR style)
-    '<h4 style="font-size:14px;font-weight:bold;margin:15px 0 8px 0;">Contact</h4>' +
+    '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 8px 0;">Contact</h4>' +
     '<p style="font-size:13px;color:#555;line-height:1.6;">' +
     'For any questions, clarifications, and updates, please reach out to us on:<br>' +
     'Email: <b>' + esc(contactConfig.EMAIL || "husayngsoksayteam@gmail.com") + '</b><br>' +
@@ -15317,21 +15326,22 @@ var MergeService = (function () {
   function getReceiptTemplate_(headerBlock) {
      return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Acknowledgement Receipt</title>' +
       '<style>@media only screen and (max-width:600px){.email-container{width:100%!important;padding:10px!important}.email-content{padding:20px 15px!important}.header-title{font-size:20px!important}.header-logo{max-width:60px!important}}</style>' +
-      '</head><body style="margin:0;padding:20px;background-color:#f2f2f2;font-family:Arial,Helvetica,sans-serif;">' +
-      '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#ffffff;box-shadow:0 0 10px rgba(0,0,0,0.1);border-radius:10px;overflow:hidden;">' +
+      '</head><body style="margin:0;padding:20px;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';font-family:Arial,Helvetica,sans-serif;">' +
+      '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
       headerBlock +
-      '<div class="email-content" style="padding:25px 30px;">' +
+      '<div style="background-color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;letter-spacing:1px;">GROUP PAYMENT CONFIRMED</div>' +
+      '<div class="email-content" style="padding:25px 30px;color:#2b2160;">' +
       '<div style="display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:bold;background:#eef2ff;color:#3730a3;margin-bottom:15px;">CONFIDENTIAL - DO NOT SHARE</div>' +
       '__EMAIL_SPIEL__' +
       '<div style="height:1px;background:#e6e8ec;margin:20px 0;"></div>' +
-      '<h2 style="font-size:16px;font-weight:bold;margin:15px 0 12px 0;">Group Acknowledgement Receipt</h2>' +
+      '<h2 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:16px;margin:15px 0 12px 0;">Group Acknowledgement Receipt</h2>' +
       '<table class="info-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;margin-bottom:15px;">' +
       '  <tr><th align="left" style="background:#f8fafc;padding:10px 12px;border:1px solid #e6e8ec;width:40%;">Receipt No. (Group ID)</th><td style="padding:10px 12px;border:1px solid #e6e8ec;">__GROUP_ID__</td></tr>' +
       '  <tr><th align="left" style="background:#f8fafc;padding:10px 12px;border:1px solid #e6e8ec;">Date Verified</th><td style="padding:10px 12px;border:1px solid #e6e8ec;">__DATE_VERIFIED__</td></tr>' +
       '  <tr><th align="left" style="background:#f8fafc;padding:10px 12px;border:1px solid #e6e8ec;">Primary Contact</th><td style="padding:10px 12px;border:1px solid #e6e8ec;">__PRIMARY__</td></tr>' +
       '  <tr><th align="left" style="background:#f8fafc;padding:10px 12px;border:1px solid #e6e8ec;">Payment Ref/Mode</th><td style="padding:10px 12px;border:1px solid #e6e8ec;">__PAY_REF__</td></tr>' +
       '</table>' +
-      '<h3 style="font-size:14px;font-weight:bold;margin:15px 0 10px 0;">Group Participants Breakdown</h3>' +
+      '<h3 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 10px 0;">Group Participants Breakdown</h3>' +
       '<table class="breakdown-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;">' +
       '  <thead><tr style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' +
       '      <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Participant Name / ID</th>' +
@@ -15340,8 +15350,8 @@ var MergeService = (function () {
       '  </tr></thead>' +
       '  <tbody>__ITEM_ROWS__</tbody>' +
       '  <tfoot><tr style="border-top:2px solid #e6e8ec;">' +
-      '      <td colspan="2" align="right" style="padding:12px;font-size:13px;font-weight:bold;">TOTAL GROUP PAID:</td>' +
-      '      <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">__TOTAL_PAID__</td>' +
+      '      <td colspan="2" align="right" style="padding:12px;font-size:13px;font-weight:bold;background:#fff4c7;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">TOTAL GROUP PAID:</td>' +
+      '      <td align="right" style="padding:12px;font-size:18px;font-weight:bold;background:#fff4c7;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';">__TOTAL_PAID__</td>' +
       '  </tr></tfoot>' +
       '</table>' +
       '<div style="margin-top:30px;">' +
@@ -15464,7 +15474,7 @@ var MergeService = (function () {
     html = html.split("__TOTAL_PAID__").join(EmailBuilder.escapeHtml_(Utils.formatCurrency(groupObj.total)));
 
     // ---- Group Participant Breakdown table ----
-    var gpbHtml = '<h3 style="font-size:14px;font-weight:bold;margin:20px 0 10px 0;">Group Participant Breakdown</h3>' +
+    var gpbHtml = '<h3 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:20px 0 10px 0;">Group Participant Breakdown</h3>' +
       '<table class="breakdown-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;">' +
       '  <thead><tr style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' +
       '    <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Participant Name / ID</th>' +
@@ -15483,8 +15493,8 @@ var MergeService = (function () {
 
     gpbHtml += '</tbody>' +
       '<tfoot><tr style="border-top:2px solid #e6e8ec;">' +
-      '  <td align="right" style="padding:12px;font-size:13px;font-weight:bold;">TOTAL GROUP PAID:</td>' +
-      '  <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' + Utils.formatCurrency(groupObj.total) + '</td>' +
+      '  <td align="right" style="padding:12px;font-size:13px;font-weight:bold;background:#fff4c7;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">TOTAL GROUP PAID:</td>' +
+      '  <td align="right" style="padding:12px;font-size:18px;font-weight:bold;background:#fff4c7;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';">' + Utils.formatCurrency(groupObj.total) + '</td>' +
       '</tr></tfoot></table>';
 
     html = html.split("__GROUP_BREAKDOWN__").join(gpbHtml);
@@ -15499,7 +15509,7 @@ var MergeService = (function () {
       var spielConfig = SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL;
       var spielTitle = spielConfig.TITLE || "IMPORTANT PARTICIPANT INFORMATION";
 
-      emailSpiel = '<h3 style="font-size:14px;font-weight:bold;margin:20px 0 10px 0;">' + spielTitle + '</h3>';
+      emailSpiel = '<h3 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:20px 0 10px 0;">' + spielTitle + '</h3>';
 
       // Personalized greeting
       emailSpiel += '<p style="font-size:14px;margin:15px 0;">Dear <b>' + EmailBuilder.escapeHtml_(participant.name || participant.email || "") + '</b>,</p>';
@@ -15527,8 +15537,8 @@ var MergeService = (function () {
 
       // Referral code
       emailSpiel += '<p style="font-size:13px;color:#555;margin:15px 0;">Under this message, you will also be provided by a unique referral code, which your friends or colleagues can use upon their registration to avail our discounted offers.</p>';
-      emailSpiel += '<h4 style="font-size:14px;font-weight:bold;margin:20px 0 10px 0;">REFERRAL CODE</h4>';
-      emailSpiel += '<div style="background:#f3f4f6;border:1px dashed #cbd5e1;padding:12px;border-radius:10px;font-family:monospace;font-size:14px;word-break:break-word;">' + EmailBuilder.escapeHtml_(displayGenId) + '</div>';
+      emailSpiel += '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:20px 0 10px 0;">REFERRAL CODE</h4>';
+      emailSpiel += '<div style="background:#fff4c7;border:2px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:12px;border-radius:10px;font-family:monospace;font-size:18px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';word-break:break-word;">' + EmailBuilder.escapeHtml_(displayGenId) + '</div>';
       emailSpiel += '<div style="height:1px;background:#e6e8ec;margin:15px 0;"></div>';
 
       // Content paragraphs
@@ -15543,7 +15553,7 @@ var MergeService = (function () {
       }
 
       // Submission form
-      emailSpiel += '<h4 style="font-size:14px;font-weight:bold;margin:15px 0 8px 0;">Official Submission Form</h4>';
+      emailSpiel += '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 8px 0;">Official Submission Form</h4>';
       if (spielConfig.SUBMISSION_INTRO) {
         emailSpiel += '<p style="font-size:14px;margin:8px 0;line-height:1.5;">' + spielConfig.SUBMISSION_INTRO + '</p>';
       }
@@ -15559,7 +15569,7 @@ var MergeService = (function () {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;line-height:1.5;">' + spielConfig.PRIMER_INTRO + '</p>';
       }
       if (spielConfig.EVENT_PRIMER_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.PRIMER_BUTTON_LABEL || "Event Primer") + '</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.EVENT_PRIMER_LINK + '" target="_blank" style="display:inline-block;padding:10px 16px;border-radius:10px;background:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border:2px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.PRIMER_BUTTON_LABEL || "Event Primer") + '</a></p>';
       }
 
       // Closing
@@ -15570,7 +15580,7 @@ var MergeService = (function () {
       // Contact Section
       var contactConfig = spielConfig.CONTACT || {};
       emailSpiel += '<div style="height:1px;background:#e6e8ec;margin:15px 0;"></div>';
-      emailSpiel += '<h4 style="font-size:14px;font-weight:bold;margin:15px 0 8px 0;">Contact</h4>';
+      emailSpiel += '<h4 style="display:table;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';padding:5px 12px;border-radius:7px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-weight:400;letter-spacing:0.5px;font-size:14px;margin:15px 0 8px 0;">Contact</h4>';
       emailSpiel += '<p style="font-size:13px;color:#555;line-height:1.6;">' +
         'For any questions, clarifications, and news updates about the events please reach out to us on:<br>' +
         'Email: <b>' + EmailBuilder.escapeHtml_(contactConfig.EMAIL || 'husayngsoksayteam@gmail.com') + '</b><br>' +
@@ -15681,11 +15691,11 @@ var MergeService = (function () {
       '  }' +
       '</style>' +
       '</head>' +
-      '<body style="font-family:Arial,sans-serif;background-color:#f4f4f4;margin:0;padding:15px;">' +
-      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">' +
+      '<body style="font-family:Arial,sans-serif;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';margin:0;padding:15px;">' +
+      '<div class="email-container" style="max-width:600px;margin:0 auto;background-color:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">' +
       headerBlock +
-      '<div style="background-color:' + HEADER_BLUE + ';color:#ffffff;text-align:center;padding:12px;font-size:16px;font-weight:bold;letter-spacing:1px;">REGISTRATION RECEIVED</div>' +
-      '<div class="email-content" style="padding:20px 25px;color:#333333;">' +
+      '<div style="background-color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-top:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-bottom:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';text-align:center;padding:10px 12px;font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:20px;font-weight:400;letter-spacing:1px;">REGISTRATION RECEIVED</div>' +
+      '<div class="email-content" style="padding:20px 25px;color:#2b2160;">' +
       '<div style="font-size:15px;margin-bottom:10px;">Hi <strong>' + name + '</strong>,</div>' +
       '<div style="font-size:15px;margin-bottom:20px;">' + greetingText + '</div>' +
       '<table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:14px;">' +
@@ -15696,9 +15706,9 @@ var MergeService = (function () {
       '</table>' +
       refLine +
       couponLine +
-      '<div class="referral-box" style="border:2px dashed ' + SYSTEM_CONFIG.BRAND.INDIGO + ';background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';padding:15px;text-align:center;border-radius:5px;">' +
+      '<div class="referral-box" style="border:2px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';background-color:#fff4c7;padding:15px;text-align:center;border-radius:5px;">' +
       '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:5px;font-weight:bold;">Your Referral Code (Share to earn cashback!)</div>' +
-      '<div class="referral-code" style="font-size:22px;font-weight:bold;color:#333333;letter-spacing:1px;">' + genId + '</div>' +
+      '<div class="referral-code" style="font-size:22px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';letter-spacing:1px;">' + genId + '</div>' +
       '</div>' +
       gpbHtml +
       '<div style="background:' + SYSTEM_CONFIG.BRAND.CREAM + ';border:1px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';padding:15px;border-radius:5px;text-align:center;margin-top:20px;">' +
@@ -20213,6 +20223,9 @@ function buildAdminDialog_(o) {
     '<style>' + getAdminUiCss_() + (o.css ? '\n' + o.css : '') + '</style></head><body>' +
     '<div class="ui-app">' +
     '<header class="ui-top"><div class="ui-title">' +
+    (SYSTEM_CONFIG.BRAND.ADMIN_THEME !== "classic"
+      ? '<div class="ui-brand" aria-hidden="true"><b>HUSAY</b><i>NG</i><b>SOKSAY</b><small>' + esc(SYSTEM_CONFIG.META.ORG).toUpperCase() + '</small></div>'
+      : '') +
     (o.icon ? '<div class="ui-icon">' + o.icon + '</div>' : '') +
     '<div style="min-width:0;"><h1>' + esc(o.title || "") + '</h1>' + (o.subtitle ? '<p>' + esc(o.subtitle) + '</p>' : '') + '</div></div>' +
     (o.actions ? '<div class="ui-actions">' + o.actions + '</div>' : '') +
@@ -20254,13 +20267,13 @@ function uiTable_(headers, rows, emptyText) {
 // ============================================================================
 // HNS BRAND THEME FOR THE ADMIN DIALOGS
 // ============================================================================
-// The dialogs were written with one dark palette (GitHub's greys and blues). Rather than
-// edit about a thousand colour codes in 27 dialogs, withGuideLink_ swaps each colour of that
-// palette for its HNS counterpart (deep indigo surfaces, cream text, violet buttons) when a
-// dialog opens, and adds the brand title font and yellow accents. Status colours (green,
-// amber, red) are left alone so they keep their meaning. Emails shown inside a dialog are
-// skipped (between EMAIL_EMBED_START_ / EMAIL_EMBED_END_). Turn it off with
-// SYSTEM_CONFIG.BRAND.ADMIN_THEME = "classic".
+// The design comes from the "HNS Finance Command Center" mockup made in Canva in the style of
+// the HNS Event Primer (link in SYSTEM_CONFIG.BRAND.DESIGN_MOCKUP). The dialogs were written
+// with one dark palette (GitHub's greys and blues). Rather than edit about a thousand colour
+// codes in 27 dialogs, withGuideLink_ swaps each colour of that palette for its paper-theme
+// counterpart when a dialog opens and adds the mockup's components (getAdminBrandCss_).
+// Emails shown inside a dialog are skipped (between EMAIL_EMBED_START_ / EMAIL_EMBED_END_).
+// Turn it off with SYSTEM_CONFIG.BRAND.ADMIN_THEME = "classic".
 
 var EMAIL_EMBED_START_ = "<!--hns-email-->";
 var EMAIL_EMBED_END_ = "<!--/hns-email-->";
@@ -20270,36 +20283,155 @@ function markEmailEmbed_(html) {
   return EMAIL_EMBED_START_ + html + EMAIL_EMBED_END_;
 }
 
-// old dialog colour -> HNS colour (lower case; rgb triples are matched inside rgba())
+// old dialog colour -> paper-theme colour (lower case; rgb triples are matched inside rgba()).
+// The old palette is GitHub's dark one, so each colour has a clear light counterpart:
+// dark surfaces become cream paper, light text becomes indigo ink, blue accents become the
+// brand indigo, and the status colours become their darker, readable-on-paper versions.
 var ADMIN_THEME_HEX_MAP_ = {
-  "#010409": "#0a0630", "#0d1117": "#100a3f", "#161b22": "#19115c", "#1a1e2e": "#1c1466",
-  "#21262d": "#261c7d", "#30363d": "#3a2f9f", "#484f58": "#5246b8", "#6e7681": "#958ed1",
-  "#8b949e": "#bcb6e8", "#c9d1d9": "#e9e5fb", "#e6edf3": "#fdf9ee",
-  "#58a6ff": "#b4a9ff", "#388bfd": "#8c7bff", "#1f6feb": "#5a43f5", "#1158c7": "#4630d6",
-  "#79c0ff": "#ffe28a", "#f5c518": "#fbd23f", "#1d4ed8": "#5a43f5", "#334155": "#3a2f9f"
+  // surfaces
+  "#010409": "#efe5cc", "#0d1117": "#f4ecd8", "#161b22": "#fffaf0", "#1a1e2e": "#fffaf0",
+  "#21262d": "#e6dcc0", "#30363d": "#8f86c9", "#484f58": "#6f66b0", "#334155": "#8f86c9",
+  // text
+  "#e6edf3": "#14006e", "#f0f6fc": "#14006e", "#c9d1d9": "#2b2160", "#b1bac4": "#3d3473",
+  "#8b949e": "#5c5488", "#6e7681": "#7d76a3",
+  // accents
+  "#58a6ff": "#1a00ab", "#388bfd": "#2d16c9", "#1f6feb": "#1a00ab", "#1158c7": "#12007a",
+  "#1d4ed8": "#1a00ab", "#79c0ff": "#0b4fa8", "#7ee787": "#116329", "#f5c518": "#fbd23f",
+  // status colours, darkened so they read on paper
+  "#3fb950": "#1f8a3b", "#2ea043": "#1f8a3b", "#ff7b72": "#c62828", "#f85149": "#c62828",
+  "#e3b341": "#a86600", "#d29922": "#a86600", "#bb8009": "#a86600", "#ffa657": "#c05600",
+  "#bc8cff": "#6b3fd1", "#f778ba": "#b0306f"
 };
 var ADMIN_THEME_RGB_MAP_ = {
-  "1,4,9": "10,6,48", "13,17,23": "16,10,63", "22,27,34": "25,17,92", "28,35,48": "31,23,108",
-  "48,54,61": "58,47,159", "110,118,129": "149,142,209", "177,186,196": "216,211,246",
-  "240,246,252": "255,252,242", "56,139,253": "140,123,255",
+  "1,4,9": "40,30,90", "13,17,23": "244,236,216", "22,27,34": "255,250,240", "28,35,48": "255,250,240",
+  "48,54,61": "143,134,201", "110,118,129": "125,118,163", "177,186,196": "26,0,171",
+  "240,246,252": "20,0,110", "56,139,253": "26,0,171", "99,102,241": "26,0,171",
   // the slate greys some dashboards use
-  "30,41,59": "31,23,108", "51,65,85": "58,47,159", "100,116,139": "149,142,209"
+  "30,41,59": "255,250,240", "51,65,85": "143,134,201", "100,116,139": "125,118,163"
 };
 
-/** Brand additions on top of the recoloured base layer: title font and yellow accents. */
+/**
+ * The look of the "HNS Finance Command Center" mockup made in Canva: cream ruled paper with
+ * yellow halftone corners, a HUSAY NG SOKSAY wordmark block, the page title on a yellow
+ * ribbon, paper cards with thick indigo outlines and yellow label tags, an indigo table
+ * header, outlined chips, yellow pill tabs and indigo buttons. The first part styles the
+ * shared ui-* components; the second gives the dialogs that have their own markup (the
+ * dashboards, the editors, the guide) the same cards, tabs, buttons and tables.
+ */
 function getAdminBrandCss_() {
   var B = SYSTEM_CONFIG.BRAND;
+  var IND = B.INDIGO, YEL = B.YELLOW, CRM = B.CREAM;
   var display = '"' + B.DISPLAY_FONT + '", "Arial Black", Arial, sans-serif';
+  var body = '"' + B.BODY_FONT + '", "Segoe UI", Arial, sans-serif';
+  var notEmail = ':not(.ui-paper *):not(.email-paper *)';
+  var card = 'background: #fffaf0; border: 2.5px solid ' + IND + '; border-radius: 16px; box-shadow: 4px 4px 0 rgba(26,0,171,0.18);';
+  var pill = 'border: 2px solid ' + IND + '; border-radius: 999px; font-family: ' + display + '; font-weight: 400; letter-spacing: 0.3px;';
   return [
-    // (not inside an email preview, which must look exactly like the email)
-    'html body h1:not(.ui-paper *):not(.email-paper *) { font-family: ' + display + '; font-weight: 400; letter-spacing: 0.3px; }',
-    // title bar of the shared dialogs: the primer's indigo banner with a yellow title
-    'html body .ui-top { background: ' + B.INDIGO + '; border-bottom: 3px solid ' + B.YELLOW + '; }',
-    'html body .ui-title h1 { color: ' + B.YELLOW + '; font-size: 19px; }',
-    'html body .ui-title p { color: #d9d4ff; }',
-    'html body .ui-icon { background: ' + B.YELLOW + '; border-color: ' + B.YELLOW + '; }',
-    ':focus-visible { outline-color: ' + B.YELLOW + '; }',
-    '::selection { background: rgba(251,210,63,0.45); color: #ffffff; }'
+    // ---- paper ---------------------------------------------------------------------------
+    // ruled lines on top, then a cream wash that leaves the yellow halftone dots showing only in
+    // the top-left and bottom-right corners, like the primer's pages
+    'html body { font-family: ' + body + '; color: #2b2160; background-color: ' + CRM + ';' +
+      ' background-image: repeating-linear-gradient(0deg, transparent 0 31px, rgba(26,0,171,0.05) 31px 32px),' +
+      ' linear-gradient(135deg, rgba(246,239,220,0) 0%, ' + CRM + ' 26%, ' + CRM + ' 74%, rgba(246,239,220,0) 100%),' +
+      ' radial-gradient(rgba(251,210,63,0.75) 1.7px, transparent 2px);' +
+      ' background-size: auto, auto, 11px 11px; background-attachment: fixed; }',
+    'html body::before { background: ' + YEL + '; height: 5px; }',
+    'html body h1' + notEmail + ' { font-family: ' + display + '; font-weight: 400; letter-spacing: 0.4px; color: ' + IND + '; }',
+    'html body h2' + notEmail + ', html body h3' + notEmail + ' { color: ' + IND + '; }',
+    '::selection { background: rgba(251,210,63,0.7); color: ' + IND + '; }',
+    ':focus-visible { outline: 3px solid ' + YEL + '; outline-offset: 2px; }',
+    'html body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), html body select, html body textarea {' +
+      ' background-color: #ffffff; color: #14006e; border: 2px solid #b9b0e3; border-radius: 10px; }',
+    'html body input:focus, html body select:focus, html body textarea:focus { border-color: ' + IND + '; box-shadow: 0 0 0 3px rgba(251,210,63,0.6); }',
+
+    // ---- shared dialogs: header = wordmark block + yellow ribbon title -------------------
+    'html body .ui-top { background: transparent; border-bottom: 0; padding: 16px 20px 6px; position: static; }',
+    'html body .ui-brand { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;' +
+      ' background: ' + IND + '; color: #ffffff; border: 3px solid ' + IND + '; border-radius: 12px; padding: 5px 11px 4px;' +
+      ' font-family: ' + display + '; line-height: 0.92; box-shadow: 3px 3px 0 ' + YEL + '; }',
+    'html body .ui-brand b { font-weight: 400; font-size: 17px; letter-spacing: 0.5px; }',
+    'html body .ui-brand i { font-style: normal; font-size: 9px; background: ' + YEL + '; color: ' + IND + '; padding: 1px 4px; border-radius: 3px; margin: 1px 0; }',
+    'html body .ui-brand small { font-family: ' + body + '; font-weight: 700; font-size: 6.5px; letter-spacing: 0.4px; margin-top: 3px; color: #ffe892; }',
+    'html body .ui-icon { display: none; }',
+    'html body .ui-title { gap: 14px; }',
+    'html body .ui-title h1 { display: inline-block; background: ' + YEL + '; color: ' + IND + '; border: 3px solid ' + IND + '; border-radius: 10px;' +
+      ' padding: 6px 16px 5px; font-size: 18px; line-height: 1.15; text-transform: uppercase; white-space: normal; box-shadow: 4px 4px 0 ' + IND + '; }',
+    'html body .ui-title p { margin-top: 7px; color: #5c5488; font-weight: 600; }',
+    'html body .ui-main { padding-top: 12px; }',
+
+    // ---- shared dialogs: cards, tags, stats, tables, buttons, badges ----------------------
+    'html body .ui-card { ' + card + ' padding: 20px 16px 16px; margin-top: 16px; position: relative; }',
+    'html body .ui-card-title { display: inline-block; position: relative; top: -2px; margin: -34px 0 12px; padding: 4px 12px; background: ' + YEL + ';' +
+      ' color: ' + IND + '; border: 2px solid ' + IND + '; border-radius: 8px; font-family: ' + display + '; font-weight: 400; font-size: 13px; letter-spacing: 0.4px; }',
+    'html body .ui-card-title .count { color: ' + IND + '; margin-left: 10px; }',
+    'html body .ui-stat { ' + card + ' box-shadow: 3px 3px 0 rgba(26,0,171,0.18); padding: 12px 14px; }',
+    'html body .ui-stat .n { font-family: ' + display + '; font-weight: 400; font-size: 28px; color: ' + IND + '; }',
+    'html body .ui-stat .l { color: #5c5488; font-weight: 600; }',
+    'html body .ui-stat.ok .n { color: #1f8a3b; } html body .ui-stat.warn .n { color: #c05600; } html body .ui-stat.bad .n { color: #c62828; } html body .ui-stat.zero .n { color: #a9a2cc; }',
+    'html body .ui-table th { background: ' + IND + '; color: #ffffff; border-bottom: 0; }',
+    'html body .ui-table th:first-child { border-top-left-radius: 8px; } html body .ui-table th:last-child { border-top-right-radius: 8px; }',
+    'html body .ui-table td { border-bottom: 1px solid #e6dcc0; color: #2b2160; }',
+    'html body .ui-table tbody tr:nth-child(even) td { background: rgba(251,210,63,0.08); }',
+    'html body .ui-scroll { border: 2px solid ' + IND + '; border-radius: 12px; background: #fffaf0; }',
+    'html body .ui-btn { background: #fffaf0; color: ' + IND + '; border: 2px solid ' + IND + '; border-radius: 10px; font-weight: 700; }',
+    'html body .ui-btn:hover { background: ' + YEL + '; color: ' + IND + '; border-color: ' + IND + '; }',
+    'html body .ui-btn.primary, html body .ui-btn.success { background: ' + IND + '; color: #ffffff; border-color: ' + IND + '; box-shadow: 3px 3px 0 ' + YEL + '; }',
+    'html body .ui-btn.primary:hover, html body .ui-btn.success:hover { background: #2d16c9; color: ' + YEL + '; }',
+    'html body .ui-btn.danger { background: #fff1f0; color: #c62828; border-color: #c62828; }',
+    'html body .ui-badge { background: #ffffff; color: ' + IND + '; border: 1.5px solid ' + IND + '; font-weight: 700; text-transform: uppercase; font-size: 10.5px; }',
+    'html body .ui-badge.ok { background: #1f8a3b; border-color: #1f8a3b; color: #ffffff; }',
+    'html body .ui-badge.warn { background: ' + B.ORANGE + '; border-color: ' + B.ORANGE + '; color: #ffffff; }',
+    'html body .ui-badge.bad { background: #c62828; border-color: #c62828; color: #ffffff; }',
+    'html body .ui-badge.info { background: ' + YEL + '; border-color: ' + IND + '; color: ' + IND + '; }',
+    'html body .ui-callout { background: #fffaf0; border: 2px dashed ' + IND + '; border-radius: 12px; color: #2b2160; }',
+    'html body .ui-callout b, html body .ui-callout strong { color: ' + IND + '; }',
+    'html body .ui-callout.ok { border-color: #1f8a3b; background: #f1faf2; } html body .ui-callout.warn { border-color: ' + B.ORANGE + '; background: #fff6e6; } html body .ui-callout.bad { border-color: #c62828; background: #fff1f0; }',
+    'html body .ui-step .n { background: ' + YEL + '; color: ' + IND + '; border: 2px solid ' + IND + '; font-family: ' + display + '; font-weight: 400; }',
+    'html body .ui-list li { border-bottom: 1px dashed #cdbf9a; }',
+    'html body .ui-list .t, html body .ui-kv dd { color: ' + IND + '; }',
+    'html body .ui-code { background: #fffdf6; border: 2px solid #b9b0e3; color: #116329; }',
+    'html body .ui-bar.sticky { background: rgba(244,236,216,0.95); border-top: 2px solid ' + IND + '; }',
+    'html body .ui-mailbar { background: ' + IND + '; border-color: ' + IND + '; color: #e9e5fb; }',
+    'html body .ui-mailbar b { color: ' + YEL + '; }',
+    'html body .ui-paper { border: 2.5px solid ' + IND + '; box-shadow: 5px 5px 0 rgba(26,0,171,0.2); }',
+    // an email preview shows the email's own font, not the dialog's
+    'html body .ui-paper, html body .email-paper { font-family: Arial, Helvetica, sans-serif; }',
+
+    // ---- dialogs with their own markup ----------------------------------------------------
+    // page titles become the yellow ribbon too
+    'html body h1' + notEmail + ':not(.ui-title h1) { display: inline-block; background: ' + YEL + '; border: 3px solid ' + IND + '; border-radius: 10px;' +
+      ' padding: 4px 14px 3px; box-shadow: 4px 4px 0 ' + IND + '; text-transform: uppercase; -webkit-text-fill-color: ' + IND + '; background-clip: border-box; }',
+    'html body .bg-orbs, html body .theme-switch { display: none !important; }',
+    // cards and tiles
+    ['.card', '.chart-card', '.stat-card', '.kpi', '.disc-card', '.map-card', '.section', '.panel', '.result-card', '.group-card']
+      .map(function (c) { return 'html body ' + c + notEmail; }).join(', ') + ' { ' + card + ' }',
+    ['.kpi-label', '.stat-label', '.disc-label', '.card-title', '.chart-title', '.section-title', '.panel-title']
+      .map(function (c) { return 'html body ' + c; }).join(', ') + ' { color: ' + IND + ' !important; font-weight: 800; }',
+    ['.kpi-val', '.stat-value', '.stat-num', '.disc-val']
+      .map(function (c) { return 'html body ' + c + notEmail; }).join(', ') + ' { font-family: ' + display + '; font-weight: 400; color: ' + IND + '; }',
+    // tabs: yellow pills, the open one indigo
+    ['.tab-btn', '.nav-tab', '.tabs button', '.tab-bar button']
+      .map(function (c) { return 'html body ' + c + notEmail; }).join(', ') + ' { background: ' + YEL + ' !important; color: ' + IND + ' !important; ' + pill + ' }',
+    ['.tab-btn.active', '.nav-tab.active', '.tabs button.active', '.tab-bar button.active']
+      .map(function (c) { return 'html body ' + c + notEmail; }).join(', ') + ' { background: ' + IND + ' !important; color: ' + YEL + ' !important; }',
+    // buttons
+    'html body .btn' + notEmail + ', html body button.btn' + notEmail + ' { border: 2px solid ' + IND + '; border-radius: 10px; font-weight: 700; }',
+    ['.btn-primary', '.btn-accent', '.btn-main'].map(function (c) { return 'html body ' + c + notEmail; }).join(', ') +
+      ' { background: ' + IND + ' !important; color: #ffffff !important; border: 2px solid ' + IND + ' !important; box-shadow: 3px 3px 0 ' + YEL + '; }',
+    ['.btn-secondary', '.btn-ghost'].map(function (c) { return 'html body ' + c + notEmail; }).join(', ') +
+      ' { background: #fffaf0 !important; color: ' + IND + ' !important; border: 2px solid ' + IND + ' !important; }',
+    // tables
+    'html body table' + notEmail + ' th { background: ' + IND + ' !important; color: #ffffff !important; }',
+    'html body table' + notEmail + ' td { border-color: #e6dcc0; }',
+    // status pills
+    'html body .status-paid { background: #1f8a3b !important; color: #ffffff !important; border-radius: 999px; }',
+    'html body .status-unpaid { background: ' + B.ORANGE + ' !important; color: #ffffff !important; border-radius: 999px; }',
+    'html body .toast { background: ' + IND + ' !important; color: #ffffff !important; border: 2px solid ' + YEL + '; }',
+    // coloured buttons whose text colour came from the dark page
+    'html body .cat-btn { color: #ffffff !important; border: 2px solid ' + IND + ' !important; }',
+    'html body .cat-btn.active { box-shadow: 4px 4px 0 ' + YEL + ' !important; transform: translateY(-2px); }',
+    'html body .kpi-label, html body .disc-label { display: inline-block; background: ' + YEL + '; border: 2px solid ' + IND + '; border-radius: 7px; padding: 2px 8px;' +
+      ' font-family: ' + display + '; font-weight: 400 !important; letter-spacing: 0.3px; }'
   ].join('\n');
 }
 
@@ -20309,17 +20441,62 @@ function applyAdminBrandTheme_(html) {
   function recolour(chunk) {
     return chunk
       .replace(/#[0-9a-fA-F]{6}\b/g, function (hex) { return ADMIN_THEME_HEX_MAP_[hex.toLowerCase()] || hex; })
+      // Translucent white was how the dark dialogs drew faint panels, borders and grey text; on
+      // paper the same job needs translucent indigo. (Nearly solid white is white text on a
+      // coloured button and stays.) Light black shading becomes a lighter indigo shade.
+      .replace(/rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\s*\)/g, function (all, a) {
+        return Number(a) < 0.85 ? "rgba(26,0,171," + a + ")" : all;
+      })
+      .replace(/rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([\d.]+)\s*\)/g, function (all, a) {
+        return Number(a) <= 0.3 ? "rgba(26,0,171," + Math.round(Number(a) * 50) / 100 + ")" : all;
+      })
       .replace(/(rgba?\(\s*)(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g, function (all, open, r, g, b) {
         var to = ADMIN_THEME_RGB_MAP_[r + "," + g + "," + b];
         return to ? open + to : all;
       });
   }
-  var out = recolour(parts[0]);
+  function themed(chunk) { return fixLowContrast_(recolour(chunk)); }
+  var out = themed(parts[0]);
   for (var i = 1; i < parts.length; i++) {
     var end = parts[i].indexOf(EMAIL_EMBED_END_);
-    out += EMAIL_EMBED_START_ + (end < 0 ? parts[i] : parts[i].slice(0, end) + recolour(parts[i].slice(end)));
+    out += EMAIL_EMBED_START_ + (end < 0 ? parts[i] : parts[i].slice(0, end) + themed(parts[i].slice(end)));
   }
   return out;
+}
+
+/**
+ * Colour pairs that read well on the dark page can end up too close after the swap (dark text
+ * on a dark button, white text on a paper card). Wherever one CSS rule or style attribute sets
+ * both a solid background and a text colour with less than 3:1 contrast, the text becomes white
+ * on a dark background or indigo ink on a light one.
+ */
+function fixLowContrast_(chunk) {
+  function rgb(c) {
+    c = String(c).toLowerCase();
+    if (c === "white") c = "#ffffff";
+    if (/^#[0-9a-f]{3}$/.test(c)) c = "#" + c.charAt(1) + c.charAt(1) + c.charAt(2) + c.charAt(2) + c.charAt(3) + c.charAt(3);
+    if (!/^#[0-9a-f]{6}$/.test(c)) return null;
+    return [1, 3, 5].map(function (k) { return parseInt(c.substr(k, 2), 16) / 255; });
+  }
+  function lum(v) {
+    var l = v.map(function (x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+  }
+  var bgRe = /background(?:-color)?\s*:\s*(?:linear-gradient\([^,]*,\s*)?(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|white)\b/i;
+  var fgRe = /(^|[;{\s"'])color\s*:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|white)\b/i;
+  function fix(decl) {
+    var bg = bgRe.exec(decl), fg = fgRe.exec(decl);
+    if (!bg || !fg) return decl;
+    var b = rgb(bg[1]), f = rgb(fg[2]);
+    if (!b || !f) return decl;
+    var lb = lum(b), lf = lum(f);
+    if ((Math.max(lb, lf) + 0.05) / (Math.min(lb, lf) + 0.05) >= 3) return decl;
+    var better = lb < 0.4 ? "#ffffff" : "#14006e";
+    return decl.slice(0, fg.index) + fg[1] + "color:" + better + decl.slice(fg.index + fg[0].length);
+  }
+  return chunk
+    .replace(/\{([^{}]*)\}/g, function (all, decl) { return "{" + fix(decl) + "}"; })
+    .replace(/style="([^"]*)"/g, function (all, decl) { return 'style="' + fix(decl) + '"'; });
 }
 
 /**
@@ -20341,8 +20518,9 @@ function withGuideLinkUnthemed_(html, guideTab, branded) {
   var text = String(html);
   var base = '<style id="admin-base">' + getAdminBaseCss_() + '</style>';
   if (branded) {
-    base += '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=' +
-      encodeURIComponent(SYSTEM_CONFIG.BRAND.DISPLAY_FONT).replace(/%20/g, "+") + '&display=swap">';
+    var fam = function (f) { return encodeURIComponent(f).replace(/%20/g, "+"); };
+    base += '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=' + fam(SYSTEM_CONFIG.BRAND.DISPLAY_FONT) +
+      '&family=' + fam(SYSTEM_CONFIG.BRAND.BODY_FONT) + ':wght@400;500;600;700;800&display=swap">';
   }
 
   // Some dialogs were written without a charset tag; make sure symbols and the peso sign
@@ -21874,8 +22052,8 @@ function sendCorrectionRequestEmail_(subSheet, sysCols, row, rowVals, reason) {
 
   // Build professional HTML email
   var h = [];
-  h.push('<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">');
-  h.push('<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;"><tr><td align="center" style="padding:20px;">');
+  h.push('<!DOCTYPE html><html><body style="margin:0;padding:0;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';font-family:Arial,Helvetica,sans-serif;">');
+  h.push('<table width="100%" cellpadding="0" cellspacing="0" style="background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';"><tr><td align="center" style="padding:20px;">');
   h.push('<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">');
 
   // Header
@@ -23065,9 +23243,9 @@ function buildAnnouncementHtml_(category, subject, body, recipientData) {
   var h = [];
   h.push('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">');
   h.push('<title>' + esc(subject) + '</title></head>');
-  h.push('<body style="margin:0;padding:0;background:#f1f5f9;font-family:Verdana,Geneva,sans-serif;">');
-  h.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;"><tr><td align="center" style="padding:20px 10px;">');
-  h.push('<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">');
+  h.push('<body style="margin:0;padding:0;background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';font-family:Verdana,Geneva,sans-serif;">');
+  h.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';"><tr><td align="center" style="padding:20px 10px;">');
+  h.push('<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#fffdf7;border:3px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:16px;overflow:hidden;">');
 
   // Header (shared)
   h.push('<tr><td>');

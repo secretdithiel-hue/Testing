@@ -2,7 +2,7 @@
 
 A Google Apps Script system that runs the UPLB Sociology Society's **Husay ng Soksay** inter-high school social science competition from one Google Sheet. It automates registration, fees, payment receipts, referrals, discount codes, anonymous judging and announcements, all managed from one **Admin Center** menu.
 
-**Current version:** V1.1 (see the CHANGELOG at the top of `src/Code.gs`)
+**Current version:** V1.2 (see the CHANGELOG at the top of `src/Code.gs`)
 
 ## Features
 
@@ -40,6 +40,14 @@ Linked the forms after building? Run BUILD again: it swaps the empty placeholder
 
 To push from this repo with [clasp](https://github.com/google/clasp) instead, run `clasp clone <scriptId> --rootDir src` once, then `clasp push`.
 
+## Brand look
+
+The admin dialogs and the emails use the HNS brand from the **HNS Event Primer 2025** design in Canva: royal indigo `#1a00ab`, yellow `#fbd23f`, cream `#f6efdc` and the Lilita One title font. The colours live in `SYSTEM_CONFIG.BRAND`.
+
+- **Dialogs:** every dialog passes through `withGuideLink_()`, which swaps the old dark grey/blue palette for the brand one (`applyAdminBrandTheme_()`) and adds the indigo title bar and yellow accents. Set `SYSTEM_CONFIG.BRAND.ADMIN_THEME` to `"classic"` to get the old look back.
+- **Emails:** headers, receipt tables, totals, buttons and referral boxes use the brand colours. Gmail cannot load web fonts, so email titles show in Arial Black there.
+- **Spreadsheet tabs** keep the original sheet's look (`getOriginalLayout_()`).
+
 ## Making changes
 
 - Prices, rules, sheet names, columns and email wording: edit `SYSTEM_CONFIG`.
@@ -55,6 +63,7 @@ Requires Node.js 18 or later; no packages to install.
 ```sh
 node tests/run_builder_test.js src/Code.gs   # BUILD BUILD BUILD reproduces the original layout
 node tests/run_fix_tests.js src/Code.gs      # behaviour of the V1.1 bug fixes
+node tests/run_theme_tests.js src/Code.gs    # brand theme of dialogs and emails
 ```
 
 `tests/original_layout.json` holds the original spreadsheet's tab names, header rows, column widths, colours and dropdowns (no participant data). The mock covers only the Apps Script calls these paths use, so test any change in a copy of the real spreadsheet before using it live.

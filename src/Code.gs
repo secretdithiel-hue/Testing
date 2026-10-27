@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * PROJECT: HUSAY NG SOKSAY - REGISTRATION SYSTEM
- * VERSION: V1.1
+ * VERSION: V1.2
  * DATE:    OCTOBER 2026
  * ============================================================================
  *
@@ -138,6 +138,17 @@
  *      - SYS_APPLICANT_AMT is configured at column 60, after the 7 merge columns
  *        (53-59), which is where the original adds it on first use. It is found by
  *        header, so live sheets behave the same; a new build no longer puts it at 53.
+ *    V1.2 - HNS brand look (colours from the "HNS Event Primer 2025" design in Canva).
+ *      - SYSTEM_CONFIG.BRAND holds the brand colours and fonts.
+ *      - Admin dialogs: deep indigo surfaces, cream text, violet buttons, yellow title
+ *        bar accents and the Lilita One title font, applied to every dialog by
+ *        withGuideLink_ (applyAdminBrandTheme_). BRAND.ADMIN_THEME = "classic" turns
+ *        it off. Embedded email previews are left exactly as the email looks.
+ *      - Emails: header, receipt table, totals, buttons and referral boxes use the
+ *        brand indigo / yellow / cream; titles use the brand font (Arial Black in Gmail).
+ *      - The Submission Acknowledgement preview no longer turns the whole dialog grey
+ *        (the email's body styles are now kept inside its frame).
+ *      - Spreadsheet tabs keep the original sheet's look.
  * ============================================================================
  */
 
@@ -148,10 +159,24 @@
 var SYSTEM_CONFIG = {
   META: {
     NAME: "Husay ng Soksay",
-    VERSION: "1.1",
+    VERSION: "1.2",
     ORG: "UPLB Sociology Society",
     TIMEZONE: "Asia/Manila",
     CURRENCY: "PHP"
+  },
+
+  // HNS brand, taken from the "HNS Event Primer 2025" design in Canva. The admin dialogs
+  // (applyAdminBrandTheme_) and the email headers use these. The spreadsheet tabs keep
+  // the original sheet's look (getOriginalLayout_).
+  BRAND: {
+    ADMIN_THEME: "hns",            // "hns" = brand colours in the dialogs; "classic" = the old dark grey/blue
+    INDIGO: "#1a00ab",
+    YELLOW: "#fbd23f",
+    CREAM: "#f6efdc",
+    ORANGE: "#f86810",
+    DISPLAY_FONT: "Lilita One",    // dialog titles (Google Font, closest to the primer's lettering)
+    // Email titles: mail apps that cannot load web fonts (e.g. Gmail) use Arial Black
+    EMAIL_TITLE_FONT: "'Lilita One','Arial Black',Arial,sans-serif"
   },
 
   SHEETS: {
@@ -2738,8 +2763,8 @@ var EmailBuilder = (function () {
     return (x < 0) ? ("-" + s) : s;
   }
 
-  var HEADER_BLUE = "#1E4FB8";
-  var HEADER_GOLD = "#FFD700";
+  var HEADER_BLUE = SYSTEM_CONFIG.BRAND.INDIGO;
+  var HEADER_GOLD = SYSTEM_CONFIG.BRAND.YELLOW;
 
   /**
    * SHARED: Build the standard email header with logos
@@ -2765,7 +2790,7 @@ var EmailBuilder = (function () {
       '        <img class="header-logo" src="' + escapeHtml_(uplbSrc) + '" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:Times New Roman, serif;font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">' + getEventTitleHtml_() + '</div>' +
+      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">' + getEventTitleHtml_() + '</div>' +
       '        <div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</div>' +
       '      </td>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
@@ -2843,8 +2868,8 @@ var EmailBuilder = (function () {
       '</table>' +
       refLine +
       couponLine +
-      '<div class="referral-box" style="border:2px dashed #007bff;background-color:#e9f5ff;padding:15px;text-align:center;border-radius:5px;">' +
-      '<div style="font-size:13px;color:#007bff;margin-bottom:5px;font-weight:bold;">Your Referral Code (Share to earn cashback!)</div>' +
+      '<div class="referral-box" style="border:2px dashed ' + SYSTEM_CONFIG.BRAND.INDIGO + ';background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';padding:15px;text-align:center;border-radius:5px;">' +
+      '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:5px;font-weight:bold;">Your Referral Code (Share to earn cashback!)</div>' +
       '<div class="referral-code" style="font-size:22px;font-weight:bold;color:#333333;letter-spacing:1px;">' + genId + '</div>' +
       '</div>' +
       '</div></div></body></html>'
@@ -2874,14 +2899,14 @@ var EmailBuilder = (function () {
       '<body style="margin:0;padding:20px;background-color:#f2f2f2;font-family:Arial, Helvetica, sans-serif;">' +
       '<div class="email-container" style="max-width:700px;margin:0 auto;background-color:#ffffff;box-shadow:0 0 10px rgba(0,0,0,0.1);border-radius:10px;overflow:hidden;">' +
       // Header with logos
-      '<div style="background-color:#1E4FB8;padding:18px 10px;text-align:center;border-bottom:6px solid #FFD700;">' +
+      '<div style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';padding:18px 10px;text-align:center;border-bottom:6px solid ' + SYSTEM_CONFIG.BRAND.YELLOW + ';">' +
       '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;">' +
       '    <tr>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
       '        <img class="header-logo" src="__UPLB_LOGO_SRC__" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <h1 class="header-title" style="margin:0;color:#FFD700;font-family:Times New Roman, serif;font-size:26px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</h1>' +
+      '        <h1 class="header-title" style="margin:0;color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:26px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</h1>' +
       '        <p style="margin:5px 0 0 0;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</p>' +
       '      </td>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
@@ -2911,7 +2936,7 @@ var EmailBuilder = (function () {
       '<h3 style="font-size:14px;font-weight:bold;margin:15px 0 10px 0;">Breakdown</h3>' +
       '<table class="breakdown-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;">' +
       '  <thead>' +
-      '    <tr style="background-color:#1E4FB8;">' +
+      '    <tr style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' +
       '      <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Description</th>' +
       '      <th align="right" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Amount</th>' +
       '    </tr>' +
@@ -2920,7 +2945,7 @@ var EmailBuilder = (function () {
       '  <tfoot>' +
       '    <tr style="border-top:2px solid #e6e8ec;">' +
       '      <td align="right" style="padding:12px;font-size:13px;font-weight:bold;">TOTAL AMOUNT PAID:</td>' +
-      '      <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:#1E4FB8;">__TOTAL_PAID__</td>' +
+      '      <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">__TOTAL_PAID__</td>' +
       '    </tr>' +
       '  </tfoot>' +
       '</table>' +
@@ -3164,7 +3189,7 @@ var EmailBuilder = (function () {
         emailSpiel += '<p style="font-size:14px;margin:8px 0;line-height:1.5;">' + spielConfig.SUBMISSION_INTRO + '</p>';
       }
       if (spielConfig.SUBMISSION_FORM_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
       }
       
       // Deadline
@@ -3270,7 +3295,7 @@ var EmailBuilder = (function () {
       '</div>' +
       '</div>' +
       '<div style="background-color:#e7f3ff;border-radius:8px;padding:15px;margin-bottom:20px;text-align:center;">' +
-      '<div style="font-size:13px;color:#004085;margin-bottom:8px;">Cashback earned from this referral:</div>' +
+      '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:8px;">Cashback earned from this referral:</div>' +
       '<div class="cashback-amount" style="font-size:28px;font-weight:bold;color:' + SUCCESS_GREEN + ';">+' + cashbackEarned + '</div>' +
       '</div>' +
       '<div style="border:1px solid #dee2e6;border-radius:8px;padding:15px;margin-bottom:20px;">' +
@@ -3288,8 +3313,8 @@ var EmailBuilder = (function () {
       '</tr>' +
       '</table>' +
       '</div>' +
-      '<div style="border:2px dashed #007bff;background-color:#e9f5ff;padding:12px;text-align:center;border-radius:5px;margin-bottom:15px;">' +
-      '<div style="font-size:11px;color:#007bff;margin-bottom:5px;">Keep sharing your referral code!</div>' +
+      '<div style="border:2px dashed ' + SYSTEM_CONFIG.BRAND.INDIGO + ';background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';padding:12px;text-align:center;border-radius:5px;margin-bottom:15px;">' +
+      '<div style="font-size:11px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:5px;">Keep sharing your referral code!</div>' +
       '<div style="font-size:18px;font-weight:bold;color:#333333;letter-spacing:1px;">' + referrerCode + '</div>' +
       '</div>' +
       '<div style="font-size:11px;color:#888;text-align:center;font-style:italic;">' +
@@ -3367,8 +3392,8 @@ var EmailBuilder = (function () {
       '</tr>' +
       '</table>' +
       '</div>' +
-      '<div style="background-color:#e9f5ff;border-radius:8px;padding:12px;margin-bottom:15px;text-align:center;">' +
-      '<div style="font-size:13px;color:#004085;">Don\'t worry! Keep sharing your code to earn more cashback:</div>' +
+      '<div style="background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';border-radius:8px;padding:12px;margin-bottom:15px;text-align:center;">' +
+      '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">Don\'t worry! Keep sharing your code to earn more cashback:</div>' +
       '<div style="font-size:18px;font-weight:bold;color:#333333;letter-spacing:1px;margin-top:8px;">' + referrerCode + '</div>' +
       '</div>' +
       '<div style="font-size:11px;color:#888;text-align:center;">' +
@@ -4908,8 +4933,8 @@ function handleSubmissionFormResponse2(e) {
 function buildSubmissionConfirmationHtml_(result) {
   var orgName = SYSTEM_CONFIG.META.ORG;
   var eventName = SYSTEM_CONFIG.META.NAME;
-  var BLUE = "#1E4FB8";
-  var GOLD = "#FFD700";
+  var BLUE = SYSTEM_CONFIG.BRAND.INDIGO;
+  var GOLD = SYSTEM_CONFIG.BRAND.YELLOW;
   var spielConfig = SYSTEM_CONFIG.ADMIN.SUB_EMAIL_SPIEL || {};
   var contactConfig = SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT || {};
 
@@ -5034,7 +5059,7 @@ function buildSubmissionConfirmationHtml_(result) {
     '        <img class="header-logo" src="cid:uplb_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:75px;height:auto;display:block;margin:0 auto;">' +
     '      </td>' +
     '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-    '        <h1 class="header-title" style="margin:0;color:' + GOLD + ';font-family:Times New Roman, serif;font-size:26px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</h1>' +
+    '        <h1 class="header-title" style="margin:0;color:' + GOLD + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:26px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</h1>' +
     '        <p style="margin:5px 0 0 0;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</p>' +
     '      </td>' +
     '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
@@ -5059,8 +5084,8 @@ function buildSubmissionConfirmationHtml_(result) {
     spielSection +
 
     // Participant Number highlight box
-    '<div style="background:linear-gradient(135deg,' + BLUE + ',#2563EB);padding:20px;border-radius:10px;text-align:center;margin:20px 0;">' +
-    '<p style="color:#93C5FD;margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Your Participant Number</p>' +
+    '<div style="background:linear-gradient(135deg,' + BLUE + ',#3d2bd6);padding:20px;border-radius:10px;text-align:center;margin:20px 0;">' +
+    '<p style="color:' + SYSTEM_CONFIG.BRAND.YELLOW + ';margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Your Participant Number</p>' +
     '<p class="participant-num" style="color:#fff;margin:0;font-size:32px;font-weight:bold;letter-spacing:3px;">' + esc(result.participantNum) + '</p>' +
     '<p style="color:#93C5FD;margin:6px 0 0;font-size:12px;">This number identifies your entry during anonymous evaluation</p></div>' +
 
@@ -11147,9 +11172,9 @@ function testEmailThreading() {
   var logoHtml = includeLogos ? '<p><img src="cid:uplb_logo" width="50"> <img src="cid:husay_logo" width="50"></p>' : '';
   
   var html1 = '<html><body style="font-family:Arial,sans-serif;padding:20px;">' +
-    '<div style="max-width:600px;margin:0 auto;border:2px solid #1E4FB8;border-radius:10px;padding:20px;">' +
+    '<div style="max-width:600px;margin:0 auto;border:2px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';border-radius:10px;padding:20px;">' +
     logoHtml +
-    '<h2 style="color:#1E4FB8;margin-top:0;">📧 Email Threading Test - Email #1</h2>' +
+    '<h2 style="color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-top:0;">📧 Email Threading Test - Email #1</h2>' +
     '<p>This is the <strong>FIRST</strong> email in the thread test.</p>' +
     '<p>Test ID: <code>' + testId + '</code></p>' +
     '<p>Has Inline Images: <strong>' + (includeLogos ? 'YES' : 'NO') + '</strong></p>' +
@@ -15269,8 +15294,8 @@ var MergeService = (function () {
   // ---- PREMIUM EMAIL HELPERS ----
 
   function getHeaderBlock_(uplbSrc, husaySrc) {
-    var HEADER_BLUE = "#1E4FB8";
-    var HEADER_GOLD = "#FFD700";
+    var HEADER_BLUE = SYSTEM_CONFIG.BRAND.INDIGO;
+    var HEADER_GOLD = SYSTEM_CONFIG.BRAND.YELLOW;
     return '<div style="background-color:' + HEADER_BLUE + ';padding:16px 10px;text-align:center;border-bottom:6px solid ' + HEADER_GOLD + ';">' +
       '  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 auto;max-width:600px;">' +
       '    <tr>' +
@@ -15278,7 +15303,7 @@ var MergeService = (function () {
       '        <img class="header-logo" src="' + Utils.escapeHtml(uplbSrc) + '" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:70px;height:auto;display:block;margin:0 auto;">' +
       '      </td>' +
       '      <td width="60%" align="center" valign="middle" style="padding:0 5px;">' +
-      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:Times New Roman, serif;font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">' + getEventTitleHtml_() + '</div>' +
+      '        <div class="header-title" style="color:' + HEADER_GOLD + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:24px;letter-spacing:2px;font-weight:800;margin:0;">' + getEventTitleHtml_() + '</div>' +
       '        <div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</div>' +
       '      </td>' +
       '      <td width="20%" align="center" valign="middle" style="padding:0 5px;">' +
@@ -15308,7 +15333,7 @@ var MergeService = (function () {
       '</table>' +
       '<h3 style="font-size:14px;font-weight:bold;margin:15px 0 10px 0;">Group Participants Breakdown</h3>' +
       '<table class="breakdown-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;">' +
-      '  <thead><tr style="background-color:#1E4FB8;">' +
+      '  <thead><tr style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' +
       '      <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Participant Name / ID</th>' +
       '      <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Competitions</th>' +
       '      <th align="right" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Amount</th>' +
@@ -15316,7 +15341,7 @@ var MergeService = (function () {
       '  <tbody>__ITEM_ROWS__</tbody>' +
       '  <tfoot><tr style="border-top:2px solid #e6e8ec;">' +
       '      <td colspan="2" align="right" style="padding:12px;font-size:13px;font-weight:bold;">TOTAL GROUP PAID:</td>' +
-      '      <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:#1E4FB8;">__TOTAL_PAID__</td>' +
+      '      <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">__TOTAL_PAID__</td>' +
       '  </tr></tfoot>' +
       '</table>' +
       '<div style="margin-top:30px;">' +
@@ -15441,7 +15466,7 @@ var MergeService = (function () {
     // ---- Group Participant Breakdown table ----
     var gpbHtml = '<h3 style="font-size:14px;font-weight:bold;margin:20px 0 10px 0;">Group Participant Breakdown</h3>' +
       '<table class="breakdown-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e8ec;border-collapse:collapse;font-size:13px;">' +
-      '  <thead><tr style="background-color:#1E4FB8;">' +
+      '  <thead><tr style="background-color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' +
       '    <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Participant Name / ID</th>' +
       '    <th align="left" style="color:#ffffff;padding:10px 12px;font-size:13px;font-weight:bold;">Competitions</th>' +
       '  </tr></thead><tbody>';
@@ -15459,7 +15484,7 @@ var MergeService = (function () {
     gpbHtml += '</tbody>' +
       '<tfoot><tr style="border-top:2px solid #e6e8ec;">' +
       '  <td align="right" style="padding:12px;font-size:13px;font-weight:bold;">TOTAL GROUP PAID:</td>' +
-      '  <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:#1E4FB8;">' + Utils.formatCurrency(groupObj.total) + '</td>' +
+      '  <td align="right" style="padding:12px;font-size:16px;font-weight:bold;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';">' + Utils.formatCurrency(groupObj.total) + '</td>' +
       '</tr></tfoot></table>';
 
     html = html.split("__GROUP_BREAKDOWN__").join(gpbHtml);
@@ -15523,7 +15548,7 @@ var MergeService = (function () {
         emailSpiel += '<p style="font-size:14px;margin:8px 0;line-height:1.5;">' + spielConfig.SUBMISSION_INTRO + '</p>';
       }
       if (spielConfig.SUBMISSION_FORM_LINK) {
-        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
+        emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
       }
       if (spielConfig.SUBMISSION_DEADLINE) {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;"><b>DEADLINE FOR ALL SUBMISSIONS:</b> ' + spielConfig.SUBMISSION_DEADLINE + '</p>';
@@ -15570,7 +15595,7 @@ var MergeService = (function () {
     options = options || {};
     var logos = getCommonLogos_(options);
     var headerBlock = getHeaderBlock_(logos.uplb, logos.husay);
-    var HEADER_BLUE = "#1E4FB8";
+    var HEADER_BLUE = SYSTEM_CONFIG.BRAND.INDIGO;
 
     var name = EmailBuilder.escapeHtml_(participant.name || "");
     var genId = EmailBuilder.escapeHtml_(participant.genId || "");
@@ -15671,13 +15696,13 @@ var MergeService = (function () {
       '</table>' +
       refLine +
       couponLine +
-      '<div class="referral-box" style="border:2px dashed #007bff;background-color:#e9f5ff;padding:15px;text-align:center;border-radius:5px;">' +
-      '<div style="font-size:13px;color:#007bff;margin-bottom:5px;font-weight:bold;">Your Referral Code (Share to earn cashback!)</div>' +
+      '<div class="referral-box" style="border:2px dashed ' + SYSTEM_CONFIG.BRAND.INDIGO + ';background-color:' + SYSTEM_CONFIG.BRAND.CREAM + ';padding:15px;text-align:center;border-radius:5px;">' +
+      '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';margin-bottom:5px;font-weight:bold;">Your Referral Code (Share to earn cashback!)</div>' +
       '<div class="referral-code" style="font-size:22px;font-weight:bold;color:#333333;letter-spacing:1px;">' + genId + '</div>' +
       '</div>' +
       gpbHtml +
-      '<div style="background:#e9f5ff;border:1px solid #1E4FB8;padding:15px;border-radius:5px;text-align:center;margin-top:20px;">' +
-      '<div style="font-size:13px;color:#1E4FB8;font-weight:bold;">Please settle your payment soon.</div>' +
+      '<div style="background:' + SYSTEM_CONFIG.BRAND.CREAM + ';border:1px solid ' + SYSTEM_CONFIG.BRAND.INDIGO + ';padding:15px;border-radius:5px;text-align:center;margin-top:20px;">' +
+      '<div style="font-size:13px;color:' + SYSTEM_CONFIG.BRAND.INDIGO + ';font-weight:bold;">Please settle your payment soon.</div>' +
       '<div style="font-size:12px;color:#666;margin-top:5px;">You will receive an Acknowledgement Receipt once confirmed.</div>' +
       '</div>' +
       '</div></div></body></html>'
@@ -20226,17 +20251,99 @@ function uiTable_(headers, rows, emptyText) {
   return out.join('');
 }
 
+// ============================================================================
+// HNS BRAND THEME FOR THE ADMIN DIALOGS
+// ============================================================================
+// The dialogs were written with one dark palette (GitHub's greys and blues). Rather than
+// edit about a thousand colour codes in 27 dialogs, withGuideLink_ swaps each colour of that
+// palette for its HNS counterpart (deep indigo surfaces, cream text, violet buttons) when a
+// dialog opens, and adds the brand title font and yellow accents. Status colours (green,
+// amber, red) are left alone so they keep their meaning. Emails shown inside a dialog are
+// skipped (between EMAIL_EMBED_START_ / EMAIL_EMBED_END_). Turn it off with
+// SYSTEM_CONFIG.BRAND.ADMIN_THEME = "classic".
+
+var EMAIL_EMBED_START_ = "<!--hns-email-->";
+var EMAIL_EMBED_END_ = "<!--/hns-email-->";
+
+/** Wrap an email shown inside a dialog so the dialog theme leaves its colours alone. */
+function markEmailEmbed_(html) {
+  return EMAIL_EMBED_START_ + html + EMAIL_EMBED_END_;
+}
+
+// old dialog colour -> HNS colour (lower case; rgb triples are matched inside rgba())
+var ADMIN_THEME_HEX_MAP_ = {
+  "#010409": "#0a0630", "#0d1117": "#100a3f", "#161b22": "#19115c", "#1a1e2e": "#1c1466",
+  "#21262d": "#261c7d", "#30363d": "#3a2f9f", "#484f58": "#5246b8", "#6e7681": "#958ed1",
+  "#8b949e": "#bcb6e8", "#c9d1d9": "#e9e5fb", "#e6edf3": "#fdf9ee",
+  "#58a6ff": "#b4a9ff", "#388bfd": "#8c7bff", "#1f6feb": "#5a43f5", "#1158c7": "#4630d6",
+  "#79c0ff": "#ffe28a", "#f5c518": "#fbd23f", "#1d4ed8": "#5a43f5", "#334155": "#3a2f9f"
+};
+var ADMIN_THEME_RGB_MAP_ = {
+  "1,4,9": "10,6,48", "13,17,23": "16,10,63", "22,27,34": "25,17,92", "28,35,48": "31,23,108",
+  "48,54,61": "58,47,159", "110,118,129": "149,142,209", "177,186,196": "216,211,246",
+  "240,246,252": "255,252,242", "56,139,253": "140,123,255",
+  // the slate greys some dashboards use
+  "30,41,59": "31,23,108", "51,65,85": "58,47,159", "100,116,139": "149,142,209"
+};
+
+/** Brand additions on top of the recoloured base layer: title font and yellow accents. */
+function getAdminBrandCss_() {
+  var B = SYSTEM_CONFIG.BRAND;
+  var display = '"' + B.DISPLAY_FONT + '", "Arial Black", Arial, sans-serif';
+  return [
+    // (not inside an email preview, which must look exactly like the email)
+    'html body h1:not(.ui-paper *):not(.email-paper *) { font-family: ' + display + '; font-weight: 400; letter-spacing: 0.3px; }',
+    // title bar of the shared dialogs: the primer's indigo banner with a yellow title
+    'html body .ui-top { background: ' + B.INDIGO + '; border-bottom: 3px solid ' + B.YELLOW + '; }',
+    'html body .ui-title h1 { color: ' + B.YELLOW + '; font-size: 19px; }',
+    'html body .ui-title p { color: #d9d4ff; }',
+    'html body .ui-icon { background: ' + B.YELLOW + '; border-color: ' + B.YELLOW + '; }',
+    ':focus-visible { outline-color: ' + B.YELLOW + '; }',
+    '::selection { background: rgba(251,210,63,0.45); color: #ffffff; }'
+  ].join('\n');
+}
+
+/** Swap the old dialog palette for the HNS one, outside any embedded email. */
+function applyAdminBrandTheme_(html) {
+  var parts = String(html).split(EMAIL_EMBED_START_);
+  function recolour(chunk) {
+    return chunk
+      .replace(/#[0-9a-fA-F]{6}\b/g, function (hex) { return ADMIN_THEME_HEX_MAP_[hex.toLowerCase()] || hex; })
+      .replace(/(rgba?\(\s*)(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g, function (all, open, r, g, b) {
+        var to = ADMIN_THEME_RGB_MAP_[r + "," + g + "," + b];
+        return to ? open + to : all;
+      });
+  }
+  var out = recolour(parts[0]);
+  for (var i = 1; i < parts.length; i++) {
+    var end = parts[i].indexOf(EMAIL_EMBED_END_);
+    out += EMAIL_EMBED_START_ + (end < 0 ? parts[i] : parts[i].slice(0, end) + recolour(parts[i].slice(end)));
+  }
+  return out;
+}
+
 /**
  * Finishes a dialog: adds the shared base layer (so every dialog has the same font, dark
- * surfaces, form controls, scrollbars and focus rings) and, when a guide page is given, the
- * small "Guide" link that opens the System Guide on the page about that tool.
+ * surfaces, form controls, scrollbars and focus rings), the HNS brand theme, and, when a
+ * guide page is given, the small "Guide" link that opens the System Guide on the page about
+ * that tool.
  * @param {string} html      the dialog's HTML
  * @param {string=} guideTab page of the guide: start, daily, prices, register, pay, email,
  *                           submit, groups, codes, menu, sheets or help. Empty = no link.
  */
 function withGuideLink_(html, guideTab) {
+  var branded = SYSTEM_CONFIG.BRAND.ADMIN_THEME !== "classic";
+  var text = withGuideLinkUnthemed_(html, guideTab, branded);
+  return branded ? applyAdminBrandTheme_(text) : text;
+}
+
+function withGuideLinkUnthemed_(html, guideTab, branded) {
   var text = String(html);
   var base = '<style id="admin-base">' + getAdminBaseCss_() + '</style>';
+  if (branded) {
+    base += '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=' +
+      encodeURIComponent(SYSTEM_CONFIG.BRAND.DISPLAY_FONT).replace(/%20/g, "+") + '&display=swap">';
+  }
 
   // Some dialogs were written without a charset tag; make sure symbols and the peso sign
   // are always read as UTF-8. The base layer goes first so the dialog's own styles win.
@@ -20247,6 +20354,12 @@ function withGuideLink_(html, guideTab) {
     text = text.slice(0, headEnd) + headBits + text.slice(headEnd);
   } else {
     text = headBits + text;
+  }
+
+  if (branded) {
+    var brandCss = '<style id="admin-brand">' + getAdminBrandCss_() + '</style>';
+    var headClose = text.search(/<\/head>/i);
+    text = headClose >= 0 ? text.slice(0, headClose) + brandCss + text.slice(headClose) : brandCss + text;
   }
 
   var tab = String(guideTab || "").replace(/[^a-z]/g, "");
@@ -20289,7 +20402,7 @@ function buildEmailPreviewDialog_(title, emailHtml, note) {
     uiCallout_("", "&#x1F441;&#xFE0F;", "<b>Preview only.</b> " + esc(note || "It uses sample data. No email was sent.")) +
     '<div style="max-width:720px;margin:0 auto;">' +
     '<div class="ui-mailbar"><span class="dots"><i></i><i></i><i></i></span><span>From <b>' + esc(SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME || "") + '</b></span></div>' +
-    '<div class="ui-paper">' + emailHtmlForEmbedding_(emailHtml) + '</div>' +
+    '<div class="ui-paper">' + markEmailEmbed_(emailHtmlForEmbedding_(emailHtml)) + '</div>' +
     '</div>';
   return buildAdminDialog_({
     icon: "&#x2709;&#xFE0F;",
@@ -21756,7 +21869,7 @@ function sendCorrectionRequestEmail_(subSheet, sysCols, row, rowVals, reason) {
 
   var eventName = SYSTEM_CONFIG.META.NAME;
   var orgName = SYSTEM_CONFIG.META.ORG;
-  var BLUE = "#2563eb";
+  var BLUE = SYSTEM_CONFIG.BRAND.INDIGO;
   var AMBER = "#d97706";
 
   // Build professional HTML email
@@ -22711,12 +22824,14 @@ function previewSubmissionAcknowledgement() {
     wrapperHtml.push('<span class="dot dot-green"></span>');
     wrapperHtml.push('<span class="toolbar-text">Subject: ' + SYSTEM_CONFIG.META.NAME + ': Submission Acknowledgement [' + data.participantNum + ']</span>');
     wrapperHtml.push('</div>');
-    wrapperHtml.push('<div class="email-content-frame email-paper">');
+    wrapperHtml.push('<div class="email-content-frame email-paper ui-paper">');
     // Replace cid: images with placeholder text for preview
     var previewEmail = emailHtml
       .replace(/src="cid:uplb_logo"/g, 'src="" alt="[Organisation logo]" style="background:#30363d;padding:8px;border-radius:50%;"')
       .replace(/src="cid:husay_logo"/g, 'src="" alt="[Event logo]" style="background:#30363d;padding:8px;border-radius:50%;"');
-    wrapperHtml.push(previewEmail);
+    // emailHtmlForEmbedding_ keeps the email's "body" styles inside this frame; embedded whole,
+    // they turned the entire dialog light grey and made its own text unreadable
+    wrapperHtml.push(markEmailEmbed_(emailHtmlForEmbedding_(previewEmail)));
     wrapperHtml.push('</div></div>');
   }
 
@@ -22923,14 +23038,14 @@ function getAnnouncementRecipients(filters) {
  * Server-side: Build the announcement email HTML.
  */
 function buildAnnouncementHtml_(category, subject, body, recipientData) {
-  var BLUE = "#1E4FB8";
-  var GOLD = "#FFD700";
+  var BLUE = SYSTEM_CONFIG.BRAND.INDIGO;
+  var GOLD = SYSTEM_CONFIG.BRAND.YELLOW;
   var contactConfig = SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT || {};
   var esc = Utils.escapeHtml;
 
   // Category banner colors
   var banners = {
-    general:     { color: "#1E4FB8", icon: "📢", label: "GENERAL ANNOUNCEMENT" },
+    general:     { color: SYSTEM_CONFIG.BRAND.INDIGO, icon: "📢", label: "GENERAL ANNOUNCEMENT" },
     reminder:    { color: "#D97706", icon: "⏰", label: "DEADLINE REMINDER" },
     competition: { color: "#7C3AED", icon: "🏆", label: "COMPETITION UPDATE" },
     payment:     { color: "#059669", icon: "💰", label: "PAYMENT NOTICE" },
@@ -22961,7 +23076,7 @@ function buildAnnouncementHtml_(category, subject, body, recipientData) {
   h.push('<tr>');
   h.push('<td width="20%" align="center" valign="middle" style="padding:0 5px;"><img src="cid:uplb_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.ORG) + '" data-logo="org" style="max-width:70px;height:auto;display:block;margin:0 auto;"></td>');
   h.push('<td width="60%" align="center" valign="middle" style="padding:0 5px;">');
-  h.push('<div style="color:' + GOLD + ';font-family:Times New Roman,serif;font-size:24px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</div>');
+  h.push('<div style="color:' + GOLD + ';font-family:' + SYSTEM_CONFIG.BRAND.EMAIL_TITLE_FONT + ';font-size:24px;letter-spacing:2px;font-weight:800;">' + getEventTitleHtml_() + '</div>');
   h.push('<div style="margin-top:4px;color:#ffffff;font-size:11px;letter-spacing:1px;">' + getOrgTitleHtml_() + '</div>');
   h.push('</td>');
   h.push('<td width="20%" align="center" valign="middle" style="padding:0 5px;"><img src="cid:husay_logo" alt="' + Utils.escapeHtml(SYSTEM_CONFIG.META.NAME) + '" data-logo="event" style="max-width:70px;height:auto;display:block;margin:0 auto;"></td>');

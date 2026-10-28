@@ -42,7 +42,7 @@ async function newPage(browser, viewport) {
   const sub = env.ss.getSheetByName('Submission Form');
 
   // ---- every page: no script errors, no sideways scrolling ----------------------------------
-  for (const vp of [{ width: 1280, height: 900 }, { width: 360, height: 780 }]) {
+  for (const vp of [{ width: 1280, height: 900 }, { width: 360, height: 780 }, { width: 320, height: 640 }]) {
     const page = await newPage(browser, vp);
     for (const p of ['index', 'about', 'competitions', 'archive', 'faq', 'register', 'submit']) {
       await page.goto(base + p + '.html', { waitUntil: 'networkidle' });

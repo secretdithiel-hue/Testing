@@ -15,10 +15,10 @@ jobs:
   script:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
       - run: node tests/run_builder_test.js src/Code.gs
       - run: node tests/run_fix_tests.js src/Code.gs
       - run: node tests/run_theme_tests.js src/Code.gs
@@ -27,10 +27,10 @@ jobs:
   website:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install --no-save --no-package-lock playwright
       - run: npx playwright install --with-deps chromium
       - run: node tests/run_site_e2e.js

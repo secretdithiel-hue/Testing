@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * PROJECT: HUSAY NG SOKSAY - REGISTRATION SYSTEM
- * VERSION: V1.2
+ * VERSION: V1.3
  * DATE:    OCTOBER 2026
  * ============================================================================
  *
@@ -153,6 +153,16 @@
  *        buttons; brand colours replace the old blue and gold.
  *      - The Submission Acknowledgement preview no longer turns the whole dialog grey.
  *      - Spreadsheet tabs keep the original sheet's look.
+ *    V1.3 - The public website (GitHub Pages) and its connection to this spreadsheet.
+ *      - Web app API (PART 26, doGet / doPost): the website's registration and submission
+ *        forms write a row to "Registration Form" / "Submission Form" exactly as the Google
+ *        Forms do (same columns and answer wording, uploads as Drive links) and run the same
+ *        processing as a form response. SYS_SOURCE marks those rows "Website".
+ *      - Submission sign-in with an access code (an HMAC of email + Gen ID), printed in the
+ *        Acknowledgement Receipt next to the Submission Form button and sent again on request.
+ *      - Admin Center -> Website & Online Forms: open / close each form (or open between two
+ *        dates), payment accounts, dates and links shown on the website, the web app address,
+ *        and clean-up of unused uploads. Defaults in SYSTEM_CONFIG.WEBSITE.
  * ============================================================================
  */
 
@@ -163,7 +173,7 @@
 var SYSTEM_CONFIG = {
   META: {
     NAME: "Husay ng Soksay",
-    VERSION: "1.2",
+    VERSION: "1.3",
     ORG: "UPLB Sociology Society",
     TIMEZONE: "Asia/Manila",
     CURRENCY: "PHP"
@@ -633,6 +643,89 @@ var SYSTEM_CONFIG = {
       titleCol: "FILM_TITLE",
       fileCols: ["FILM_FILE"],
       scannableCols: []
+    }
+  },
+
+  // ===== WEBSITE (GitHub Pages) =====
+  // The public website (site/ in the repository) registers people and takes entries through this
+  // script's web app (PART 26). Admin Center -> Website & Online Forms overrides URL, EDITION,
+  // REGISTRATION, SUBMISSION, PAYMENT_METHODS, DATES and the two links without editing the code.
+  WEBSITE: {
+    URL: "",                        // the website's address, e.g. "https://<account>.github.io/Testing/" (links in emails)
+    EDITION: "5th",                 // shown on the online forms
+    // STATUS: "auto" = open between OPENS and CLOSES ("2027-01-17T08:00", Asia/Manila), "open", "closed"
+    REGISTRATION: { STATUS: "closed", OPENS: "", CLOSES: "" },
+    SUBMISSION: { STATUS: "closed", OPENS: "", CLOSES: "" },
+    // Entries only from participants whose payment the Finance team confirmed (as with the
+    // Submission Form link, which is sent with the Acknowledgement Receipt)
+    REQUIRE_PAYMENT_TO_SUBMIT: true,
+    BLOCK_DUPLICATE_EMAIL: true,    // one website registration per email address
+    PAYMENT_METHODS: [],            // e.g. [{ mode: "GCash", accountName: "J. Dela Cruz", accountNumber: "0917 123 4567" }]
+    DATES: [],                      // e.g. [{ label: "Registration", date: "January 17 - February 13, 2027" }]
+    REGISTRATION_FORM_URL: "",      // the registration form participants download, fill up and upload
+    PRIMER_URL: "",                 // the public event primer (the receipt email's primer link is for participants only)
+
+    // Answers exactly as the Google Forms write them, so website rows look like form rows
+    BUNDLE_NAMES: {                 // "HOW MANY COMPETITIONS WILL YOU JOIN?" (+ " (₱price)" from PRICING.BUNDLES)
+      STD_1_SPC_0: "STANDARD A: 1 Competition",
+      STD_2_SPC_0: "STANDARD B: 2 Competitions",
+      STD_3_SPC_0: "STANDARD C: 3 Competitions",
+      STD_0_SPC_1: "FILM SPECIAL: Film Making Only",
+      STD_1_SPC_1: "BUNDLE A: 1 Competition + Film Making",
+      STD_2_SPC_1: "BUNDLE B: 2 Competitions + Film Making",
+      STD_3_SPC_1: "ALL IN: All Competitions"
+    },
+    OPTIONS: {
+      SEX: ["Female", "Male"],
+      REGION: [
+        "National Capital Region (NCR)", "Cordillera Administrative Region (CAR)", "Region I (Ilocos Region)",
+        "Region II (Cagayan Valley)", "Region III (Central Luzon)", "Region IV - A (CALABARZON)",
+        "Region IV - B (MIMAROPA)", "Region V (Bicol Region)", "Region VI (Western Visayas)",
+        "Negros Island Region (NIR)", "Region VII (Central Visayas)", "Region VIII (Eastern Visayas)",
+        "Region IX (Zamboanga Peninsula)", "Region X (Northern Mindanao)", "Region XI (Davao Region)",
+        "Region XII (SOCCSKSARGEN)", "Region XIII (Caraga)", "Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)"
+      ],
+      GUARDIAN_REL: ["Mother", "Father", "Sibling (Brother/Sister)", "Grandparent", "Aunt/Uncle", "Other"],
+      GRADE_LEVEL: ["Grade 7 (JHS)", "Grade 8 (JHS)", "Grade 9 (JHS)", "Grade 10 (JHS)", "Grade 11 (SHS)", "Grade 12 (SHS)"],
+      PAY_MODE: ["GCash", "Maya", "BPI", "PNB"]
+    },
+    ANSWERS: {
+      PRIVACY_CONSENT: "I hereby let the organizers collect my personal data for the sole purpose of this competition",
+      PLEDGE: "I agree to the pledge and expect the team to strictly adhere to it.",
+      SUBMIT_ANOTHER: "No"
+    },
+    // Form-only questions (the script never reads them; the website still fills them in)
+    REG_FORM_ONLY_COLS: { PRIVACY_CONSENT: 3, PLEDGE: 4, PROOF_OF_SCHOOL: 15, VALID_ID: 16 },
+    SUB_FORM_ONLY_COLS: { PRIVACY_CONSENT: 3, PLEDGE: 4, SUBMIT_ANOTHER: 42 },
+
+    UPLOADS: {
+      FOLDER_ID: "",                // empty = a "Husay ng Soksay - Website Uploads" folder made on first use
+      MAX_FILE_MB: 20,              // an entry file sent through the website; bigger videos come as a Google Drive link
+      REGISTRATION_MAX_FILE_MB: 10, // a registration document (IDs, proof of payment, the registration form)
+      // Registration uploads come from people not registered yet, so they have a daily budget:
+      // nobody can fill the Drive by uploading again and again
+      REGISTRATION_MB_PER_DAY: 2000,
+      MAX_LINKED_FILE_MB: 4096,     // a Google Drive link is copied only up to this size
+      LINK_FIELDS: ["SPEECH_VIDEO", "FILM_FILE"],   // the only questions that take a Google Drive link
+      MAX_FILES_PER_SESSION: 20,
+      MAX_UPLOADS_PER_HOUR: 300,
+      REGISTRATION_EXTENSIONS: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "heic", "heif", "webp"],
+      EXTENSIONS: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "heic", "heif", "webp", "mp4", "mov", "m4v"],
+      MIME_TYPES: {
+        pdf: "application/pdf", doc: "application/msword",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", heic: "image/heic", heif: "image/heif",
+        webp: "image/webp", mp4: "video/mp4", mov: "video/quicktime", m4v: "video/x-m4v"
+      }
+    },
+    LIMITS: {
+      REQUESTS_PER_MINUTE: 300,     // all visitors together
+      REGISTRATIONS_PER_HOUR: 40,   // website registrations, all visitors together (each one sends an email)
+      SUBMISSIONS_PER_HOUR: 80,
+      SIGN_IN_TRIES_PER_10_MIN: 8,  // wrong access codes for one email before it is locked for 10 minutes
+      MIN_FILL_SECONDS: 20,         // a form sent back faster than this is treated as a bot
+      LOCK_WAIT_SECONDS: 25,        // wait for a running form trigger before answering "busy, try again"
+      KEEP_EMAIL_QUOTA: 15          // "email my access code" stops when fewer daily emails are left
     }
   }
 };
@@ -3200,6 +3293,8 @@ var EmailBuilder = (function () {
       if (spielConfig.SUBMISSION_FORM_LINK) {
         emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
       }
+      // The website's submission page and this person's access code (once the website is set up)
+      emailSpiel += webReceiptAccessHtml_(options.recipient || data.email, displayGenId, !!options.preview);
       
       // Deadline
       if (spielConfig.SUBMISSION_DEADLINE) {
@@ -3836,7 +3931,7 @@ var EmailService = (function () {
 
   // Acknowledgement Receipt - Reply to existing thread
   function sendPaidReceipt(recipient, subject, data, isUpdate, forceSend) {
-    var html = EmailBuilder.buildReceiptHtml(data, isUpdate, { preview: false });
+    var html = EmailBuilder.buildReceiptHtml(data, isUpdate, { preview: false, recipient: recipient });
     var inlineImages = LogoService.getInlineImages();
     return sendWithGuard_(recipient, subject, html, data.genId, "PAID", inlineImages, forceSend, false);
   }
@@ -15560,6 +15655,7 @@ var MergeService = (function () {
       if (spielConfig.SUBMISSION_FORM_LINK) {
         emailSpiel += '<p style="margin:12px 0;"><a class="btn-link" href="' + spielConfig.SUBMISSION_FORM_LINK + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:' + SYSTEM_CONFIG.BRAND.INDIGO + ';color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">' + (spielConfig.SUBMISSION_BUTTON_LABEL || "SUBMISSION FORM") + '</a></p>';
       }
+      emailSpiel += webReceiptAccessHtml_(participant.email, participant.genId, !!options.preview);
       if (spielConfig.SUBMISSION_DEADLINE) {
         emailSpiel += '<p style="font-size:14px;margin:12px 0;"><b>DEADLINE FOR ALL SUBMISSIONS:</b> ' + spielConfig.SUBMISSION_DEADLINE + '</p>';
       }
@@ -19776,6 +19872,8 @@ function getAdminMenuDefinition_() {
     "-",
     ["📚 System Introduction & Guide", "showSystemIntroduction",
       "This guide. It is rebuilt from the current settings, sheets and menu every time you open it."],
+    ["🌐 Website & Online Forms", "openWebsiteSettings",
+      "The public website's connection to this spreadsheet: open or close online registration and entry submission (or open them between two dates), the payment accounts, dates and links the website shows, the web app address, and clean-up of unused uploads."],
     "-",
 
     { menu: "📊 Dashboards & Reports", items: [
@@ -28084,4 +28182,1187 @@ function showSystemIntroduction(startTab) {
     .setHeight(680)
     .setTitle(systemName + ' — System Guide');
   SpreadsheetApp.getUi().showModalDialog(output, systemName + ' — System Guide');
+}
+
+// ============================================================================
+// PART 26: WEBSITE API (the GitHub Pages website <-> this spreadsheet)
+// ============================================================================
+// The public website (site/ in the repository, hosted on GitHub Pages) presents the event and
+// lets people register and submit entries without opening the Google Forms. It talks to this
+// script's web app:
+//   GET  ?action=config                      open / closed, prices, payment accounts, answer options
+//   GET  ?action=checkCode&kind=&code=        is a referral / coupon code valid?
+//   POST {action:"upload", ...}               one file (base64) -> Drive, returns its id
+//   POST {action:"register", ...}             a registration
+//   POST {action:"lookup", email, access}     submission page sign-in: the person's competitions
+//   POST {action:"submit", ...}               a competition entry
+//   POST {action:"resendAccess", email}       emails the person their access code again
+// A registration or entry becomes a new row of "Registration Form" / "Submission Form" laid
+// out exactly like a Google Form response (same columns, same answer wording, uploads as
+// https://drive.google.com/open?id= links) and is then processed by the same code as a form
+// response (handleSubmission / handleSubmissionFormResponse2): Gen ID, pricing, coupon and
+// referral, Finance row, emails, participant numbers, anonymized copies. A Google Form with
+// file-upload questions cannot be filled in by a script, so the row is written directly; the
+// SYS_SOURCE column marks these rows "Website".
+//
+// Deploy once: Extensions -> Apps Script -> Deploy -> New deployment -> type "Web app",
+// Execute as "Me", Who has access "Anyone" -> copy the URL that ends in /exec into
+// site/assets/js/config.js (apiUrl). After changing this script: Deploy -> Manage deployments
+// -> Edit -> Version "New version", or the website keeps running the old code.
+// What the team changes during the event (open / close, payment accounts, dates) is set in
+// Admin Center -> Website & Online Forms and overrides SYSTEM_CONFIG.WEBSITE.
+
+var WEB_SETTINGS_KEY_ = "HNS_WEBSITE_SETTINGS";
+var WEB_SECRET_KEY_ = "HNS_WEBSITE_SECRET";
+var WEB_UPLOADS_FOLDER_KEY_ = "HNS_WEBSITE_UPLOADS_FOLDER";
+var WEB_SOURCE_HEADER_ = "SYS_SOURCE";
+var WEB_SOURCE_PREFIX_ = "Website";
+var WEB_SESSION_TTL_S_ = 6 * 60 * 60;   // how long an uploaded file stays attachable to a form
+
+function doGet(e) {
+  return webJson_(webHandle_("GET", e));
+}
+
+function doPost(e) {
+  return webJson_(webHandle_("POST", e));
+}
+
+function webJson_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function webError_(code, message, extra) {
+  var out = { ok: false, error: code, message: message };
+  if (extra) Object.keys(extra).forEach(function (k) { out[k] = extra[k]; });
+  return out;
+}
+
+/** Read the request, route it, and never let an exception reach the browser as an HTML page. */
+function webHandle_(method, e) {
+  var W = SYSTEM_CONFIG.WEBSITE;
+  var req;
+  try {
+    if (method === "POST") {
+      var raw = (e && e.postData && e.postData.contents) || "";
+      // base64 makes a file a third bigger; anything larger than one allowed file is refused unread
+      if (raw.length > W.UPLOADS.MAX_FILE_MB * 1024 * 1024 * 1.4 + 200000) {
+        return webError_("too_large", "That file is too large. The limit is " + W.UPLOADS.MAX_FILE_MB + " MB per file.");
+      }
+      req = JSON.parse(raw || "{}");
+    } else {
+      req = (e && e.parameter) || {};
+    }
+  } catch (parseErr) {
+    return webError_("bad_request", "The request could not be read. Please reload the page and try again.");
+  }
+
+  var action = String(req.action || "").trim();
+  try {
+    if (!webRateLimit_("all", W.LIMITS.REQUESTS_PER_MINUTE, 60)) {
+      return webError_("busy", "Many people are using the website right now. Please try again in a minute.");
+    }
+    if (method === "GET") {
+      if (action === "" || action === "config") return webConfig_();
+      if (action === "checkCode") return webCheckCode_(req);
+      if (action === "ping") return { ok: true, name: SYSTEM_CONFIG.META.NAME, version: SYSTEM_CONFIG.META.VERSION };
+    } else {
+      if (action === "upload") return webUpload_(req);
+      if (action === "register") return webOnce_(req, webRegister_);
+      if (action === "lookup") return webLookup_(req);
+      if (action === "submit") return webOnce_(req, webSubmit_);
+      if (action === "resendAccess") return webResendAccess_(req);
+    }
+    return webError_("unknown_action", "Unknown request.");
+  } catch (err) {
+    AuditLogService.error("WEB_API_ERROR", action + ": " + (err && err.stack ? err.stack : err));
+    return webError_("server", "Something went wrong on our side. Please try again in a few minutes, or message us on Facebook.");
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Settings: SYSTEM_CONFIG.WEBSITE, overridden by what the team saved in the Admin Center
+// ----------------------------------------------------------------------------
+
+function getWebsiteSettings_() {
+  var W = SYSTEM_CONFIG.WEBSITE;
+  var saved = {};
+  try { saved = JSON.parse(PropertiesService.getScriptProperties().getProperty(WEB_SETTINGS_KEY_) || "{}") || {}; } catch (e) {}
+  function win(s, def) {
+    s = s || {};
+    return {
+      STATUS: s.STATUS !== undefined ? s.STATUS : def.STATUS,
+      OPENS: s.OPENS !== undefined ? s.OPENS : def.OPENS,
+      CLOSES: s.CLOSES !== undefined ? s.CLOSES : def.CLOSES
+    };
+  }
+  function str(key, def) { return String(saved[key] !== undefined ? saved[key] : (def || "")).trim(); }
+  return {
+    siteUrl: str("siteUrl", W.URL),
+    edition: str("edition", W.EDITION),
+    registration: win(saved.registration, W.REGISTRATION),
+    submission: win(saved.submission, W.SUBMISSION),
+    paymentMethods: Array.isArray(saved.paymentMethods) ? saved.paymentMethods : W.PAYMENT_METHODS,
+    dates: Array.isArray(saved.dates) ? saved.dates : W.DATES,
+    registrationFormUrl: str("registrationFormUrl", W.REGISTRATION_FORM_URL),
+    primerUrl: str("primerUrl", W.PRIMER_URL)
+  };
+}
+
+/** Save what the Admin Center dialog sends (validated; unknown keys are dropped). */
+function saveWebsiteSettings(payload) {
+  payload = payload || {};
+  function win(w, label) {
+    w = w || {};
+    var status = ["auto", "open", "closed"].indexOf(String(w.STATUS)) >= 0 ? String(w.STATUS) : "closed";
+    var out = { STATUS: status, OPENS: String(w.OPENS || "").trim(), CLOSES: String(w.CLOSES || "").trim() };
+    if (out.OPENS && !webParseDate_(out.OPENS)) throw new Error(label + ": the opening date is not a date.");
+    if (out.CLOSES && !webParseDate_(out.CLOSES)) throw new Error(label + ": the closing date is not a date.");
+    if (out.OPENS && out.CLOSES && webParseDate_(out.OPENS) > webParseDate_(out.CLOSES)) throw new Error(label + ": it closes before it opens.");
+    if (status === "auto" && !out.OPENS && !out.CLOSES) throw new Error(label + ": \"Automatic\" needs an opening or closing date.");
+    return out;
+  }
+  function link(v, label) {
+    v = String(v || "").trim().slice(0, 400);
+    if (v && !/^https:\/\//i.test(v)) throw new Error(label + " must start with https://");
+    return v;
+  }
+  var modes = SYSTEM_CONFIG.WEBSITE.OPTIONS.PAY_MODE;
+  var clean = {
+    siteUrl: link(payload.siteUrl, "The website address"),
+    edition: String(payload.edition || "").trim().slice(0, 40),
+    registration: win(payload.registration, "Online registration"),
+    submission: win(payload.submission, "Online entry submission"),
+    paymentMethods: (Array.isArray(payload.paymentMethods) ? payload.paymentMethods : []).map(function (p) {
+      return {
+        mode: String(p && p.mode || "").trim().slice(0, 40),
+        accountName: String(p && p.accountName || "").trim().slice(0, 80),
+        accountNumber: String(p && p.accountNumber || "").trim().slice(0, 40)
+      };
+    }).filter(function (p) { return p.mode || p.accountName || p.accountNumber; }).slice(0, 8),
+    dates: (Array.isArray(payload.dates) ? payload.dates : []).map(function (d) {
+      return { label: String(d && d.label || "").trim().slice(0, 60), date: String(d && d.date || "").trim().slice(0, 60) };
+    }).filter(function (d) { return d.label && d.date; }).slice(0, 12),
+    registrationFormUrl: link(payload.registrationFormUrl, "The registration form link"),
+    primerUrl: link(payload.primerUrl, "The primer link")
+  };
+  clean.paymentMethods.forEach(function (p) {
+    if (modes.indexOf(p.mode) < 0) throw new Error("Payment account \"" + (p.accountName || p.accountNumber) + "\": the mode must be one of " + modes.join(", ") + ".");
+    if (!p.accountNumber) throw new Error("Payment account " + p.mode + ": enter the account number.");
+  });
+  PropertiesService.getScriptProperties().setProperty(WEB_SETTINGS_KEY_, JSON.stringify(clean));
+  CacheService.getScriptCache().remove("web:config");
+  AuditLogService.info("WEB_SETTINGS_SAVED", "Website settings saved by " + (Session.getActiveUser().getEmail() || "an admin"));
+  return getWebsiteDashboardData();
+}
+
+/** "2027-01-17T08:00" (from the dialog) or "2027-01-17" as a time in the event's time zone. */
+function webParseDate_(s) {
+  s = String(s || "").trim();
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/);
+  if (!m) return null;
+  var d = Utilities.parseDate(m[1] + "-" + m[2] + "-" + m[3] + " " + (m[4] || "00") + ":" + (m[5] || "00"),
+    SYSTEM_CONFIG.META.TIMEZONE, "yyyy-MM-dd HH:mm");
+  return (d && !isNaN(d.getTime())) ? d : null;
+}
+
+/** Is a registration / submission window open now? "auto" = between the dates. */
+function webWindowState_(w) {
+  var now = new Date();
+  var opens = webParseDate_(w.OPENS), closes = webParseDate_(w.CLOSES);
+  var fmt = function (d) { return Utilities.formatDate(d, SYSTEM_CONFIG.META.TIMEZONE, "MMMM d, yyyy 'at' h:mm a"); };
+  var st = { status: "closed", open: false, opens: opens ? opens.toISOString() : "", closes: closes ? closes.toISOString() : "", message: "" };
+  if (w.STATUS === "open") {
+    st.status = "open"; st.open = true;
+  } else if (w.STATUS === "auto" && (opens || closes)) {
+    if (opens && now < opens) { st.status = "upcoming"; st.message = "Opens on " + fmt(opens) + "."; }
+    else if (closes && now > closes) { st.status = "ended"; st.message = "Closed on " + fmt(closes) + "."; }
+    else { st.status = "open"; st.open = true; if (closes) st.message = "Open until " + fmt(closes) + "."; }
+  }
+  if (st.status === "closed") st.message = "Closed for now. Follow our Facebook page for the next opening.";
+  return st;
+}
+
+// ----------------------------------------------------------------------------
+// Answer wording: the website writes exactly what the Google Form writes
+// ----------------------------------------------------------------------------
+
+/** "STANDARD B: 2 Competitions (₱499)" etc., the answers of the "how many competitions" question. */
+function webBundleLabels_() {
+  var B = SYSTEM_CONFIG.PRICING.BUNDLES, N = SYSTEM_CONFIG.WEBSITE.BUNDLE_NAMES;
+  var out = {};
+  Object.keys(N).forEach(function (k) { out[k] = N[k] + " (₱" + B[k] + ")"; });
+  return out;
+}
+
+/** The competitions picked (by key or registration name), in the order of SYSTEM_CONFIG.COMPETITIONS. */
+function webSelection_(names) {
+  var wanted = {};
+  (names || []).forEach(function (n) { wanted[String(n || "").trim().toUpperCase()] = true; });
+  var picked = getCompetitions_().filter(function (c) {
+    return wanted[c.key] || c.registrationNames.some(function (r) { return wanted[String(r).toUpperCase()]; });
+  });
+  var std = picked.filter(function (c) { return !c.special; }).length;
+  var spc = picked.filter(function (c) { return c.special; }).length;
+  return { comps: picked, names: picked.map(function (c) { return c.registrationName; }), bundleKey: "STD_" + std + "_SPC_" + Math.min(spc, 1) };
+}
+
+/** Free text is stored as text: never a formula, and phone numbers keep their leading 0. */
+function webText_(v, max) {
+  var s = String(v === null || v === undefined ? "" : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();
+  if (max) s = s.slice(0, max);
+  return s ? "'" + s : "";
+}
+
+function webDriveUrl_(id) {
+  return id ? "https://drive.google.com/open?id=" + id : "";
+}
+
+// ----------------------------------------------------------------------------
+// GET ?action=config
+// ----------------------------------------------------------------------------
+
+function webConfig_() {
+  var cache = CacheService.getScriptCache();
+  var out = null;
+  try { out = JSON.parse(cache.get("web:config") || "null"); } catch (e) {}
+  var W = getWebsiteSettings_();
+  if (!out) {
+    var C = SYSTEM_CONFIG.WEBSITE, contact = SYSTEM_CONFIG.ADMIN.OR_EMAIL_SPIEL.CONTACT || {};
+    out = {
+      ok: true,
+      event: { name: SYSTEM_CONFIG.META.NAME, org: SYSTEM_CONFIG.META.ORG, edition: W.edition, timezone: SYSTEM_CONFIG.META.TIMEZONE },
+      contact: { email: contact.EMAIL || "", facebook: contact.FACEBOOK || "", instagram: contact.INSTAGRAM || "" },
+      competitions: getCompetitions_().map(function (c) {
+        return { key: c.key, registrationName: c.registrationName, submissionName: c.submissionName, shortName: c.shortName, special: c.special, price: c.price };
+      }),
+      pricing: {
+        single: SYSTEM_CONFIG.PRICING.SINGLE,
+        bundles: SYSTEM_CONFIG.PRICING.BUNDLES,
+        bundleLabels: webBundleLabels_(),
+        referralDiscount: SYSTEM_CONFIG.PRICING.REFERRAL_DISCOUNT_PER_USE
+      },
+      paymentMethods: W.paymentMethods,
+      dates: W.dates,
+      links: { registrationForm: W.registrationFormUrl, primer: W.primerUrl },
+      options: C.OPTIONS,
+      requirePaymentToSubmit: !!C.REQUIRE_PAYMENT_TO_SUBMIT,
+      uploads: {
+        maxFileMb: C.UPLOADS.MAX_FILE_MB, extensions: C.UPLOADS.EXTENSIONS,
+        registrationMaxFileMb: C.UPLOADS.REGISTRATION_MAX_FILE_MB, registrationExtensions: C.UPLOADS.REGISTRATION_EXTENSIONS,
+        linkFields: C.UPLOADS.LINK_FIELDS, maxLinkedFileMb: C.UPLOADS.MAX_LINKED_FILE_MB
+      },
+      submissionForm: webSubmissionFormSpec_()
+    };
+    cache.put("web:config", JSON.stringify(out), 300);
+  }
+  // the open / closed state is worked out on every request; the rest changes only when saved
+  out.registration = webWindowState_(W.registration);
+  out.submission = webWindowState_(W.submission);
+  out.serverTime = new Date().toISOString();
+  return out;
+}
+
+/**
+ * The questions of each competition's section of the Submission Form, in column order. The
+ * question text comes from the sheet's header row, which is the linked form's own wording.
+ */
+function webSubmissionFormSpec_() {
+  var SUB = SYSTEM_CONFIG.COLS.SUB;
+  var headers = [];
+  try {
+    var sh = new SheetRepository().getSubmissionSheet();
+    if (sh && sh.getLastColumn() > 0) headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  } catch (e) {}
+  var fallback = getOriginalLayout_().SUBMISSION.FORM_HEADERS;
+  var out = {};
+  Object.keys(SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP).forEach(function (subName) {
+    var m = SYSTEM_CONFIG.SUBMISSION_COMPETITION_MAP[subName];
+    var keys = Object.keys(SUB).filter(function (k) { return k.indexOf(m.key + "_") === 0; })
+      .sort(function (a, b) { return SUB[a] - SUB[b]; });
+    out[m.key] = {
+      submissionName: subName,
+      fields: keys.map(function (k) {
+        var col = SUB[k];
+        var type = "text";
+        if (m.fileCols.indexOf(k) >= 0) type = "file";
+        else if (k === m.regionCol) type = "region";
+        else if (k === m.facebookCol) type = "url";
+        else if (k === m.contactCol) type = "tel";
+        else if (k === "FILM_CONSENT") type = "yesno";
+        else if (k === "FILM_MEMBERS" || k === "FILM_ROLES") type = "textarea";
+        return {
+          key: k,
+          label: String(headers[col - 1] || fallback[col - 1] || k).trim(),
+          type: type,
+          required: k !== m.adviserCol,
+          role: k === m.nameCol ? "name" : k === m.schoolCol ? "school" : k === m.adviserCol ? "adviser" :
+            k === m.facebookCol ? "facebook" : k === m.contactCol ? "contact" : k === m.regionCol ? "region" : ""
+        };
+      })
+    };
+  });
+  return out;
+}
+
+// ----------------------------------------------------------------------------
+// GET ?action=checkCode&kind=referral|coupon&code=
+// ----------------------------------------------------------------------------
+
+function webCheckCode_(req) {
+  var kind = String(req.kind || "").toLowerCase();
+  var code = Utils.cleanInput(req.code).slice(0, 40);
+  if (!code) return { ok: true, valid: false, message: "Enter a code." };
+  if (!webRateLimit_("code", 60, 60)) return webError_("busy", "Too many code checks. Please wait a minute.");
+  var repo = new SheetRepository();
+  if (kind === "referral") {
+    var valid = repo.isValidReferralCode(code, 0);
+    var off = SYSTEM_CONFIG.PRICING.REFERRAL_DISCOUNT_PER_USE;
+    return { ok: true, valid: valid, kind: "referral", discount: valid ? off : 0,
+      message: valid ? "Referral code accepted: ₱" + off + " off." : "We can't find that referral code. Check the spelling (it looks like REF-XXXXXXXX)." };
+  }
+  if (kind === "coupon") {
+    var res = new CouponService(repo.getCouponSheet(), { lazyLoad: true }).validate(code);
+    return { ok: true, valid: !!res.valid, kind: "coupon", discount: res.valid ? Number(res.value || 0) : 0,
+      message: res.valid ? "Coupon accepted: ₱" + res.value + " off." : webCouponReason_(res.reason) };
+  }
+  return webError_("bad_request", "Unknown code type.");
+}
+
+function webCouponReason_(reason) {
+  var reasons = {
+    "Not found": "We can't find that coupon code (or it is no longer active).",
+    "Inactive": "That coupon is no longer active.",
+    "Expired": "That coupon has expired.",
+    "Not yet active": "That coupon is not active yet.",
+    "Fully redeemed": "That coupon has been fully used.",
+    "Invalid date range": "That coupon can't be used right now."
+  };
+  return reasons[reason] || "That coupon can't be used.";
+}
+
+// ----------------------------------------------------------------------------
+// Submission access code: proves the person can read the registration email's inbox
+// ----------------------------------------------------------------------------
+// The Gen ID cannot do this: participants share it as their referral code. The access code is
+// an HMAC of the email and the Gen ID with a secret kept in Script Properties, so nothing new is
+// stored in the sheets. It is printed in the Acknowledgement Receipt (sent once the payment is
+// confirmed) and can be emailed again from the website.
+
+function webSecret_() {
+  var props = PropertiesService.getScriptProperties();
+  var s = props.getProperty(WEB_SECRET_KEY_);
+  if (!s) {
+    s = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty(WEB_SECRET_KEY_, s);
+  }
+  return s;
+}
+
+function webAccessCode_(email, genId) {
+  var e = Utils.normalizeEmail(email), g = String(genId || "").trim().toUpperCase();
+  if (!e || !g) return "";
+  var sig = Utilities.computeHmacSha256Signature(e + "|" + g, webSecret_());
+  var alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";   // no 0/O, 1/I/L
+  var out = "";
+  for (var i = 0; i < 8; i++) out += alphabet.charAt((((sig[i] % 256) + 256) % 256) % alphabet.length);
+  return out.slice(0, 4) + "-" + out.slice(4);
+}
+
+/** The website's submission page with the email and access code filled in (after "#", so the code never reaches a server log). */
+function webPersonalSubmitUrl_(email, genId) {
+  var site = getWebsiteSettings_().siteUrl;
+  var code = webAccessCode_(email, genId);
+  if (!site || !code) return "";
+  return site.replace(/\/?$/, "/") + "submit.html#email=" + encodeURIComponent(Utils.normalizeEmail(email)) + "&access=" + encodeURIComponent(code);
+}
+
+/**
+ * The receipt email's "submit on the website" box, with the person's access code. Empty until
+ * the website address is set in Admin Center -> Website & Online Forms.
+ */
+function webReceiptAccessHtml_(email, genId, preview) {
+  try {
+    var site = getWebsiteSettings_().siteUrl;
+    if (!site) return "";
+    if (!preview && !/^[A-Z0-9]+-[A-Z0-9]+$/i.test(String(genId || "").trim())) return "";
+    var code = preview ? "ABCD-2345" : webAccessCode_(email, genId);
+    var link = preview ? site.replace(/\/?$/, "/") + "submit.html" : webPersonalSubmitUrl_(email, genId);
+    if (!code || !link) return "";
+    var B = SYSTEM_CONFIG.BRAND, esc = Utils.escapeHtml;
+    return '<div style="border:2px dashed ' + B.INDIGO + ';border-radius:12px;padding:14px;margin:14px 0;background:#fffdf7;">' +
+      '<p style="margin:0 0 8px 0;font-size:14px;line-height:1.5;"><b>Or submit on our website.</b> No Google sign-in needed: open your submission page, or sign in there with this email address and your access code.</p>' +
+      '<div style="background:#fff4c7;border:2px solid ' + B.YELLOW + ';border-radius:10px;padding:10px;font-family:monospace;font-size:20px;font-weight:bold;letter-spacing:3px;text-align:center;color:' + B.INDIGO + ';">' + esc(code) + '</div>' +
+      '<p style="margin:12px 0 4px 0;"><a href="' + esc(link) + '" target="_blank" style="display:inline-block;padding:12px 16px;border-radius:10px;background:' + B.INDIGO + ';color:#fff;text-decoration:none;font-weight:bold;font-size:13px;">OPEN MY SUBMISSION PAGE</a></p>' +
+      '<p style="margin:6px 0 0 0;font-size:12px;color:#5c5488;">Keep this code private: with it and your email, anyone can submit an entry in your name.</p>' +
+      '</div>';
+  } catch (e) {
+    return "";
+  }
+}
+
+/** The registration row of this email, if the access code matches it. */
+function webFindRegistration_(email, access) {
+  var repo = new SheetRepository();
+  var row = repo.findRegistrationRowIndexByEmail(email);
+  if (!row) return null;
+  var sheet = repo.getRegistrationSheet();
+  var vals = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var genId = vals[SYSTEM_CONFIG.COLS.REG.GEN_ID - 1];
+  var want = webAccessCode_(email, genId).replace(/-/g, "");
+  var got = String(access || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!want || want !== got) return null;
+  return { row: row, values: vals, genId: genId, sheet: sheet };
+}
+
+/**
+ * The registration for this email and access code. Wrong codes are counted per email: after
+ * SIGN_IN_TRIES_PER_10_MIN of them the email is locked for ten minutes, so codes cannot be guessed.
+ */
+function webAuth_(email, access) {
+  var cache = CacheService.getScriptCache();
+  var key = "authfail:" + webHash_(email) + ":" + Math.floor(Date.now() / 600000);
+  var fails = Number(cache.get(key) || 0);
+  if (fails >= SYSTEM_CONFIG.WEBSITE.LIMITS.SIGN_IN_TRIES_PER_10_MIN) return { blocked: true, reg: null };
+  var reg = Utils.isValidEmail(email) ? webFindRegistration_(email, access) : null;
+  if (!reg) cache.put(key, String(fails + 1), 660);
+  return { blocked: false, reg: reg };
+}
+
+function webIsPaid_(email, reg) {
+  try { return getPaidEmailLookup_().isPaid(email, reg.values[SYSTEM_CONFIG.COLS.REG.PAYMENT_STATUS - 1]); } catch (e) { return false; }
+}
+
+// ----------------------------------------------------------------------------
+// POST {action:"lookup", email, access}: submission page sign-in
+// ----------------------------------------------------------------------------
+
+function webLookup_(req) {
+  var email = Utils.normalizeEmail(req.email);
+  if (!Utils.isValidEmail(email)) return webError_("invalid", "Enter the email address you registered with.");
+  var auth = webAuth_(email, req.access);
+  if (auth.blocked) return webError_("busy", "Too many wrong codes for this email. Please wait 10 minutes.");
+  var reg = auth.reg;
+  if (!reg) return webError_("not_found", "That email and access code don't match a registration. Check both, or have the code emailed to you again.");
+
+  var R = SYSTEM_CONFIG.COLS.REG;
+  var sel = webSelection_(String(reg.values[R.COMPETITION - 1] || "").split(/\s*,\s*/));
+  var done = webSubmittedCompetitions_(email);
+  var fullName = String(reg.values[R.NAME - 1] || "").trim();
+  return {
+    ok: true,
+    name: fullName,
+    firstName: fullName.split(/\s+/)[0] || "",
+    genId: String(reg.genId || ""),
+    paid: webIsPaid_(email, reg),
+    requirePayment: !!SYSTEM_CONFIG.WEBSITE.REQUIRE_PAYMENT_TO_SUBMIT,
+    submission: webWindowState_(getWebsiteSettings_().submission),
+    competitions: sel.comps.map(function (c) {
+      return { key: c.key, submissionName: c.submissionName, shortName: c.shortName, submitted: !!done[c.key] };
+    }),
+    // filled in for convenience; the participant can change them
+    prefill: {
+      name: fullName,
+      region: String(reg.values[R.REGION - 1] || ""),
+      school: String(reg.values[R.SCHOOL - 1] || ""),
+      adviser: String(reg.values[R.ADVISER - 1] || ""),
+      facebook: String(reg.values[R.FACEBOOK - 1] || ""),
+      contact: String(reg.values[R.CONTACT - 1] || "")
+    }
+  };
+}
+
+/** The competitions (by key) this email already has an entry for. */
+function webSubmittedCompetitions_(email) {
+  var out = {};
+  var sh = new SheetRepository().getSubmissionSheet();
+  if (!sh || sh.getLastRow() < 2) return out;
+  var SUB = SYSTEM_CONFIG.COLS.SUB;
+  var vals = sh.getRange(2, 1, sh.getLastRow() - 1, SUB.COMPETITION_TYPE).getValues();
+  var bySubName = {};
+  getCompetitions_().forEach(function (c) { bySubName[String(c.submissionName).toUpperCase()] = c.key; });
+  vals.forEach(function (v) {
+    if (Utils.normalizeEmail(v[SUB.EMAIL - 1]) !== email) return;
+    String(v[SUB.COMPETITION_TYPE - 1] || "").split(/\s*,\s*/).forEach(function (n) {
+      var key = bySubName[String(n).toUpperCase()];
+      if (key) out[key] = true;
+    });
+  });
+  return out;
+}
+
+// ----------------------------------------------------------------------------
+// POST {action:"upload"}: one file per request, so each request stays small
+// ----------------------------------------------------------------------------
+
+function webUpload_(req) {
+  var U = SYSTEM_CONFIG.WEBSITE.UPLOADS;
+  var session = String(req.session || "");
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(session)) return webError_("bad_request", "Please reload the page and try again.");
+  var kind = req.form === "submission" ? "submission" : "registration";
+  var win = webWindowState_(getWebsiteSettings_()[kind]);
+  if (!win.open) return webError_("closed", (kind === "submission" ? "Entry submission" : "Online registration") + " is closed. " + win.message);
+  var allowed = kind === "submission" ? U.EXTENSIONS : U.REGISTRATION_EXTENSIONS;
+  var maxMb = kind === "submission" ? U.MAX_FILE_MB : U.REGISTRATION_MAX_FILE_MB;
+  var name = String(req.name || "file").replace(/[\\/:*?"<>|\u0000-\u001F]/g, "_").slice(-120);
+  var ext = ((name.match(/\.([A-Za-z0-9]{1,5})$/) || [])[1] || "").toLowerCase();
+  if (allowed.indexOf(ext) < 0) {
+    return webError_("bad_type", "This kind of file can't be uploaded here. Allowed: " + allowed.join(", ") + ".");
+  }
+  if (kind === "submission") {
+    // entry files only from registered participants (who have paid, when that is required)
+    var email = Utils.normalizeEmail(req.email);
+    var auth = webAuth_(email, req.access);
+    if (auth.blocked) return webError_("busy", "Too many wrong codes for this email. Please wait 10 minutes.");
+    if (!auth.reg) return webError_("not_found", "Sign in again with your email and access code.");
+    if (SYSTEM_CONFIG.WEBSITE.REQUIRE_PAYMENT_TO_SUBMIT && !webIsPaid_(email, auth.reg)) {
+      return webError_("unpaid", "We haven't confirmed your payment yet, so entries can't be uploaded.");
+    }
+  }
+  if (!webRateLimit_("upl:" + session, U.MAX_FILES_PER_SESSION, WEB_SESSION_TTL_S_) ||
+      !webRateLimit_("upl-all", U.MAX_UPLOADS_PER_HOUR, 3600)) {
+    return webError_("busy", "Too many uploads right now. Please wait a while and try again.");
+  }
+  var bytes;
+  try { bytes = Utilities.base64Decode(String(req.data || "")); } catch (e) { return webError_("bad_request", "The file could not be read. Please try again."); }
+  if (!bytes || !bytes.length) return webError_("bad_request", "The file is empty.");
+  if (bytes.length > maxMb * 1024 * 1024) return webError_("too_large", "That file is larger than " + maxMb + " MB.");
+  if (!webLooksLike_(bytes, ext)) return webError_("bad_type", "That file doesn't look like a ." + ext + " file. Please export it again and retry.");
+  if (kind === "registration" && !webBudget_("upl-bytes", bytes.length, U.REGISTRATION_MB_PER_DAY * 1024 * 1024, 86400)) {
+    AuditLogService.warn("WEB_UPLOAD_BUDGET", "The daily budget for registration uploads (" + U.REGISTRATION_MB_PER_DAY + " MB) is used up.");
+    return webError_("busy", "We've received a lot of uploads today. Please try again tomorrow, or message us.");
+  }
+
+  var field = String(req.field || "").replace(/[^A-Z_]/g, "").slice(0, 40) || "FILE";
+  var blob = Utilities.newBlob(bytes, U.MIME_TYPES[ext] || "application/octet-stream", field + " - " + name);
+  var file = getWebUploadsFolder_(kind).createFile(blob);
+  file.setDescription("Uploaded through the website. Session " + session + ", field " + field + ".");
+  webSessionAdd_(session, file.getId());
+  return { ok: true, fileId: file.getId(), name: name, size: bytes.length };
+}
+
+/** A quick look at the first bytes, so a renamed program is not stored as a "photo". */
+function webLooksLike_(bytes, ext) {
+  function b(i) { return ((bytes[i] % 256) + 256) % 256; }
+  function ascii(from, n) { var s = ""; for (var i = from; i < from + n && i < bytes.length; i++) s += String.fromCharCode(b(i)); return s; }
+  if (ext === "pdf") return ascii(0, 5) === "%PDF-";
+  if (ext === "jpg" || ext === "jpeg") return b(0) === 0xFF && b(1) === 0xD8;
+  if (ext === "png") return b(0) === 0x89 && ascii(1, 3) === "PNG";
+  if (ext === "webp") return ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP";
+  if (ext === "heic" || ext === "heif" || ext === "mp4" || ext === "m4v") return ascii(4, 4) === "ftyp";
+  if (ext === "mov") return ["ftyp", "moov", "wide", "mdat", "free", "skip", "pnot"].indexOf(ascii(4, 4)) >= 0;
+  if (ext === "docx" || ext === "pptx") return ascii(0, 2) === "PK";
+  if (ext === "doc") return b(0) === 0xD0 && b(1) === 0xCF;
+  return false;
+}
+
+function webSessionAdd_(session, fileId) {
+  var cache = CacheService.getScriptCache();
+  var key = "ses:" + session;
+  var list = [];
+  try { list = JSON.parse(cache.get(key) || "[]"); } catch (e) {}
+  list.push(fileId);
+  cache.put(key, JSON.stringify(list.slice(-40)), WEB_SESSION_TTL_S_);
+}
+
+/** Was this file uploaded from this page (session)? The cache first, then the file's own note. */
+function webSessionOwns_(session, fileId) {
+  if (!fileId || !/^[A-Za-z0-9_-]{16,64}$/.test(String(session))) return false;
+  try {
+    if (JSON.parse(CacheService.getScriptCache().get("ses:" + session) || "[]").indexOf(fileId) >= 0) return true;
+  } catch (e) {}
+  try {
+    var f = DriveApp.getFileById(fileId);
+    var fresh = (Date.now() - f.getDateCreated().getTime()) < WEB_SESSION_TTL_S_ * 1000;
+    return fresh && String(f.getDescription() || "").indexOf("Session " + session + ",") >= 0;
+  } catch (e2) {
+    return false;
+  }
+}
+
+/** "<event> - Website Uploads" in the owner's Drive, with a Registrations and a Submissions folder. */
+function getWebUploadsFolder_(kind) {
+  var props = PropertiesService.getScriptProperties();
+  var root = null;
+  var id = SYSTEM_CONFIG.WEBSITE.UPLOADS.FOLDER_ID || props.getProperty(WEB_UPLOADS_FOLDER_KEY_);
+  if (id) { try { root = DriveApp.getFolderById(id); } catch (e) { root = null; } }
+  if (!root) {
+    root = DriveApp.createFolder(SYSTEM_CONFIG.META.NAME + " - Website Uploads");
+    props.setProperty(WEB_UPLOADS_FOLDER_KEY_, root.getId());
+  }
+  if (!kind) return root;
+  var name = kind === "submission" ? "Submissions" : "Registrations";
+  var it = root.getFoldersByName(name);
+  return it.hasNext() ? it.next() : root.createFolder(name);
+}
+
+/**
+ * Move to the trash the uploads that no response row uses and that are older than a day (forms
+ * left unfinished, files picked twice). Run from Admin Center -> Website & Online Forms.
+ */
+function webCleanupUploads() {
+  var used = {};
+  var repo = new SheetRepository();
+  [repo.getRegistrationSheet(), repo.getSubmissionSheet()].forEach(function (sh) {
+    if (!sh || sh.getLastRow() < 2) return;
+    sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach(function (r) {
+      r.forEach(function (v) {
+        var s = String(v || ""), m, re = /(?:[?&]id=|\/d\/)([A-Za-z0-9_-]{20,})/g;
+        while ((m = re.exec(s))) used[m[1]] = true;
+      });
+    });
+  });
+  var cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  var trashed = 0, kept = 0;
+  ["registration", "submission"].forEach(function (kind) {
+    var files = getWebUploadsFolder_(kind).getFiles();
+    while (files.hasNext()) {
+      var f = files.next();
+      if (used[f.getId()] || f.getDateCreated().getTime() > cutoff) { kept++; continue; }
+      f.setTrashed(true);
+      trashed++;
+    }
+  });
+  AuditLogService.info("WEB_UPLOADS_CLEANUP", "Moved " + trashed + " unused website uploads to the trash; kept " + kept + ".");
+  return { trashed: trashed, kept: kept };
+}
+
+// ----------------------------------------------------------------------------
+// Shared by register / submit
+// ----------------------------------------------------------------------------
+
+/** A retried request (double click, dropped connection) gets the first answer instead of a second row. */
+function webOnce_(req, handler) {
+  var id = String(req.requestId || "");
+  var key = /^[A-Za-z0-9_-]{16,64}$/.test(id) ? "req:" + id : "";
+  var cache = CacheService.getScriptCache();
+  if (key) {
+    var seen = cache.get(key);
+    if (seen) return JSON.parse(seen);
+  }
+  var res = handler(req, key);
+  if (key && res && res.ok) cache.put(key, JSON.stringify(res), 6 * 60 * 60);
+  return res;
+}
+
+/** The hidden "website" field filled in, or the form sent back faster than a person can fill it. */
+function webLooksAutomated_(req) {
+  if (String(req.website || "").trim()) return true;
+  var elapsed = Number(req.elapsedMs || 0);
+  return !(elapsed >= SYSTEM_CONFIG.WEBSITE.LIMITS.MIN_FILL_SECONDS * 1000);
+}
+
+function webRateLimit_(key, max, windowSeconds) {
+  var cache = CacheService.getScriptCache();
+  var bucket = "rl:" + key + ":" + Math.floor(Date.now() / (windowSeconds * 1000));
+  var n = Number(cache.get(bucket) || 0) + 1;
+  cache.put(bucket, String(n), Math.min(21600, windowSeconds + 5));
+  return n <= max;
+}
+
+/** Adds amount to a running total for the current window; false (and nothing added) when it would pass max. */
+function webBudget_(key, amount, max, windowSeconds) {
+  var cache = CacheService.getScriptCache();
+  var bucket = "bg:" + key + ":" + Math.floor(Date.now() / (windowSeconds * 1000));
+  var used = Number(cache.get(bucket) || 0);
+  if (used + amount > max) return false;
+  cache.put(bucket, String(used + amount), Math.min(21600, windowSeconds + 5));
+  return true;
+}
+
+function webHash_(s) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s))).slice(0, 24);
+}
+
+/**
+ * The column with this header, added at the far right when there is none yet. On the
+ * Registration sheet it goes after SYS_APPLICANT_AMT's place (column 60), which stays free.
+ */
+function webEnsureHeader_(sheet, header) {
+  var map = ColumnManager.headerMap(sheet) || {};
+  if (map[header]) return map[header];
+  var col = sheet.getLastColumn() + 1;
+  if (sheet.getName() === SYSTEM_CONFIG.SHEETS.REGISTRATION) col = Math.max(col, SYSTEM_CONFIG.SYS_REG_COLS_END.SYS_APPLICANT_AMT + 1);
+  if (sheet.getMaxColumns() < col) sheet.insertColumnsAfter(sheet.getMaxColumns(), col - sheet.getMaxColumns());
+  sheet.getRange(1, col).setValue(header);
+  return col;
+}
+
+/**
+ * Append a response row (values by column, 1-based) and return its row number. appendRow is
+ * atomic, so a Google Form response arriving at the same moment cannot land on the same row;
+ * the SYS_SOURCE marker finds ours even if another row landed right after it.
+ */
+function webAppendFormRow_(sheet, values, marker) {
+  var srcCol = webEnsureHeader_(sheet, WEB_SOURCE_HEADER_);
+  var width = Math.max(values.length, srcCol);
+  var row = [];
+  for (var i = 0; i < width; i++) row.push(values[i] === undefined || values[i] === null ? "" : values[i]);
+  row[srcCol - 1] = marker;
+  sheet.appendRow(row);
+  SpreadsheetApp.flush();
+  var last = sheet.getLastRow();
+  var from = Math.max(2, last - 50);
+  var marks = sheet.getRange(from, srcCol, last - from + 1, 1).getValues();
+  for (var r = marks.length - 1; r >= 0; r--) {
+    if (String(marks[r][0]) === marker) return from + r;
+  }
+  throw new Error("The new response row could not be found after writing it.");
+}
+
+/**
+ * Run fn holding the same lock the form triggers use, so website and form responses never
+ * interleave. A request retried while its first try was still running gets that first answer.
+ */
+function webWithLock_(onceKey, fn) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(SYSTEM_CONFIG.WEBSITE.LIMITS.LOCK_WAIT_SECONDS * 1000)) {
+    return webError_("busy", "We're processing many forms right now. Nothing was saved yet; please press Submit again in a minute.");
+  }
+  try {
+    if (onceKey) {
+      var seen = CacheService.getScriptCache().get(onceKey);
+      if (seen) return JSON.parse(seen);
+    }
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ----------------------------------------------------------------------------
+// POST {action:"register"}
+// ----------------------------------------------------------------------------
+
+function webValidateRegistration_(a, files, session) {
+  var O = SYSTEM_CONFIG.WEBSITE.OPTIONS;
+  var errors = {};
+  var c = {};
+  function text(key, max, label, optional) {
+    var v = String(a[key] === undefined || a[key] === null ? "" : a[key]).trim();
+    if (!v && !optional) errors[key] = label + " is required.";
+    else if (v.length > max) errors[key] = label + " is too long.";
+    c[key] = v;
+    return v;
+  }
+  function choice(key, list, label) {
+    var v = String(a[key] || "").trim();
+    if (list.indexOf(v) < 0) errors[key] = "Choose your " + label + ".";
+    c[key] = v;
+  }
+  function phone(key, label) {
+    var v = text(key, 30, label);
+    if (v && !/^[0-9+()\-\s\/.]{7,30}$/.test(v)) errors[key] = label + " should be a phone number, like 0917 123 4567.";
+  }
+
+  c.email = Utils.normalizeEmail(a.email);
+  if (!Utils.isValidEmail(c.email) || c.email.length > 120) errors.email = "Enter a valid email address.";
+  text("name", 100, "Your full name");
+  choice("sex", O.SEX, "sex");
+  var age = Number(a.age);
+  if (!(age >= 9 && age <= 25 && Math.floor(age) === age)) errors.age = "Enter your age (9 to 25).";
+  c.age = age;
+  choice("region", O.REGION, "region");
+  phone("contact", "Your contact number");
+  text("guardianName", 100, "Your guardian's full name");
+  phone("guardianContact", "Your guardian's contact number");
+  choice("guardianRel", O.GUARDIAN_REL, "relationship to your guardian");
+  text("facebook", 300, "Your Facebook profile link");
+  text("school", 150, "Your school's name");
+  choice("gradeLevel", O.GRADE_LEVEL, "grade level");
+  text("adviser", 100, "Your adviser's name", true);
+  choice("payMode", O.PAY_MODE, "mode of payment");
+
+  var sel = webSelection_(Array.isArray(a.competitions) ? a.competitions : []);
+  if (!sel.comps.length) errors.competitions = "Choose at least one competition.";
+  c.selection = sel;
+
+  var repo = new SheetRepository();
+  c.refCode = Utils.cleanInput(a.refCode).slice(0, 40);
+  c.couponCode = Utils.cleanInput(a.couponCode).slice(0, 40);
+  if (c.refCode && !repo.isValidReferralCode(c.refCode, 0)) {
+    errors.refCode = "We can't find that referral code. Fix it or leave the box empty.";
+  }
+  if (c.couponCode) {
+    var cv = new CouponService(repo.getCouponSheet(), { lazyLoad: true }).validate(c.couponCode);
+    if (!cv.valid) errors.couponCode = webCouponReason_(cv.reason) + " Fix it or leave the box empty.";
+  }
+  if (a.consentPrivacy !== true) errors.consentPrivacy = "Please agree to the data privacy statement.";
+  if (a.consentPledge !== true) errors.consentPledge = "Please agree to the ethical use pledge.";
+
+  c.files = {};
+  ["PROOF_OF_SCHOOL", "VALID_ID", "PAY_PROOF", "REG_FORM"].forEach(function (k) {
+    var id = String(files && files[k] || "");
+    if (!id) errors[k] = "Please upload this file.";
+    else if (!webSessionOwns_(session, id)) errors[k] = "Please upload this file again.";
+    c.files[k] = id;
+  });
+
+  var keys = Object.keys(errors);
+  return { ok: keys.length === 0, clean: c, fields: errors, message: keys.length ? errors[keys[0]] : "" };
+}
+
+/** Values by column for a "Registration Form" row, worded like the Google Form's answers. */
+function webRegistrationRow_(c) {
+  var R = SYSTEM_CONFIG.COLS.REG, F = SYSTEM_CONFIG.WEBSITE.REG_FORM_ONLY_COLS, A = SYSTEM_CONFIG.WEBSITE.ANSWERS;
+  var v = [];
+  function put(col, val) { if (col) v[col - 1] = val; }
+  put(R.TIMESTAMP, new Date());
+  put(R.EMAIL, webText_(c.email, 120));
+  put(F.PRIVACY_CONSENT, A.PRIVACY_CONSENT);
+  put(F.PLEDGE, A.PLEDGE);
+  put(R.NAME, webText_(c.name, 100));
+  put(R.SEX, c.sex);
+  put(R.AGE, c.age);
+  put(R.REGION, c.region);
+  put(R.CONTACT, webText_(c.contact, 30));
+  put(R.GUARDIAN_NAME, webText_(c.guardianName, 100));
+  put(R.GUARDIAN_CONTACT, webText_(c.guardianContact, 30));
+  put(R.GUARDIAN_REL, c.guardianRel);
+  put(R.FACEBOOK, webText_(c.facebook, 300));
+  put(R.SCHOOL, webText_(c.school, 150));
+  put(F.PROOF_OF_SCHOOL, webDriveUrl_(c.files.PROOF_OF_SCHOOL));
+  put(F.VALID_ID, webDriveUrl_(c.files.VALID_ID));
+  put(R.GRADE_LEVEL, c.gradeLevel);
+  put(R.ADVISER, webText_(c.adviser, 100));
+  put(R.COMPETITION_COUNT, webBundleLabels_()[c.selection.bundleKey] || "");
+  put(R.COMPETITION, c.selection.names.join(", "));
+  put(R.PAY_MODE, c.payMode);
+  put(R.PAY_PROOF, webDriveUrl_(c.files.PAY_PROOF));
+  put(R.REG_FORM, webDriveUrl_(c.files.REG_FORM));
+  put(R.REF_INPUT, webText_(c.refCode, 40));
+  put(R.COUPON_INPUT, webText_(c.couponCode, 40));
+  return v;
+}
+
+function webRegister_(req, onceKey) {
+  var win = webWindowState_(getWebsiteSettings_().registration);
+  if (!win.open) return webError_("closed", "Online registration is closed. " + win.message);
+  if (webLooksAutomated_(req)) return webError_("rejected", "Please take a moment to check your answers, then press Submit again.");
+
+  var v = webValidateRegistration_(req.answers || {}, req.files || {}, String(req.session || ""));
+  if (!v.ok) return webError_("invalid", v.message, { fields: v.fields });
+  var c = v.clean;
+  if (!webRateLimit_("reg:" + webHash_(c.email), 3, 86400)) {
+    return webError_("busy", "Too many registrations with this email today. Please contact us.");
+  }
+  if (!webRateLimit_("reg-all", SYSTEM_CONFIG.WEBSITE.LIMITS.REGISTRATIONS_PER_HOUR, 3600)) {
+    return webError_("busy", "We're receiving many registrations right now. Nothing was saved yet; please try again in a while.");
+  }
+
+  return webWithLock_(onceKey, function () {
+    var repo = new SheetRepository();
+    var sheet = repo.getRegistrationSheet();
+    if (!sheet) throw new Error("Missing \"" + SYSTEM_CONFIG.SHEETS.REGISTRATION + "\" sheet.");
+    if (SYSTEM_CONFIG.WEBSITE.BLOCK_DUPLICATE_EMAIL && repo.findRegistrationRowIndexByEmail(c.email)) {
+      return webError_("duplicate", "This email address is already registered. Look for our confirmation email (it has your Gen ID), or message us to change your registration.",
+        { fields: { email: "Already registered." } });
+    }
+    var marker = WEB_SOURCE_PREFIX_ + " " + Utilities.getUuid();
+    var row = webAppendFormRow_(sheet, webRegistrationRow_(c), marker);
+    AuditLogService.info("WEB_REGISTRATION", "Row " + row + " " + c.email + " (" + c.selection.names.join(", ") + ")");
+
+    // Exactly what a form response gets: Gen ID, pricing, coupon / referral, email, Finance row
+    handleSubmission({ range: sheet.getRange(row, 1), source: "website" });
+
+    var R = SYSTEM_CONFIG.COLS.REG;
+    var vals = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+    return {
+      ok: true,
+      genId: String(vals[R.GEN_ID - 1] || ""),
+      email: c.email,
+      name: c.name,
+      competitions: c.selection.names,
+      payMode: c.payMode,
+      total: Number(vals[R.TOTAL_FEE - 1] || 0),
+      breakdown: {
+        base: Number(vals[R.BASE_FEE - 1] || 0),
+        bundle: Number(vals[R.BUNDLE_DISCOUNT - 1] || 0),
+        coupon: Number(vals[R.COUPON_DISCOUNT - 1] || 0),
+        referral: Number(vals[R.REF_DISCOUNT - 1] || 0)
+      }
+    };
+  });
+}
+
+// ----------------------------------------------------------------------------
+// POST {action:"submit"}
+// ----------------------------------------------------------------------------
+
+function webSubmit_(req, onceKey) {
+  var win = webWindowState_(getWebsiteSettings_().submission);
+  if (!win.open) return webError_("closed", "Entry submission is closed. " + win.message);
+  if (webLooksAutomated_(req)) return webError_("rejected", "Please take a moment to check your entry, then press Submit again.");
+
+  var email = Utils.normalizeEmail(req.email);
+  if (!Utils.isValidEmail(email)) return webError_("not_found", "Sign in again with your email and access code.");
+  if (!webRateLimit_("sub:" + webHash_(email), 20, 3600)) return webError_("busy", "Too many tries. Please wait an hour or contact us.");
+  var auth = webAuth_(email, req.access);
+  if (auth.blocked) return webError_("busy", "Too many wrong codes for this email. Please wait 10 minutes.");
+  var reg = auth.reg;
+  if (!reg) return webError_("not_found", "Your email and access code don't match a registration. Sign in again.");
+  if (SYSTEM_CONFIG.WEBSITE.REQUIRE_PAYMENT_TO_SUBMIT && !webIsPaid_(email, reg)) {
+    return webError_("unpaid", "We haven't confirmed your payment yet. You can submit once the Finance team marks it as received (you'll get your Acknowledgement Receipt by email).");
+  }
+
+  var R = SYSTEM_CONFIG.COLS.REG;
+  var sel = webSelection_(String(reg.values[R.COMPETITION - 1] || "").split(/\s*,\s*/));
+  var comp = sel.comps.filter(function (x) { return x.key === String(req.competition || ""); })[0];
+  if (!comp) return webError_("invalid", "You are not registered for that competition.");
+  if (webSubmittedCompetitions_(email)[comp.key]) {
+    return webError_("duplicate", "You already submitted an entry for " + comp.shortName + ". Message us if you need to replace it.");
+  }
+
+  var spec = webSubmissionFormSpec_()[comp.key];
+  var answers = req.answers || {}, files = req.files || {}, links = req.links || {};
+  var SUB = SYSTEM_CONFIG.COLS.SUB, O = SYSTEM_CONFIG.WEBSITE.OPTIONS;
+  var errors = {}, values = {}, copied = [];
+  if (req.consentPrivacy !== true) errors.consentPrivacy = "Please agree to the data privacy statement.";
+  if (req.consentPledge !== true) errors.consentPledge = "Please agree to the ethical use pledge.";
+
+  spec.fields.forEach(function (f) {
+    if (f.type === "file") {
+      var id = String(files[f.key] || "");
+      var link = String(links[f.key] || "").trim();
+      if (id) {
+        if (!webSessionOwns_(String(req.session || ""), id)) errors[f.key] = "Please upload this file again.";
+        values[f.key] = webDriveUrl_(id);
+      } else if (link) {
+        // A Google Drive link (for videos too big to upload here): keep our own copy, as the form did
+        var U = SYSTEM_CONFIG.WEBSITE.UPLOADS;
+        if (U.LINK_FIELDS.indexOf(f.key) < 0) { errors[f.key] = "Upload this file instead of sending a link."; return; }
+        var linkId = webDriveIdFromUrl_(link);
+        if (!linkId) { errors[f.key] = "Paste a Google Drive link (it starts with https://drive.google.com/)."; return; }
+        try {
+          var src = DriveApp.getFileById(linkId);
+          if (String(src.getMimeType() || "").indexOf("video/") !== 0) { errors[f.key] = "That link is not a video file. Share the video itself, not a folder or a document."; return; }
+          if (src.getSize() > U.MAX_LINKED_FILE_MB * 1024 * 1024) { errors[f.key] = "That video is larger than " + Math.round(U.MAX_LINKED_FILE_MB / 1024) + " GB. Please export a smaller copy."; return; }
+          var copy = src.makeCopy(f.key + " - " + src.getName(), getWebUploadsFolder_("submission"));
+          copy.setDescription("Copied from a Google Drive link sent through the website by " + email + ".");
+          copied.push(copy.getId());
+          values[f.key] = webDriveUrl_(copy.getId());
+        } catch (e) {
+          errors[f.key] = "We can't open that link. In Google Drive choose Share, set General access to \"Anyone with the link\", then paste the link again.";
+        }
+      } else if (f.required) {
+        errors[f.key] = "Please upload this file.";
+      }
+      return;
+    }
+    var val = String(answers[f.key] === undefined || answers[f.key] === null ? "" : answers[f.key]).trim();
+    var max = f.type === "textarea" ? 1500 : 300;
+    if (!val && f.required) errors[f.key] = "This is required.";
+    else if (val.length > max) errors[f.key] = "This answer is too long.";
+    else if (f.type === "region" && val && O.REGION.indexOf(val) < 0) errors[f.key] = "Choose a region from the list.";
+    else if (f.type === "yesno" && val && ["Yes", "No"].indexOf(val) < 0) errors[f.key] = "Choose Yes or No.";
+    values[f.key] = (f.type === "region" || f.type === "yesno") ? val : webText_(val, max);
+  });
+
+  var keys = Object.keys(errors);
+  if (keys.length) {
+    copied.forEach(function (cid) { try { DriveApp.getFileById(cid).setTrashed(true); } catch (e) {} });
+    return webError_("invalid", errors[keys[0]], { fields: errors });
+  }
+  if (!webRateLimit_("sub-all", SYSTEM_CONFIG.WEBSITE.LIMITS.SUBMISSIONS_PER_HOUR, 3600)) {
+    copied.forEach(function (cid) { try { DriveApp.getFileById(cid).setTrashed(true); } catch (e) {} });
+    return webError_("busy", "We're receiving many entries right now. Nothing was saved yet; please try again in a while.");
+  }
+
+  return webWithLock_(onceKey, function () {
+    if (webSubmittedCompetitions_(email)[comp.key]) {
+      return webError_("duplicate", "You already submitted an entry for " + comp.shortName + ".");
+    }
+    var sheet = new SheetRepository().getSubmissionSheet();
+    if (!sheet) throw new Error("Missing \"" + SYSTEM_CONFIG.SHEETS.SUBMISSIONS + "\" sheet.");
+    var F = SYSTEM_CONFIG.WEBSITE.SUB_FORM_ONLY_COLS, A = SYSTEM_CONFIG.WEBSITE.ANSWERS;
+    var row = [];
+    function put(col, val) { if (col) row[col - 1] = val; }
+    put(SUB.TIMESTAMP, new Date());
+    put(SUB.EMAIL, webText_(email, 120));
+    put(F.PRIVACY_CONSENT, A.PRIVACY_CONSENT);
+    put(F.PLEDGE, A.PLEDGE);
+    put(SUB.COMPETITION_TYPE, comp.submissionName);
+    Object.keys(values).forEach(function (k) { put(SUB[k], values[k]); });
+    put(F.SUBMIT_ANOTHER, A.SUBMIT_ANOTHER);
+
+    var marker = WEB_SOURCE_PREFIX_ + " " + Utilities.getUuid();
+    var r = webAppendFormRow_(sheet, row, marker);
+    AuditLogService.info("WEB_SUBMISSION", "Row " + r + " " + email + " (" + comp.submissionName + ")");
+
+    // Exactly what a form response gets: participant number, anonymized copies, PII scan, email
+    handleSubmissionFormResponse2({ range: sheet.getRange(r, 1), source: "website" });
+
+    var sys = ColumnManager.ensureSysColsOnSubmissions(sheet);
+    var num = sys["SYS_PARTICIPANT_NUM"] ? String(sheet.getRange(r, sys["SYS_PARTICIPANT_NUM"]).getValue() || "") : "";
+    return { ok: true, competition: comp.shortName, key: comp.key, participantNumber: num };
+  });
+}
+
+function webDriveIdFromUrl_(url) {
+  var s = String(url || "").trim();
+  if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(s)) return "";
+  var m = s.match(/\/d\/([A-Za-z0-9_-]{20,})/) || s.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
+  return m ? m[1] : "";
+}
+
+// ----------------------------------------------------------------------------
+// POST {action:"resendAccess"}: "send me my access code again"
+// ----------------------------------------------------------------------------
+
+function webResendAccess_(req) {
+  var email = Utils.normalizeEmail(req.email);
+  // the same answer whether or not the email is registered: the page must not tell who registered
+  var generic = { ok: true, message: "If that email is registered, its access code is on the way. Check your inbox and spam folder in a few minutes." };
+  if (!Utils.isValidEmail(email)) return webError_("invalid", "Enter the email address you registered with.");
+  if (!webRateLimit_("resend:" + webHash_(email), 2, 86400)) return generic;
+  if (MailApp.getRemainingDailyQuota() < SYSTEM_CONFIG.WEBSITE.LIMITS.KEEP_EMAIL_QUOTA) {
+    return webError_("busy", "We can't send emails right now. Please try again tomorrow or message us on Facebook.");
+  }
+  var repo = new SheetRepository();
+  var row = repo.findRegistrationRowIndexByEmail(email);
+  if (!row) return generic;
+  var sheet = repo.getRegistrationSheet();
+  var vals = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var R = SYSTEM_CONFIG.COLS.REG;
+  var genId = String(vals[R.GEN_ID - 1] || "").trim();
+  if (!genId) return generic;
+  var name = String(vals[R.NAME - 1] || "").trim();
+  var code = webAccessCode_(email, genId);
+  var link = webPersonalSubmitUrl_(email, genId);
+  var unpaid = SYSTEM_CONFIG.WEBSITE.REQUIRE_PAYMENT_TO_SUBMIT && !webIsPaid_(email, { values: vals });
+  var esc = Utils.escapeHtml, B = SYSTEM_CONFIG.BRAND;
+  var html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;background:' + B.CREAM + ';padding:22px 12px;">' +
+    '<div style="max-width:520px;margin:0 auto;background:#fffdf7;border:3px solid ' + B.INDIGO + ';border-radius:16px;padding:22px;color:#2b2160;">' +
+    '<div style="font-family:' + B.EMAIL_TITLE_FONT + ';font-size:22px;color:' + B.INDIGO + ';letter-spacing:1px;">' + esc(SYSTEM_CONFIG.META.NAME.toUpperCase()) + '</div>' +
+    '<p style="font-size:14px;">Hi <b>' + esc(name || "there") + '</b>,</p>' +
+    '<p style="font-size:14px;line-height:1.5;">Here is your <b>submission access code</b>. You need it, with this email address, to submit your entries on our website.</p>' +
+    '<div style="background:#fff4c7;border:2px solid ' + B.YELLOW + ';border-radius:10px;padding:12px;font-family:monospace;font-size:22px;font-weight:bold;letter-spacing:3px;text-align:center;color:' + B.INDIGO + ';">' + esc(code) + '</div>' +
+    (unpaid ? '<p style="font-size:13px;line-height:1.5;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">We haven\'t confirmed your payment yet. The code works once the Finance team marks your payment as received.</p>' : '') +
+    (link ? '<p style="text-align:center;margin:18px 0;"><a href="' + esc(link) + '" style="display:inline-block;background:' + B.INDIGO + ';color:#fff;padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:13px;">OPEN MY SUBMISSION PAGE</a></p>' : '') +
+    '<p style="font-size:12px;color:#5c5488;">Keep this code private. If you did not ask for it, you can ignore this email.</p>' +
+    '</div></div>';
+  MailApp.sendEmail({ to: email, subject: SYSTEM_CONFIG.META.NAME + ": your submission access code", htmlBody: html, name: SYSTEM_CONFIG.ADMIN.EMAIL_SENDER_NAME });
+  AuditLogService.info("WEB_ACCESS_RESENT", email);
+  return generic;
+}
+
+// ----------------------------------------------------------------------------
+// Admin Center -> Website & Online Forms
+// ----------------------------------------------------------------------------
+
+function openWebsiteSettings() {
+  var html = HtmlService.createHtmlOutput(withGuideLink_(getWebsiteSettingsHtml_(), "start")).setWidth(920).setHeight(780);
+  SpreadsheetApp.getUi().showModalDialog(html, "🌐 Website & Online Forms");
+}
+
+/** Everything the dialog shows: settings, the web app address, counts. */
+function getWebsiteDashboardData() {
+  var s = getWebsiteSettings_();
+  var url = "";
+  try { url = ScriptApp.getService().getUrl() || ""; } catch (e) {}
+  var counts = { registrations: 0, submissions: 0 };
+  var repo = new SheetRepository();
+  [["registrations", repo.getRegistrationSheet()], ["submissions", repo.getSubmissionSheet()]].forEach(function (p) {
+    var sh = p[1];
+    if (!sh || sh.getLastRow() < 2) return;
+    var col = (ColumnManager.headerMap(sh) || {})[WEB_SOURCE_HEADER_];
+    if (!col) return;
+    counts[p[0]] = sh.getRange(2, col, sh.getLastRow() - 1, 1).getValues()
+      .filter(function (v) { return String(v[0]).indexOf(WEB_SOURCE_PREFIX_) === 0; }).length;
+  });
+  return {
+    settings: s,
+    webAppUrl: url,
+    registration: webWindowState_(s.registration),
+    submission: webWindowState_(s.submission),
+    counts: counts
+  };
+}
+
+function getWebsiteSettingsHtml_() {
+  var esc = Utils.escapeHtml;
+  var d = getWebsiteDashboardData();
+  var s = d.settings;
+  var deployed = /\/exec$/.test(d.webAppUrl);
+  function winCard(key, title, w, st) {
+    var opt = function (v, label) { return '<option value="' + v + '"' + (w.STATUS === v ? ' selected' : '') + '>' + label + '</option>'; };
+    return uiCard_(title,
+      '<div class="ui-row">' +
+      '<div class="ui-field"><label for="' + key + 'Status">Status</label><select id="' + key + 'Status">' +
+        opt("auto", "Automatic (open between the dates)") + opt("open", "Open now (ignore the dates)") + opt("closed", "Closed") + '</select></div>' +
+      '<div class="ui-field"><label for="' + key + 'Opens">Opens</label><input type="datetime-local" id="' + key + 'Opens" value="' + esc(w.OPENS) + '"></div>' +
+      '<div class="ui-field"><label for="' + key + 'Closes">Closes</label><input type="datetime-local" id="' + key + 'Closes" value="' + esc(w.CLOSES) + '"></div>' +
+      '</div>' +
+      '<div class="ui-hint" id="' + key + 'State">Right now: ' + uiBadge_(st.open ? "OPEN" : st.status.toUpperCase(), st.open ? "ok" : "warn") + ' ' + esc(st.message) + '</div>');
+  }
+  var pay = (s.paymentMethods || []).slice();
+  while (pay.length < 4) pay.push({ mode: "", accountName: "", accountNumber: "" });
+  var dates = (s.dates || []).slice();
+  while (dates.length < 6) dates.push({ label: "", date: "" });
+  var modeOptions = function (cur) {
+    return '<option value=""></option>' + SYSTEM_CONFIG.WEBSITE.OPTIONS.PAY_MODE.map(function (m) {
+      return '<option' + (m === cur ? ' selected' : '') + '>' + esc(m) + '</option>';
+    }).join('');
+  };
+
+  var body =
+    uiCallout_(deployed ? "ok" : "warn", deployed ? "&#x2705;" : "&#x26A0;&#xFE0F;",
+      deployed
+        ? "<b>The website connection is deployed.</b> This address goes in the website's <code>site/assets/js/config.js</code> (apiUrl):<br><code style=\"user-select:all;word-break:break-all;\">" + esc(d.webAppUrl) + "</code><br>After you change the script, publish it again: Deploy, Manage deployments, Edit, Version: New version."
+        : "<b>Not deployed yet.</b> In the Apps Script editor choose Deploy, New deployment, type Web app, Execute as Me, Who has access Anyone. Paste the address that ends in /exec into the website's <code>site/assets/js/config.js</code> (apiUrl).") +
+    '<div class="ui-grid">' + uiStat_(d.counts.registrations, "Registrations from the website", "info") + uiStat_(d.counts.submissions, "Entries from the website", "info") + '</div>' +
+    uiCard_("The website",
+      '<div class="ui-row">' +
+      '<div class="ui-field"><label for="siteUrl">Website address</label><input id="siteUrl" placeholder="https://your-account.github.io/Testing/" value="' + esc(s.siteUrl) + '"><div class="ui-hint">Puts a personal "submit on the website" link and access code in every receipt email.</div></div>' +
+      '<div class="ui-field"><label for="edition">Edition</label><input id="edition" placeholder="5th" value="' + esc(s.edition) + '"><div class="ui-hint">Shown on the online forms.</div></div>' +
+      '</div>' +
+      '<div class="ui-row">' +
+      '<div class="ui-field"><label for="registrationFormUrl">Registration form template (to download, fill up and upload)</label><input id="registrationFormUrl" placeholder="https://drive.google.com/..." value="' + esc(s.registrationFormUrl) + '"></div>' +
+      '<div class="ui-field"><label for="primerUrl">Event primer</label><input id="primerUrl" placeholder="https://drive.google.com/..." value="' + esc(s.primerUrl) + '"></div>' +
+      '</div>') +
+    winCard("reg", "Online registration", s.registration, d.registration) +
+    winCard("sub", "Online entry submission", s.submission, d.submission) +
+    uiCard_("Payment accounts shown on the registration page",
+      pay.map(function (p, i) {
+        return '<div class="ui-row">' +
+          '<div class="ui-field"><label>Mode</label><select data-pay="mode" data-i="' + i + '">' + modeOptions(p.mode) + '</select></div>' +
+          '<div class="ui-field"><label>Account name</label><input data-pay="accountName" data-i="' + i + '" value="' + esc(p.accountName) + '"></div>' +
+          '<div class="ui-field"><label>Account number</label><input data-pay="accountNumber" data-i="' + i + '" value="' + esc(p.accountNumber) + '"></div>' +
+          '</div>';
+      }).join('') + '<div class="ui-hint">Leave a row empty to hide it. Without any account the page asks people to message the team for payment details.</div>') +
+    uiCard_("Dates shown on the website",
+      dates.map(function (x, i) {
+        return '<div class="ui-row">' +
+          '<div class="ui-field"><label>What</label><input data-date="label" data-i="' + i + '" placeholder="Registration period" value="' + esc(x.label) + '"></div>' +
+          '<div class="ui-field"><label>When</label><input data-date="date" data-i="' + i + '" placeholder="January 17 - February 13, 2027" value="' + esc(x.date) + '"></div>' +
+          '</div>';
+      }).join('')) +
+    uiCard_("Housekeeping",
+      '<p class="ui-lead">Files people uploaded but never sent with a form (an unfinished registration, a file picked twice) stay in the "' + esc(SYSTEM_CONFIG.META.NAME) + ' - Website Uploads" Drive folder. This moves the ones older than a day to the trash.</p>' +
+      '<button class="ui-btn" id="cleanBtn" onclick="cleanup()">Remove unused uploads</button> <span id="cleanMsg" class="ui-muted"></span>') +
+    '<div class="ui-bar sticky"><span id="msg" class="ui-muted" style="margin-right:auto;"></span>' +
+    '<button class="ui-btn" onclick="google.script.host.close()">Close</button>' +
+    '<button class="ui-btn primary" id="saveBtn" onclick="save()">Save settings</button></div>';
+
+  var script =
+    'function rows(attr){var out=[];document.querySelectorAll("[data-"+attr+"]").forEach(function(el){var i=+el.getAttribute("data-i");out[i]=out[i]||{};out[i][el.getAttribute("data-"+attr)]=el.value;});return out.filter(Boolean);}\n' +
+    'function win(p){return {STATUS:document.getElementById(p+"Status").value,OPENS:document.getElementById(p+"Opens").value,CLOSES:document.getElementById(p+"Closes").value};}\n' +
+    'function val(id){return document.getElementById(id).value;}\n' +
+    'function state(id,st){var el=document.getElementById(id);el.textContent="Right now: "+(st.open?"OPEN":st.status.toUpperCase())+(st.message?" - "+st.message:"");}\n' +
+    'function save(){var b=document.getElementById("saveBtn"),m=document.getElementById("msg");b.disabled=true;m.textContent="Saving...";\n' +
+    ' var payload={siteUrl:val("siteUrl"),edition:val("edition"),registrationFormUrl:val("registrationFormUrl"),primerUrl:val("primerUrl"),\n' +
+    '  registration:win("reg"),submission:win("sub"),paymentMethods:rows("pay"),dates:rows("date")};\n' +
+    ' google.script.run.withSuccessHandler(function(d){b.disabled=false;m.textContent="Saved. The website shows the change within a few minutes.";state("regState",d.registration);state("subState",d.submission);})\n' +
+    '  .withFailureHandler(function(e){b.disabled=false;m.textContent="Not saved: "+(e&&e.message?e.message:e);}).saveWebsiteSettings(payload);}\n' +
+    'function cleanup(){var b=document.getElementById("cleanBtn"),m=document.getElementById("cleanMsg");b.disabled=true;m.textContent="Working...";\n' +
+    ' google.script.run.withSuccessHandler(function(r){b.disabled=false;m.textContent="Moved "+r.trashed+" file(s) to the trash.";})\n' +
+    '  .withFailureHandler(function(e){b.disabled=false;m.textContent="Failed: "+(e&&e.message?e.message:e);}).webCleanupUploads();}\n';
+
+  return buildAdminDialog_({
+    icon: "&#x1F310;",
+    title: "Website & Online Forms",
+    subtitle: "Open or close the online forms; the payment accounts, dates and links shown on the website",
+    body: body,
+    script: script
+  });
 }

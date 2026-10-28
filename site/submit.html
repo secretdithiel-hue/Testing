@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submit your entry — Husay ng SokSay</title>
+<meta name="description" content="Registered participants: sign in with your email and access code to submit your competition entries.">
+<meta name="theme-color" content="#1a00ab">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Husay ng SokSay">
+<meta property="og:title" content="Submit your entry — Husay ng SokSay">
+<meta property="og:description" content="Registered participants: sign in with your email and access code to submit your competition entries.">
+<link rel="icon" type="image/png" href="assets/img/favicon.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Poppins:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div id="statusbar" class="statusbar" role="status" hidden></div>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="index.html" aria-label="Husay ng SokSay home">
+      <img src="assets/img/socsoc-emblem-96.png" alt="" width="38" height="44">
+      <span class="brand-text"><span class="brand-word">HUSAY<i>ng</i>SOKSAY</span><small>UPLB Sociology Society</small></span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span class="bars"><span></span></span>Menu</button>
+    <nav class="nav" id="site-nav" aria-label="Main">
+      <ul>
+        <li class="nav-mobile"><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="competitions.html">Competitions</a></li>
+        <li><a href="archive.html">Hall of Fame</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="submit.html">Submit entry</a></li>
+        <li class="nav-mobile nav-cta"><a href="register.html">Register</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-yellow btn-sm header-cta" href="register.html">Register</a>
+  </div>
+</header>
+<main id="main">
+<section class="page-head" style="padding-bottom:26px">
+  <div class="halftone" style="top:-40px;right:-50px"></div>
+  <div class="wrap">
+    <p class="crumbs"><a href="index.html">Home</a> / Submit entry</p>
+    <span class="eyebrow">For registered participants</span>
+    <h1>Submit your <span class="hl">entry</span></h1>
+    <p class="lead">Sign in with the email you registered with and the access code from your Acknowledgement Receipt. Your entry goes straight to the official submission list and is judged anonymously.</p>
+  </div>
+</section>
+
+<section class="section-tight" style="padding-top:0">
+  <div class="wrap">
+    <div id="sub-banner"></div>
+
+    <!-- sign in -->
+    <div id="view-signin" class="grid grid-2" style="align-items:start" hidden>
+      <form class="card" id="signin-form" novalidate style="padding-top:36px">
+        <span class="card-tag">Sign in</span>
+        <div class="field">
+          <label for="si-email">Email address you registered with</label>
+          <input class="input" id="si-email" type="email" inputmode="email" autocomplete="email" placeholder="juan.delacruz@gmail.com">
+        </div>
+        <div class="field" style="margin-top:16px">
+          <label for="si-code">Access code</label>
+          <input class="input" id="si-code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="ABCD-2345" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.3rem;letter-spacing:3px;text-transform:uppercase">
+          <span class="hint">It is in your Acknowledgement Receipt email, next to the “Open my submission page” button.</span>
+        </div>
+        <div id="si-error" class="banner bad" role="alert" hidden style="margin:16px 0 0"><span class="i" aria-hidden="true">⚠️</span><p></p></div>
+        <button class="btn btn-block btn-lg" type="submit" style="margin-top:20px">Sign in <span class="arrow" aria-hidden="true">→</span></button>
+        <p class="small" style="margin:14px 0 0;text-align:center"><button type="button" class="link-btn" id="show-resend">Email me my access code</button></p>
+      </form>
+      <div>
+        <div class="card card-yellow" style="padding-top:36px">
+          <span class="card-tag">Good to know</span>
+          <ul class="stack" style="margin:0">
+            <li>You get your access code once the Finance team <b>confirms your payment</b>.</li>
+            <li>Submit <b>one entry per competition</b>. Each one gets a participant number by email.</li>
+            <li><b>Keep your name and school out of your files</b>, file names included: judges only see your participant number.</li>
+            <li>Files up to <span data-max-mb>20</span> MB upload here. For bigger videos, share a <b>Google Drive link</b> set to “Anyone with the link”.</li>
+          </ul>
+        </div>
+        <form class="card" id="resend-form" novalidate hidden style="margin-top:24px;padding-top:36px">
+          <span class="card-tag">Lost your code?</span>
+          <p>We'll email the access code to the address you registered with.</p>
+          <div class="field"><label for="rs-email">Your registration email</label><input class="input" id="rs-email" type="email" inputmode="email" autocomplete="email"></div>
+          <div id="rs-msg" class="banner" role="status" hidden style="margin:14px 0 0"><span class="i" aria-hidden="true">📨</span><p></p></div>
+          <button class="btn btn-paper" type="submit" style="margin-top:16px">Send my code</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- closed -->
+    <div id="view-closed" class="card" hidden data-status="submission" style="max-width:760px;margin:0 auto;text-align:center;padding-top:36px">
+      <span class="card-tag">Entry submission</span>
+      <span class="status-pill closed"><span class="dot"></span>Closed</span>
+      <h2 style="margin-top:14px">Entry submission isn't open right now</h2>
+      <p class="lead" data-status-text style="margin-left:auto;margin-right:auto">Entry submission is closed for now.</p>
+      <div class="countdown" data-countdown="" hidden style="max-width:420px;margin:16px auto 0"></div>
+      <div class="btn-row" style="justify-content:center;margin-top:22px">
+        <a class="btn" href="competitions.html">Read the mechanics</a>
+        <a class="btn btn-paper" href="faq.html">FAQ</a>
+      </div>
+    </div>
+
+    <!-- dashboard -->
+    <div id="view-dash" hidden>
+      <div class="card" style="padding-top:36px">
+        <span class="card-tag">Your entries</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+          <div><h2 style="margin:0" id="dash-hello">Hi!</h2><p class="muted mb-0" id="dash-sub"></p></div>
+          <button type="button" class="btn btn-paper btn-sm" id="sign-out">Sign out</button>
+        </div>
+        <div id="dash-pay" style="margin-top:16px"></div>
+        <div class="grid grid-2" id="dash-comps" style="margin-top:20px"></div>
+      </div>
+    </div>
+
+    <!-- entry form -->
+    <form id="view-entry" class="card" novalidate hidden style="padding-top:36px">
+      <span class="card-tag" id="entry-tag">Entry</span>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <span id="entry-sticker"></span>
+        <div><h2 style="margin:0" id="entry-title">Entry</h2><p class="muted mb-0" id="entry-sub"></p></div>
+      </div>
+      <div class="honey" aria-hidden="true"><label>Leave this empty <input type="text" id="hp" tabindex="-1" autocomplete="off"></label></div>
+      <div class="consent" style="margin-top:16px">
+        <div class="field"><label class="check"><input type="checkbox" id="e-privacy"><span><b>I hereby let the organizers collect my personal data for the sole purpose of this competition</b> <span class="muted small">(Republic Act 10173: Data Privacy Act of 2012)</span></span></label></div>
+        <div class="field" style="margin-top:10px"><label class="check"><input type="checkbox" id="e-pledge"><span><b>I agree to the pledge and expect the team to strictly adhere to it.</b> <span class="muted small">(Ethical use pledge: your entry is used only for this competition and judged anonymously)</span></span></label></div>
+      </div>
+      <div class="form-grid" id="entry-fields" style="margin-top:22px"></div>
+      <div id="entry-error" class="banner bad" role="alert" hidden style="margin-top:18px"><span class="i" aria-hidden="true">⚠️</span><p></p></div>
+      <div class="wiz-nav">
+        <button type="button" class="btn btn-paper" id="entry-back">← My entries</button>
+        <button type="submit" class="btn btn-yellow btn-lg" id="entry-send">Submit my entry</button>
+      </div>
+    </form>
+
+    <!-- done -->
+    <div id="view-done" class="card success" hidden tabindex="-1" style="max-width:780px;margin:0 auto;padding-top:40px">
+      <div class="big-check"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 25l9 9 18-20" fill="none" stroke="#1a00ab" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h2 id="done-title">Entry received!</h2>
+      <p class="lead" style="margin:0 auto 16px" id="done-lead"></p>
+      <div id="done-num-wrap"><p class="small muted" style="margin-bottom:6px">Your participant number</p><div class="idbox" id="done-num">XX-0000</div></div>
+      <ol class="next-list">
+        <li><b>Check your email</b> for the Submission Acknowledgement with your participant number.</li>
+        <li><b>Keep the files</b> (and any Google Drive link you shared) until the results are announced.</li>
+        <li><b>Watch our Facebook page</b> for the finalists, the People's Choice voting and the awarding.</li>
+      </ol>
+      <div class="btn-row" style="justify-content:center;margin-top:24px"><button type="button" class="btn" id="done-back">Back to my entries</button></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="foot-brand"><img src="assets/img/socsoc-emblem-96.png" alt="UPLB Sociology Society emblem" width="54" height="62"><b>Husay ng<br>SokSay</b></div>
+        <p>A National Inter-High School Social Science Competition by the UPLB Sociology Society, the first organization for Sociology majors in UP Los Baños (since 1975).</p>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="competitions.html">Competitions</a></li>
+          <li><a href="archive.html">Hall of Fame</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Join</h4>
+        <ul>
+          <li><a href="register.html">Register online</a></li>
+          <li><a href="submit.html">Submit your entry</a></li>
+          <li><a href="competitions.html#fees">Fees &amp; bundles</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li>Participants: <a data-contact="participants" href="mailto:husayngsoksayteam@gmail.com">husayngsoksayteam@gmail.com</a></li>
+          <li>Partners: <a data-contact="partners" href="mailto:husayngsoksay@gmail.com">husayngsoksay@gmail.com</a></li>
+          <li>Facebook: <a data-contact="facebook" href="https://www.facebook.com/search/top?q=Husay%20ng%20SokSay%20-%20UPLB%20Sociology%20Society" target="_blank" rel="noopener">Husay ng SokSay - UPLB Sociology Society</a></li>
+          <li>Instagram: <a data-contact="instagram" href="https://www.instagram.com/husayngsoksay/" target="_blank" rel="noopener">@husayngsoksay</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom"><span>&copy; <span data-year>2026</span> UPLB Sociology Society &middot; Los Ba&ntilde;os, Laguna</span><span>Para sa malayang mga kwento.</span></div>
+  </div>
+</footer>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/defaults.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/forms.js"></script>
+<script src="assets/js/submit.js"></script>
+</body>
+</html>

@@ -16,6 +16,15 @@ function chainable(target, log) {
   return p;
 }
 
+// Like Google Sheets, a written string that starts with ' is stored as plain text without the
+// quote, and one that starts with = becomes a formula.
+function writeCell(sheet, r, c, v) {
+  const k = sheet.key(r, c);
+  if (typeof v === 'string' && v.charAt(0) === "'") { sheet.cells.set(k, v.slice(1)); sheet.formulas.delete(k); return; }
+  if (typeof v === 'string' && v.charAt(0) === '=' && v.length > 1) { sheet.formulas.set(k, v); sheet.cells.set(k, 'formula'); return; }
+  sheet.cells.set(k, v); sheet.formulas.delete(k);
+}
+
 class Sheet {
   constructor(ss, name, opts = {}) {
     this.ss = ss; this.name = name; this.maxRows = opts.rows || 1000; this.maxCols = opts.cols || 26;
@@ -47,7 +56,7 @@ class Sheet {
   hideSheet() { this.hidden = true; return this; }
   isSheetHidden() { return this.hidden; }
   getBandings() { return this.bandings.map(b => ({ remove: () => { this.bandings = this.bandings.filter(x => x !== b); } })); }
-  appendRow(vals) { const r = this.getLastRow() + 1; vals.forEach((v, i) => this.cells.set(this.key(r, i + 1), v)); return this; }
+  appendRow(vals) { const r = this.getLastRow() + 1; vals.forEach((v, i) => writeCell(this, r, i + 1, v)); return this; }
   clearContents() { this.cells.clear(); this.formulas.clear(); return this; }
   clearFormats() { this.fmt.clear(); return this; }
   autoResizeColumn() { return this; }
@@ -81,8 +90,8 @@ class Range {
   getValues() { const out = []; for (let r = 0; r < this.nr; r++) { const row = []; for (let c = 0; c < this.nc; c++) { const v = this.sheet.cells.get(this.sheet.key(this.row + r, this.col + c)); row.push(v === undefined ? '' : v); } out.push(row); } return out; }
   getValue() { return this.getValues()[0][0]; }
   getDisplayValue() { return String(this.getValue()); }
-  setValues(v) { if (v.length !== this.nr || v[0].length !== this.nc) throw new Error('setValues size mismatch ' + v.length + 'x' + v[0].length + ' vs ' + this.nr + 'x' + this.nc); this.each((r, c, i, j) => { this.sheet.cells.set(this.sheet.key(r, c), v[i][j]); this.sheet.formulas.delete(this.sheet.key(r, c)); }); return this; }
-  setValue(v) { this.each((r, c) => { this.sheet.cells.set(this.sheet.key(r, c), v); this.sheet.formulas.delete(this.sheet.key(r, c)); }); return this; }
+  setValues(v) { if (v.length !== this.nr || v[0].length !== this.nc) throw new Error('setValues size mismatch ' + v.length + 'x' + v[0].length + ' vs ' + this.nr + 'x' + this.nc); this.each((r, c, i, j) => writeCell(this.sheet, r, c, v[i][j])); return this; }
+  setValue(v) { this.each((r, c) => writeCell(this.sheet, r, c, v)); return this; }
   setFormula(f) { this.each((r, c) => { this.sheet.formulas.set(this.sheet.key(r, c), f); this.sheet.cells.set(this.sheet.key(r, c), 'formula'); }); return this; }
   getFormula() { return this.sheet.formulas.get(this.sheet.key(this.row, this.col)) || ''; }
   setFmt(k, v) { this.each((r, c) => { const key = this.sheet.key(r, c); const f = this.sheet.fmt.get(key) || {}; f[k] = v; this.sheet.fmt.set(key, f); }); return this; }

@@ -1,0 +1,36 @@
+# Runs the tests: the Apps Script against a mock spreadsheet, and the website in Chromium
+# talking to that same script.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node tests/run_builder_test.js src/Code.gs
+      - run: node tests/run_fix_tests.js src/Code.gs
+      - run: node tests/run_theme_tests.js src/Code.gs
+      - run: node tests/run_web_api_tests.js src/Code.gs
+
+  website:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-package-lock playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/run_site_e2e.js

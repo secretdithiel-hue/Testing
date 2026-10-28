@@ -237,6 +237,15 @@ async function newPage(browser, viewport) {
     await page.context().close();
   }
 
+  // ---- "page not found" at a deep address still has its look and working links --------------------
+  {
+    const page = await newPage(browser);
+    await page.goto(base + 'old/deep/missing-page.html', { waitUntil: 'networkidle' });
+    ok('404: styled at a deep address', (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(246, 239, 220)');
+    ok('404: home link points at the site root', (await page.evaluate(() => document.querySelector('.brand').href)) === base + 'index.html');
+    await page.context().close();
+  }
+
   // ---- phone width: the wizard still works ------------------------------------------------------
   {
     const page = await newPage(browser, { width: 360, height: 780 });

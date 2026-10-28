@@ -651,7 +651,7 @@ var SYSTEM_CONFIG = {
   // script's web app (PART 26). Admin Center -> Website & Online Forms overrides URL, EDITION,
   // REGISTRATION, SUBMISSION, PAYMENT_METHODS, DATES and the two links without editing the code.
   WEBSITE: {
-    URL: "",                        // the website's address, e.g. "https://<account>.github.io/Testing/" (links in emails)
+    URL: "",                        // the website's address, e.g. "https://husayngsoksay.github.io/" (links in emails)
     EDITION: "5th",                 // shown on the online forms
     // STATUS: "auto" = open between OPENS and CLOSES ("2027-01-17T08:00", Asia/Manila), "open", "closed"
     REGISTRATION: { STATUS: "closed", OPENS: "", CLOSES: "" },
@@ -29320,7 +29320,7 @@ function getWebsiteSettingsHtml_() {
     '<div class="ui-grid">' + uiStat_(d.counts.registrations, "Registrations from the website", "info") + uiStat_(d.counts.submissions, "Entries from the website", "info") + '</div>' +
     uiCard_("The website",
       '<div class="ui-row">' +
-      '<div class="ui-field"><label for="siteUrl">Website address</label><input id="siteUrl" placeholder="https://your-account.github.io/Testing/" value="' + esc(s.siteUrl) + '"><div class="ui-hint">Puts a personal "submit on the website" link and access code in every receipt email.</div></div>' +
+      '<div class="ui-field"><label for="siteUrl">Website address</label><input id="siteUrl" placeholder="https://husayngsoksay.github.io/" value="' + esc(s.siteUrl) + '"><div class="ui-hint">Puts a personal "submit on the website" link and access code in every receipt email.</div></div>' +
       '<div class="ui-field"><label for="edition">Edition</label><input id="edition" placeholder="5th" value="' + esc(s.edition) + '"><div class="ui-hint">Shown on the online forms.</div></div>' +
       '</div>' +
       '<div class="ui-row">' +

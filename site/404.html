@@ -2,8 +2,10 @@
 <html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
-<script>/* a 404 page is served at any address: point relative links back to the site's root */
-(function () { var p = location.pathname.split("/"); var base = (/github\.io$/.test(location.hostname) && p.length > 2 && p[1]) ? "/" + p[1] + "/" : "/"; document.write('<base href="' + base + '">'); })();</script>
+<script>/* A 404 page is served at any address, so relative links are pointed back to the site's
+   root. The Website workflow puts the site's base path (e.g. "/Testing", or "" for
+   husayngsoksay.github.io) in place of __SITE_BASE__; when it is not set the site is at "/". */
+(function () { var base = "__SITE_BASE__/"; if (base.indexOf("__") === 0) base = "/"; document.write('<base href="' + base + '">'); })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Page not found — Husay ng SokSay</title>
 <meta name="description" content="This page does not exist.">

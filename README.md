@@ -61,13 +61,28 @@ The website has eight pages: home, about (the organization and its history), com
 1. **Publish the script as a web app.** In the spreadsheet open **Extensions → Apps Script → Deploy → New deployment**. Choose the type **Web app**, set **Execute as: Me** and **Who has access: Anyone**, then **Deploy** and allow the permissions. Copy the **Web app URL** (it ends in `/exec`). It is also shown in **Admin Center → 🌐 Website & Online Forms**.
 2. **Connect the website.** In `site/assets/js/config.js` paste the address into `apiUrl: ""`, and commit.
 3. **Turn on GitHub Pages.** In the GitHub repository open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
-4. **Publish.** Merge into `main`. The **Website** workflow (`.github/workflows/pages.yml`) publishes the `site/` folder; the address appears in **Settings → Pages** (for this repository: `https://secretdithiel-hue.github.io/Testing/`). It runs again whenever something in `site/` changes on `main`, and can be started by hand from the **Actions** tab.
+4. **Publish.** Merge into `main`. The **Website** workflow (`.github/workflows/pages.yml`) publishes the `site/` folder; the address appears in **Settings → Pages**. It runs again whenever something in `site/` changes on `main`, and can be started by hand from the **Actions** tab.
 5. **Set up the forms in the spreadsheet:** **Admin Center → 🌐 Website & Online Forms**:
    - **Website address:** the address from step 4. This puts the access code and the personal submission link in every receipt email.
    - **Online registration / Online entry submission:** *Closed*, *Open now*, or *Automatic* (open between the two dates, Asia/Manila time). The website shows a countdown while a form is about to open.
    - **Payment accounts** shown on the registration page (mode, account name, number), the **dates** shown on the website, and the links to the **registration form template** and the **event primer**.
 
 After changing the script later, publish the new version: **Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy**. The address stays the same.
+
+### The website's address
+
+GitHub Pages names a site after the account and the repository that publish it. As it is now, this repository would publish at `https://secretdithiel-hue.github.io/Testing/`. To publish at **`https://husayngsoksay.github.io`** instead:
+
+1. **Create a free GitHub organization named `husayngsoksay`:** on GitHub click your profile picture → **Your organizations → New organization → Free**. GitHub tells you right away if the name is taken; any other name works the same way (the address follows it).
+2. **Move this repository into it:** **Settings → General → Danger Zone → Transfer ownership**, new owner `husayngsoksay`. The history, the pull request and the settings move along, and old links redirect.
+3. **Rename the repository to `husayngsoksay.github.io`:** **Settings → General → Repository name**. A repository with exactly that name publishes at the organization's root address.
+4. Follow **Putting the website online** above (steps 3 and 4), then enter the new address in **Admin Center → Website & Online Forms**.
+
+An organization also keeps the website in the Society's hands: add the officers under the organization's **People**, so the site does not depend on one person's account.
+
+For an address like `husayngsoksay.com` (or `.org`, `.ph`), buy the domain from a domain registrar, enter it in **Settings → Pages → Custom domain**, and add the DNS records GitHub lists there. GitHub Pages still hosts the site for free.
+
+Nothing in the website needs to change for a new address: every link inside it is relative, and the Website workflow tells the "page not found" page where the site starts.
 
 ### Editing the website
 

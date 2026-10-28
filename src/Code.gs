@@ -28258,13 +28258,14 @@ function webHandle_(method, e) {
 
   var action = String(req.action || "").trim();
   try {
+    if (method === "GET" && (action === "" || action === "config")) return webConfig_();
+    if (method === "GET" && action === "ping") return { ok: true, name: SYSTEM_CONFIG.META.NAME, version: SYSTEM_CONFIG.META.VERSION };
+    // page views above are never refused; everything that writes or looks things up is limited
     if (!webRateLimit_("all", W.LIMITS.REQUESTS_PER_MINUTE, 60)) {
       return webError_("busy", "Many people are using the website right now. Please try again in a minute.");
     }
     if (method === "GET") {
-      if (action === "" || action === "config") return webConfig_();
       if (action === "checkCode") return webCheckCode_(req);
-      if (action === "ping") return { ok: true, name: SYSTEM_CONFIG.META.NAME, version: SYSTEM_CONFIG.META.VERSION };
     } else {
       if (action === "upload") return webUpload_(req);
       if (action === "register") return webOnce_(req, webRegister_);
@@ -28351,6 +28352,7 @@ function saveWebsiteSettings(payload) {
   });
   PropertiesService.getScriptProperties().setProperty(WEB_SETTINGS_KEY_, JSON.stringify(clean));
   CacheService.getScriptCache().remove("web:config");
+  webSecret_();
   AuditLogService.info("WEB_SETTINGS_SAVED", "Website settings saved by " + (Session.getActiveUser().getEmail() || "an admin"));
   return getWebsiteDashboardData();
 }
@@ -28548,6 +28550,10 @@ function webCouponReason_(reason) {
 // stored in the sheets. It is printed in the Acknowledgement Receipt (sent once the payment is
 // confirmed) and can be emailed again from the website.
 
+/**
+ * The secret behind the access codes. It is created when the Website & Online Forms dialog is
+ * opened or saved (one admin, no visitors yet), so two requests can never each create their own.
+ */
 function webSecret_() {
   var props = PropertiesService.getScriptProperties();
   var s = props.getProperty(WEB_SECRET_KEY_);
@@ -29251,6 +29257,7 @@ function webResendAccess_(req) {
 // ----------------------------------------------------------------------------
 
 function openWebsiteSettings() {
+  webSecret_();
   var html = HtmlService.createHtmlOutput(withGuideLink_(getWebsiteSettingsHtml_(), "start")).setWidth(920).setHeight(780);
   SpreadsheetApp.getUi().showModalDialog(html, "🌐 Website & Online Forms");
 }
@@ -29309,7 +29316,7 @@ function getWebsiteSettingsHtml_() {
     uiCallout_(deployed ? "ok" : "warn", deployed ? "&#x2705;" : "&#x26A0;&#xFE0F;",
       deployed
         ? "<b>The website connection is deployed.</b> This address goes in the website's <code>site/assets/js/config.js</code> (apiUrl):<br><code style=\"user-select:all;word-break:break-all;\">" + esc(d.webAppUrl) + "</code><br>After you change the script, publish it again: Deploy, Manage deployments, Edit, Version: New version."
-        : "<b>Not deployed yet.</b> In the Apps Script editor choose Deploy, New deployment, type Web app, Execute as Me, Who has access Anyone. Paste the address that ends in /exec into the website's <code>site/assets/js/config.js</code> (apiUrl).") +
+        : "<b>Not published as a web app yet.</b> In the Apps Script editor choose Deploy, New deployment, type Web app, Execute as Me, Who has access Anyone. Paste the Web app URL (it ends in /exec; Deploy, Manage deployments shows it again) into the website's <code>site/assets/js/config.js</code> (apiUrl).") +
     '<div class="ui-grid">' + uiStat_(d.counts.registrations, "Registrations from the website", "info") + uiStat_(d.counts.submissions, "Entries from the website", "info") + '</div>' +
     uiCard_("The website",
       '<div class="ui-row">' +

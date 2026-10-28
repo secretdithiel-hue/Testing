@@ -90,6 +90,7 @@ ss.getSheetByName('Coupon Manager').getRange(2, 1, 1, 9).setValues([['SOK-ANA', 
   eq('1: auto window between the dates', env.get({ action: 'config' }).registration.open, true);
 
   openForms(env);
+  ok('1: the access-code secret is made when the settings are saved', !!env.g.__scriptProps.get('HNS_WEBSITE_SECRET'));
   const c3 = env.get({ action: 'config' });
   eq('1: saved payment account shown', c3.paymentMethods, [{ mode: 'GCash', accountName: 'HNS Finance', accountNumber: '0917 000 0000' }]);
   eq('1: open after saving', [c3.registration.open, c3.submission.open], [true, true]);
@@ -102,6 +103,11 @@ ss.getSheetByName('Coupon Manager').getRange(2, 1, 1, 9).setValues([['SOK-ANA', 
   eq('2: ping', env.get({ action: 'ping' }).ok, true);
   const out = ctx.doGet({ parameter: { action: 'ping' } });
   eq('2: JSON output', out.mime, 'JSON');
+  const keepR = C.WEBSITE.LIMITS.REQUESTS_PER_MINUTE;
+  C.WEBSITE.LIMITS.REQUESTS_PER_MINUTE = 0;
+  eq('2: page views are never refused', env.get({ action: 'config' }).ok, true);
+  eq('2: other requests are limited', env.get({ action: 'checkCode', kind: 'coupon', code: 'X' }).error, 'busy');
+  C.WEBSITE.LIMITS.REQUESTS_PER_MINUTE = keepR;
 }
 
 // ---- 3. codes ---------------------------------------------------------------------------------
